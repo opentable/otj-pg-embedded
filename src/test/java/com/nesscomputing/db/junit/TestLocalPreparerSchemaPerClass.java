@@ -27,7 +27,7 @@ import com.nesscomputing.db.postgres.junit.PostgresRules;
 public class TestLocalPreparerSchemaPerClass extends AbstractPreparerTests
 {
     @Rule
-    public static final LocalPostgresPreparerTestRule DATABASE = PostgresRules.schemaPreparerRule("trumpet_test", Resources.getResource(PostgresRules.class, "/sql/"), "simple");
+    public static final LocalPostgresPreparerTestRule DATABASE = PostgresRules.schemaPreparerRule("postgres", Resources.getResource(PostgresRules.class, "/sql/"), "simple");
 
     @Override
     public DBI getDbi()

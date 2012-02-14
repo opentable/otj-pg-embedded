@@ -26,7 +26,7 @@ import com.nesscomputing.db.postgres.junit.PostgresRules;
 public class TestLocalControllerSchemaPerClass extends AbstractControllerTests
 {
     @Rule
-    public static final LocalPostgresControllerTestRule DATABASE = PostgresRules.schemaControllerRule("trumpet_test");
+    public static final LocalPostgresControllerTestRule DATABASE = PostgresRules.schemaControllerRule("postgres");
 
     @Override
     public DBI getDbi()

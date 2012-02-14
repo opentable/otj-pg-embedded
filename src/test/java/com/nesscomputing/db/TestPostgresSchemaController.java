@@ -50,7 +50,7 @@ public class TestPostgresSchemaController
     public void setUp() throws Exception
     {
         userName = "test" + RandomStringUtils.randomNumeric(8);
-        dbName = "trumpet_test";
+        dbName = "postgres";
 
         userConfig = new ImmutableMigratoryDBIConfig(String.format(PostgresUtils.PG_LOCALHOST_TEMPLATE, dbName), userName, "");
     }

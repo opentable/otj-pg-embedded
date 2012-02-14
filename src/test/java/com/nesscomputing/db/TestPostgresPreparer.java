@@ -102,7 +102,7 @@ public class TestPostgresPreparer
     @Test
     public void testSimpleSchema() throws Exception
     {
-        final DatabasePreparer preparer = DatabasePreparers.forPostgresSchema("trumpet_test", Resources.getResource(TestPostgresPreparer.class, "/sql/").toURI());
+        final DatabasePreparer preparer = DatabasePreparers.forPostgresSchema("postgres", Resources.getResource(TestPostgresPreparer.class, "/sql/").toURI());
 
         try {
             preparer.setupDatabase("simple");
@@ -118,7 +118,7 @@ public class TestPostgresPreparer
     @Test
     public void testGuiceSchema() throws Exception
     {
-        final DatabasePreparer preparer = DatabasePreparers.forPostgresSchema("trumpet_test", Resources.getResource(TestPostgresPreparer.class, "/sql/").toURI());
+        final DatabasePreparer preparer = DatabasePreparers.forPostgresSchema("postgres", Resources.getResource(TestPostgresPreparer.class, "/sql/").toURI());
 
         try {
             preparer.setupDatabase("simple");
