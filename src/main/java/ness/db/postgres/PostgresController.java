@@ -161,7 +161,7 @@ public final class PostgresController implements DatabaseController
         }
     }
 
-    @SuppressWarnings("DM_GC")
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value="DM_GC", justification="c3p0 bug")
     private void dropDatabase()
     {
         if (exists()) {
