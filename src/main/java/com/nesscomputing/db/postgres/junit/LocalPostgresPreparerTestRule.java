@@ -22,7 +22,6 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.skife.jdbi.v2.DBI;
 
-
 import com.google.inject.Module;
 import com.nesscomputing.db.DatabasePreparer;
 import com.nesscomputing.testing.lessio.AllowDNSResolution;
@@ -53,6 +52,11 @@ public class LocalPostgresPreparerTestRule implements TestRule
     public Module getGuiceModule(@Nonnull final String visibleDbName)
     {
         return databasePreparer.getGuiceModule(visibleDbName);
+    }
+
+    public Module getJdbcModule(@Nonnull final String visibleDbName, final Module jdbcModule)
+    {
+        return databasePreparer.getJdbcModule(visibleDbName, jdbcModule);
     }
 
     @AllowDNSResolution

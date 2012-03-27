@@ -19,17 +19,20 @@ import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.Properties;
 
+import javax.annotation.Nonnull;
+
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.IDBI;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 import org.skife.jdbi.v2.util.IntegerMapper;
 
-
 import com.google.common.base.Preconditions;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
+import com.google.inject.util.Modules;
 import com.nesscomputing.db.DatabaseController;
 import com.nesscomputing.logging.Log;
 import com.nesscomputing.migratory.ImmutableMigratoryDBIConfig;
@@ -108,7 +111,25 @@ public final class PostgresController implements DatabaseController
 
 
     @Override
-    public Module getGuiceModule(final String dbName)
+    public Module getJdbcModule(@Nonnull final String visibleDbName, @Nonnull Module jdbcModule)
+    {
+        return Modules.override(jdbcModule).with(getInternalModule(visibleDbName));
+    }
+
+
+    @Override
+    public Module getGuiceModule(@Nonnull final String visibleDbName)
+    {
+        return Modules.combine(getInternalModule(visibleDbName), new Module() {
+            @Override
+            public void configure(final Binder binder) {
+                final Annotation annotation = Names.named(visibleDbName);
+                binder.bind(IDBI.class).annotatedWith(annotation).toInstance(userDbi);
+            }
+        });
+    }
+
+    private Module getInternalModule(final String dbName)
     {
         final URI uri = URI.create(userConfig.getDBUrl());
         final Properties props = new Properties();
@@ -122,7 +143,6 @@ public final class PostgresController implements DatabaseController
             public void configure() {
                 bind(Properties.class).annotatedWith(annotation).toInstance(props);
                 bind(URI.class).annotatedWith(annotation).toInstance(uri);
-                bind(IDBI.class).annotatedWith(annotation).toInstance(userDbi);
             }
         };
     }

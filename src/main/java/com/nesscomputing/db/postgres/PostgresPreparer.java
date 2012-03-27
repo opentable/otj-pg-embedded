@@ -25,7 +25,6 @@ import javax.annotation.Nonnull;
 
 import org.skife.jdbi.v2.DBI;
 
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.inject.Module;
@@ -100,9 +99,15 @@ public class PostgresPreparer implements DatabasePreparer
     }
 
     @Override
-    public Module getGuiceModule(final String visibleDbName)
+    public Module getGuiceModule(@Nonnull final String visibleDbName)
     {
         return databaseController.getGuiceModule(visibleDbName);
+    }
+
+    @Override
+    public Module getJdbcModule(@Nonnull final String visibleDbName, @Nonnull final Module jdbcModule)
+    {
+        return databaseController.getJdbcModule(visibleDbName, jdbcModule);
     }
 
     private static class DatabasePreparerLocator extends AbstractSqlResourceLocator
