@@ -26,6 +26,7 @@ import org.junit.rules.TestRule;
 
 import com.google.common.base.Throwables;
 import com.google.common.io.Resources;
+import com.nesscomputing.config.Config;
 import com.nesscomputing.db.DatabaseControllers;
 import com.nesscomputing.db.DatabasePreparers;
 import com.nesscomputing.db.postgres.PostgresUtils;
@@ -126,5 +127,27 @@ public final class PostgresRules
     {
         return new LocalPostgresControllerTestRule(DatabaseControllers.forPostgresSchema(PostgresUtils.PG_LOCALHOST_ROOT_CONFIG,
                                                                                          DatabaseControllers.createRandomUserConfig(PostgresUtils.PG_LOCALHOST_TEMPLATE, dbName)));
+    }
+
+    /**
+     * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
+     * The rule contributes {@link Config} switches to configure each test case to get its own database.
+     */
+    public static EmbeddedPostgresTestDatabaseRule embeddedDatabaseRule(@Nonnull final URL baseUrl, final String... personalities)
+    {
+        try {
+            return embeddedDatabaseRule(baseUrl.toURI(), personalities);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
+     * The rule contributes {@link Config} switches to configure each test case to get its own database.
+     */
+    public static EmbeddedPostgresTestDatabaseRule embeddedDatabaseRule(@Nonnull final URI baseUri, final String... personalities)
+    {
+        return new EmbeddedPostgresTestDatabaseRule(baseUri, personalities);
     }
 }
