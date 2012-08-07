@@ -2,10 +2,14 @@ package com.nesscomputing.db.postgres.junit;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+
 import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.commons.configuration.MapConfiguration;
@@ -17,6 +21,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nesscomputing.config.Config;
 import com.nesscomputing.db.postgres.PostgresUtils;
 import com.nesscomputing.migratory.Migratory;
@@ -31,13 +36,12 @@ import com.nesscomputing.testing.postgres.EmbeddedPostgreSQL;
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 {
     @GuardedBy("EmbeddedPostgresTestDatabaseRule.class")
-    private static final Map<Entry<URI, Set<String>>, EmbeddedPostgreSQL> CLUSTERS = Maps.newHashMap();
+    private static final Map<Entry<URI, Set<String>>, Cluster> CLUSTERS = Maps.newHashMap();
 
     private final URI baseUrl;
     private final String[] personalities;
 
-    private volatile EmbeddedPostgreSQL cluster;
-    private volatile DBI pgDb;
+    private volatile Cluster cluster;
 
     EmbeddedPostgresTestDatabaseRule(URI baseUrl, String[] personalities)
     {
@@ -49,22 +53,24 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
      * Each schema set has its own database cluster.  The template1 database has the schema preloaded so that
      * each test case need only create a new database and not re-invoke Migratory.
      */
-    private synchronized static EmbeddedPostgreSQL getCluster(URI baseUrl, String[] personalities) throws IOException
+    private synchronized static Cluster getCluster(URI baseUrl, String[] personalities) throws IOException
     {
         Entry<URI, Set<String>> key = Maps.immutableEntry(baseUrl, (Set<String>)ImmutableSet.copyOf(personalities));
 
-        EmbeddedPostgreSQL result = CLUSTERS.get(key);
+        Cluster result = CLUSTERS.get(key);
         if (result != null) {
             return result;
         }
 
-        result = EmbeddedPostgreSQL.start();
+        result = new Cluster(EmbeddedPostgreSQL.start());
 
-        String url = result.getTemplateDatabaseUri();
+        String url = result.getPg().getTemplateDatabaseUri();
         DBI dbi = new DBI(url);
         Migratory migratory = new Migratory(new MigratoryConfig() {}, dbi, dbi);
         migratory.addLocator(new DatabasePreparerLocator(migratory, baseUrl));
         migratory.dbMigrate(new MigrationPlan(personalities));
+
+        result.start();
 
         CLUSTERS.put(key, result);
         return result;
@@ -75,7 +81,6 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     {
         super.before();
         cluster = getCluster(baseUrl, personalities);
-        pgDb = new DBI(cluster.getPostgresDatabaseUri());
     }
 
     /**
@@ -84,9 +89,9 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
      */
     protected EmbeddedPostgreSQL getCluster()
     {
-        EmbeddedPostgreSQL cluster = this.cluster;
+        Cluster cluster = this.cluster;
         Preconditions.checkState(cluster != null, "rule not active");
-        return cluster;
+        return cluster.getPg();
     }
 
     /**
@@ -95,10 +100,8 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
      */
     public Config getTweakedConfig(Config config, String dbModuleName)
     {
-        String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
-        PostgresUtils.create(pgDb, newDbName, "postgres");
         return Config.getOverriddenConfig(config,
-                new MapConfiguration(ImmutableMap.of("ness.db." + dbModuleName + ".uri", cluster.getDatabaseUri("postgres", newDbName))));
+                new MapConfiguration(ImmutableMap.of("ness.db." + dbModuleName + ".uri", cluster.getNextDbUri())));
     }
 
     /**
@@ -112,7 +115,6 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     @Override
     protected void after()
     {
-        pgDb = null;
         cluster = null;
         super.after();
     }
@@ -131,6 +133,58 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
         protected Entry<URI, String> getBaseInformation(final String personalityName, final String databaseType)
         {
             return Maps.immutableEntry(URI.create(baseUri.toString() + "/" + personalityName), ".*\\.sql");
+        }
+    }
+
+    private static class Cluster implements Runnable
+    {
+        private EmbeddedPostgreSQL pg;
+        private final DBI pgDb;
+        private final SynchronousQueue<String> nextDatabaseUri = new SynchronousQueue<String>();
+
+        Cluster(EmbeddedPostgreSQL pg)
+        {
+            this.pg = pg;
+            pgDb = new DBI(pg.getPostgresDatabaseUri());
+
+        }
+
+        void start()
+        {
+            ExecutorService service = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+                .setDaemon(true).setNameFormat("cluster-" + pg + "-preparer").build());
+            service.submit(this);
+            service.shutdown();
+        }
+
+        String getNextDbUri()
+        {
+            try {
+                return nextDatabaseUri.take();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
+        }
+
+        EmbeddedPostgreSQL getPg()
+        {
+            return pg;
+        }
+
+        @Override
+        public void run()
+        {
+            while (true) {
+                String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
+                PostgresUtils.create(pgDb, newDbName, "postgres");
+                try {
+                    nextDatabaseUri.put(pg.getDatabaseUri("postgres", newDbName));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
         }
     }
 }
