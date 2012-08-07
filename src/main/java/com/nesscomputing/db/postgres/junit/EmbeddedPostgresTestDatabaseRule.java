@@ -18,6 +18,7 @@ import org.junit.rules.ExternalResource;
 import org.skife.jdbi.v2.DBI;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -38,15 +39,15 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     @GuardedBy("EmbeddedPostgresTestDatabaseRule.class")
     private static final Map<Entry<URI, Set<String>>, Cluster> CLUSTERS = Maps.newHashMap();
 
-    private final URI baseUrl;
-    private final String[] personalities;
-
-    private volatile Cluster cluster;
+    private final Cluster cluster;
 
     EmbeddedPostgresTestDatabaseRule(URI baseUrl, String[] personalities)
     {
-        this.baseUrl = baseUrl;
-        this.personalities = personalities;
+        try {
+            cluster = getCluster(baseUrl, personalities);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     /**
@@ -76,13 +77,6 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
         return result;
     }
 
-    @Override
-    protected void before() throws Throwable
-    {
-        super.before();
-        cluster = getCluster(baseUrl, personalities);
-    }
-
     /**
      * Expose direct access to this rule's cluster.  Advanced usage only.
      * @return the cluster used by this rule.
@@ -110,13 +104,6 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     public Config getTweakedConfig(String dbModuleName)
     {
         return getTweakedConfig(Config.getEmptyConfig(), dbModuleName);
-    }
-
-    @Override
-    protected void after()
-    {
-        cluster = null;
-        super.after();
     }
 
     private static class DatabasePreparerLocator extends AbstractSqlResourceLocator
