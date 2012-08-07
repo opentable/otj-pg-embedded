@@ -35,6 +35,10 @@ import com.nesscomputing.testing.postgres.EmbeddedPostgreSQL;
 @AllowAll
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 {
+    /**
+     * Each database cluster's <code>template1</code> database has a unique set of schema
+     * loaded so that the databases may be cloned.
+     */
     @GuardedBy("EmbeddedPostgresTestDatabaseRule.class")
     private static final Map<Entry<URI, Set<String>>, Cluster> CLUSTERS = Maps.newHashMap();
 
@@ -111,6 +115,10 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
         }
     }
 
+    /**
+     * Spawns a background thread that prepares databases ahead of time for speed, and then uses a
+     * synchronous queue to hand the prepared databases off to test cases.
+     */
     private static class Cluster implements Runnable
     {
         private EmbeddedPostgreSQL pg;
