@@ -17,7 +17,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.rules.ExternalResource;
 import org.skife.jdbi.v2.DBI;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -75,17 +74,6 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 
         CLUSTERS.put(key, result);
         return result;
-    }
-
-    /**
-     * Expose direct access to this rule's cluster.  Advanced usage only.
-     * @return the cluster used by this rule.
-     */
-    protected EmbeddedPostgreSQL getCluster()
-    {
-        Cluster cluster = this.cluster;
-        Preconditions.checkState(cluster != null, "rule not active");
-        return cluster.getPg();
     }
 
     /**
