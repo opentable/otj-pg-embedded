@@ -31,6 +31,7 @@ import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
 import com.nesscomputing.migratory.migration.MigrationPlan;
 import com.nesscomputing.testing.lessio.AllowAll;
 import com.nesscomputing.testing.postgres.EmbeddedPostgreSQL;
+import com.nesscomputing.testing.tweaked.TweakedModule;
 
 @AllowAll
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
@@ -87,8 +88,9 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     public Config getTweakedConfig(Config config, String dbModuleName)
     {
         return Config.getOverriddenConfig(config,
-                new MapConfiguration(ImmutableMap.of("ness.db." + dbModuleName + ".uri", cluster.getNextDbUri())));
+                new MapConfiguration(getConfigurationTweak(dbModuleName)));
     }
+
 
     /**
      * Shorthand for <code>getTweakedConfig(Config.getEmptyConfig(), dbModuleName)</code>.
@@ -96,6 +98,25 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     public Config getTweakedConfig(String dbModuleName)
     {
         return getTweakedConfig(Config.getEmptyConfig(), dbModuleName);
+    }
+
+    /**
+     * @return a {@link TweakedModule} which gives services database URLs
+     */
+    public TweakedModule getTweakedModule(final String dbModuleName)
+    {
+        return new TweakedModule() {
+            @Override
+            public Map<String, String> getServiceConfigTweaks()
+            {
+                return getConfigurationTweak(dbModuleName);
+            }
+        };
+    }
+
+    private ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
+    {
+        return ImmutableMap.of("ness.db." + dbModuleName + ".uri", cluster.getNextDbUri());
     }
 
     private static class DatabasePreparerLocator extends AbstractSqlResourceLocator

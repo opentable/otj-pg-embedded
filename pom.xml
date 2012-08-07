@@ -105,6 +105,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.nesscomputing.components</groupId>
+      <artifactId>ness-integration-testing</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit-dep</artifactId>
       <scope>provided</scope>
