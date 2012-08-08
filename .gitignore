@@ -16,3 +16,4 @@ target/
 .classpath
 .project
 .settings
+dist/
