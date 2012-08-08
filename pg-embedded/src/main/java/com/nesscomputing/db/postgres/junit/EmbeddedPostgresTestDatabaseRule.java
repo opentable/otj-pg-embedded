@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2012 Ness Computing, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.nesscomputing.db.postgres.junit;
 
 import java.io.IOException;
@@ -10,32 +25,36 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
-
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.rules.ExternalResource;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.tweak.HandleCallback;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nesscomputing.config.Config;
-import com.nesscomputing.db.postgres.PostgresUtils;
+import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQL;
 import com.nesscomputing.migratory.Migratory;
 import com.nesscomputing.migratory.MigratoryConfig;
 import com.nesscomputing.migratory.MigratoryContext;
 import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
 import com.nesscomputing.migratory.migration.MigrationPlan;
 import com.nesscomputing.testing.lessio.AllowAll;
-import com.nesscomputing.testing.postgres.EmbeddedPostgreSQL;
 import com.nesscomputing.testing.tweaked.TweakedModule;
 
 @AllowAll
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 {
+    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s";
+
     /**
      * Each database cluster's <code>template1</code> database has a unique set of schema
      * loaded so that the databases may be cloned.
@@ -69,8 +88,7 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 
         result = new Cluster(EmbeddedPostgreSQL.start());
 
-        String url = result.getPg().getTemplateDatabaseUri();
-        DBI dbi = new DBI(url);
+        DBI dbi = new DBI(result.getPg().getTemplateDatabase());
         Migratory migratory = new Migratory(new MigratoryConfig() {}, dbi, dbi);
         migratory.addLocator(new DatabasePreparerLocator(migratory, baseUrl));
         migratory.dbMigrate(new MigrationPlan(personalities));
@@ -116,7 +134,9 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 
     private ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
     {
-        return ImmutableMap.of("ness.db." + dbModuleName + ".uri", cluster.getNextDbUri());
+        DbInfo db = cluster.getNextDb();
+        return ImmutableMap.of("ness.db." + dbModuleName + ".uri", String.format(JDBC_FORMAT, db.port, db.dbName),
+                               "ness.db." + dbModuleName + ".ds.user", db.user);
     }
 
     private static class DatabasePreparerLocator extends AbstractSqlResourceLocator
@@ -144,12 +164,12 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
     {
         private EmbeddedPostgreSQL pg;
         private final DBI pgDb;
-        private final SynchronousQueue<String> nextDatabaseUri = new SynchronousQueue<String>();
+        private final SynchronousQueue<DbInfo> nextDatabase = new SynchronousQueue<DbInfo>();
 
         Cluster(EmbeddedPostgreSQL pg)
         {
             this.pg = pg;
-            pgDb = new DBI(pg.getPostgresDatabaseUri());
+            pgDb = new DBI(pg.getPostgresDatabase());
 
         }
 
@@ -161,10 +181,10 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
             service.shutdown();
         }
 
-        String getNextDbUri()
+        DbInfo getNextDb()
         {
             try {
-                return nextDatabaseUri.take();
+                return nextDatabase.take();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e);
@@ -181,14 +201,41 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
         {
             while (true) {
                 String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
-                PostgresUtils.create(pgDb, newDbName, "postgres");
+                create(pgDb, newDbName, "postgres");
                 try {
-                    nextDatabaseUri.put(pg.getDatabaseUri("postgres", newDbName));
+                    nextDatabase.put(new DbInfo(newDbName, pg.getPort(), "postgres"));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     return;
                 }
             }
+        }
+    }
+
+    private static void create(final DBI dbi, @Nonnull final String dbName, @Nonnull final String userName)
+    {
+        Preconditions.checkArgument(dbName != null, "the database name must not be null!");
+        Preconditions.checkArgument(userName != null, "the user name must not be null!");
+
+        dbi.withHandle(new HandleCallback<Void>() {
+                @Override
+                public Void withHandle(final Handle handle) {
+                    handle.createStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName)).execute();
+                    return null;
+                }
+            });
+    }
+
+    private static class DbInfo
+    {
+        private final String dbName;
+        private final int port;
+        private final String user;
+
+        DbInfo(String dbName, int port, String user) {
+            this.dbName = dbName;
+            this.port = port;
+            this.user = user;
         }
     }
 }

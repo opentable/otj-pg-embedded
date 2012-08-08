@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+
+    Copyright (C) 2012 Ness Computing, Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<!--
+  This is the default logging setup for test cases.
+
+  If more/less logging is required, enable disable it on a per component base.
+-->
+
+<log4j:configuration
+    xmlns:log4j="http://jakarta.apache.org/log4j/"
+    threshold="trace">
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="immediateFlush" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- the following line contains tabs. They are used for grepp'ing through the output, -->
+            <!-- so *DON'T* replace them with spaces! -->
+            <param name="ConversionPattern" value="%p	%d{ISO8601}	%t	%c	%m%n" />
+        </layout>
+    </appender>
+
+    <logger name="com.nesscomputing">
+        <level value="debug" />
+    </logger>
+
+    <root>
+        <level value="info"/>
+        <appender-ref ref="CONSOLE" />
+    </root>
+</log4j:configuration>
