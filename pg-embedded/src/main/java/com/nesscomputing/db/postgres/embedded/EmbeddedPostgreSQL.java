@@ -319,6 +319,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
         Builder() {
             config.put("timezone", "UTC");
+            config.put("max_connections", "300");
         }
 
         public void setServerConfig(String key, String value)
