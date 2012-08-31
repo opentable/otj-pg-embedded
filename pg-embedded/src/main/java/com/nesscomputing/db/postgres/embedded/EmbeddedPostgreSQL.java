@@ -281,7 +281,7 @@ public class EmbeddedPostgreSQL implements Closeable
                         LOG.info("Found stale data directory %s", dir);
                         if (new File(dir, "postmaster.pid").exists()) {
                             pgCtl(dir, "stop");
-                            LOG.info("Shut down orphaned postmaster %s");
+                            LOG.info("Shut down orphaned postmaster!");
                         }
                         FileUtils.deleteDirectory(dir);
                     }
