@@ -339,8 +339,8 @@ public class EmbeddedPostgreSQL implements Closeable
 
     public static class Builder
     {
-        private File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
-        private Map<String, String> config = Maps.newHashMap();
+        private final File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
+        private final Map<String, String> config = Maps.newHashMap();
 
         Builder() {
             config.put("timezone", "UTC");
