@@ -201,6 +201,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
     {
+        Throwable lastCause = null;
         long start = System.nanoTime();
         long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
         while (System.nanoTime() - start < maxWaitNs) {
@@ -209,6 +210,7 @@ public class EmbeddedPostgreSQL implements Closeable
                 LOG.info("%s postmaster startup finished in %s", instanceId, watch);
                 return;
             } catch (SQLException e) {
+                lastCause = e;
                 LOG.trace(e);
             }
 
@@ -226,7 +228,7 @@ public class EmbeddedPostgreSQL implements Closeable
                 return;
             }
         }
-        throw new IOException("Gave up waiting for server to start after " + PG_STARTUP_WAIT_MS + "ms");
+        throw new IOException("Gave up waiting for server to start after " + PG_STARTUP_WAIT_MS + "ms", lastCause);
     }
 
     private void checkReady() throws SQLException
