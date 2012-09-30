@@ -211,6 +211,14 @@ public class EmbeddedPostgreSQL implements Closeable
             } catch (SQLException e) {
                 LOG.trace(e);
             }
+
+            try {
+                throw new IOException(String.format("%s postmaster exited with value %d, check standard out for more detail!", instanceId, postmaster.exitValue()));
+            } catch (IllegalThreadStateException e) {
+                // Process is not yet dead, loop and try again
+                LOG.trace(e);
+            }
+
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
