@@ -174,12 +174,29 @@ public class EmbeddedPostgreSQL implements Closeable
             args.add(config.getKey() + "=" + config.getValue());
         }
 
-        postmaster = new ProcessBuilder(args).start();
+        ProcessBuilder builder = new ProcessBuilder(args);
+        enableRedirects(builder);
+        postmaster = builder.start();
         LOG.info("%s postmaster started as %s on port %s.  Waiting up to %sms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
         waitForServerStartup(watch);
+    }
+
+    /*
+     * Enable Java 7 only features
+     */
+    private void enableRedirects(ProcessBuilder builder)
+    {
+        try {
+            ProcessBuilder.class.getMethod("redirectErrorStream", boolean.class).invoke(builder, true);
+            Class<?> redirectClass = Class.forName("java.lang.ProcessBuilder$Redirect");
+            Object inherit = redirectClass.getField("INHERIT").get(null);
+            ProcessBuilder.class.getMethod("redirectOutput", redirectClass).invoke(builder, inherit);
+        } catch (Exception e) {
+            LOG.infoDebug(e, "Could not redirect output, probably not running on Java 7");
+        }
     }
 
     private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
