@@ -280,7 +280,12 @@ public class EmbeddedPostgreSQL implements Closeable
             lock.release();
         }
         Closeables.closeQuietly(lockStream);
-        FileUtils.deleteDirectory(dataDirectory);
+
+        if (System.getProperty("ness.epg.no-cleanup") == null) {
+            FileUtils.deleteDirectory(dataDirectory);
+        } else {
+            LOG.info("Did not clean up directory %s", dataDirectory.getAbsolutePath());
+        }
     }
 
     private void pgCtl(File dir, String action)
