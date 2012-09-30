@@ -30,7 +30,6 @@ import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.rules.ExternalResource;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.tweak.HandleCallback;
@@ -47,11 +46,9 @@ import com.nesscomputing.migratory.MigratoryConfig;
 import com.nesscomputing.migratory.MigratoryContext;
 import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
 import com.nesscomputing.migratory.migration.MigrationPlan;
-import com.nesscomputing.testing.lessio.AllowAll;
 import com.nesscomputing.testing.tweaked.TweakedModule;
 
-@AllowAll
-public class EmbeddedPostgreSQLController extends ExternalResource
+public class EmbeddedPostgreSQLController
 {
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s";
 
