@@ -58,7 +58,7 @@ public class EmbeddedPostgreSQL implements Closeable
 {
     private static final Log LOG = Log.findLog();
 
-    private static final String PG_STOP_MODE = "immediate";
+    private static final String PG_STOP_MODE = "fast";
     private static final String PG_STOP_WAIT_S = "5";
     private static final String PG_SUPERUSER = "postgres";
     private static final int PG_STARTUP_WAIT_MS = 10 * 1000;
