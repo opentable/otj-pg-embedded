@@ -58,7 +58,7 @@ public class EmbeddedPostgreSQL implements Closeable
 {
     private static final Log LOG = Log.findLog();
 
-    private static final String PG_STOP_MODE = "immediate";
+    private static final String PG_STOP_MODE = "fast";
     private static final String PG_STOP_WAIT_S = "5";
     private static final String PG_SUPERUSER = "postgres";
     private static final int PG_STARTUP_WAIT_MS = 10 * 1000;
@@ -174,12 +174,29 @@ public class EmbeddedPostgreSQL implements Closeable
             args.add(config.getKey() + "=" + config.getValue());
         }
 
-        postmaster = new ProcessBuilder(args).start();
+        ProcessBuilder builder = new ProcessBuilder(args);
+        enableRedirects(builder);
+        postmaster = builder.start();
         LOG.info("%s postmaster started as %s on port %s.  Waiting up to %sms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
         waitForServerStartup(watch);
+    }
+
+    /*
+     * Enable Java 7 only features
+     */
+    private void enableRedirects(ProcessBuilder builder)
+    {
+        try {
+            ProcessBuilder.class.getMethod("redirectErrorStream", boolean.class).invoke(builder, true);
+            Class<?> redirectClass = Class.forName("java.lang.ProcessBuilder$Redirect");
+            Object inherit = redirectClass.getField("INHERIT").get(null);
+            ProcessBuilder.class.getMethod("redirectOutput", redirectClass).invoke(builder, inherit);
+        } catch (Exception e) {
+            LOG.infoDebug(e, "Could not redirect output, probably not running on Java 7");
+        }
     }
 
     private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
@@ -194,6 +211,14 @@ public class EmbeddedPostgreSQL implements Closeable
             } catch (SQLException e) {
                 LOG.trace(e);
             }
+
+            try {
+                throw new IOException(String.format("%s postmaster exited with value %d, check standard out for more detail!", instanceId, postmaster.exitValue()));
+            } catch (IllegalThreadStateException e) {
+                // Process is not yet dead, loop and try again
+                LOG.trace(e);
+            }
+
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -314,8 +339,8 @@ public class EmbeddedPostgreSQL implements Closeable
 
     public static class Builder
     {
-        private File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
-        private Map<String, String> config = Maps.newHashMap();
+        private final File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
+        private final Map<String, String> config = Maps.newHashMap();
 
         Builder() {
             config.put("timezone", "UTC");
