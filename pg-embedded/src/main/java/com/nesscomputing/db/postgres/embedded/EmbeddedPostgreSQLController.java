@@ -65,7 +65,7 @@ public class EmbeddedPostgreSQLController
     {
         try {
             cluster = getCluster(baseUrl, personalities);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -76,7 +76,7 @@ public class EmbeddedPostgreSQLController
      */
     private synchronized static Cluster getCluster(URI baseUrl, String[] personalities) throws IOException
     {
-        Entry<URI, Set<String>> key = Maps.immutableEntry(baseUrl, (Set<String>)ImmutableSet.copyOf(personalities));
+        final Entry<URI, Set<String>> key = Maps.immutableEntry(baseUrl, (Set<String>)ImmutableSet.copyOf(personalities));
 
         Cluster result = CLUSTERS.get(key);
         if (result != null) {
@@ -85,10 +85,18 @@ public class EmbeddedPostgreSQLController
 
         result = new Cluster(EmbeddedPostgreSQL.start());
 
-        DBI dbi = new DBI(result.getPg().getTemplateDatabase());
-        Migratory migratory = new Migratory(new MigratoryConfig() {}, dbi, dbi);
+        final DBI dbi = new DBI(result.getPg().getTemplateDatabase());
+        final Migratory migratory = new Migratory(new MigratoryConfig() {}, dbi, dbi);
         migratory.addLocator(new DatabasePreparerLocator(migratory, baseUrl));
-        migratory.dbMigrate(new MigrationPlan(personalities));
+
+        final MigrationPlan plan = new MigrationPlan();
+        int priority = 100;
+
+        for (final String personality : personalities) {
+            plan.addMigration(personality, Integer.MAX_VALUE, priority--);
+        }
+
+        migratory.dbMigrate(plan);
 
         result.start();
 
@@ -134,7 +142,7 @@ public class EmbeddedPostgreSQLController
      */
     public String getJdbcUri()
     {
-        DbInfo db = cluster.getNextDb();
+        final DbInfo db = cluster.getNextDb();
         return getJdbcUri(db);
     }
 
@@ -145,7 +153,7 @@ public class EmbeddedPostgreSQLController
 
     private ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
     {
-        DbInfo db = cluster.getNextDb();
+        final DbInfo db = cluster.getNextDb();
         return ImmutableMap.of("ness.db." + dbModuleName + ".uri", getJdbcUri(db),
                                "ness.db." + dbModuleName + ".ds.user", db.user);
     }
@@ -186,7 +194,7 @@ public class EmbeddedPostgreSQLController
 
         void start()
         {
-            ExecutorService service = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+            final ExecutorService service = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
                 .setDaemon(true).setNameFormat("cluster-" + pg + "-preparer").build());
             service.submit(this);
             service.shutdown();
@@ -196,7 +204,7 @@ public class EmbeddedPostgreSQLController
         {
             try {
                 return nextDatabase.take();
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e);
             }
@@ -211,11 +219,11 @@ public class EmbeddedPostgreSQLController
         public void run()
         {
             while (true) {
-                String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
+                final String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
                 create(pgDb, newDbName, "postgres");
                 try {
                     nextDatabase.put(new DbInfo(newDbName, pg.getPort(), "postgres"));
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
                     return;
                 }
