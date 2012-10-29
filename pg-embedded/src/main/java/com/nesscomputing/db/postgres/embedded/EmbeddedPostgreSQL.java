@@ -118,7 +118,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     public DataSource getDatabase(String userName, String dbName)
     {
-        SimpleDataSource ds = new SimpleDataSource();
+        final SimpleDataSource ds = new SimpleDataSource();
         ds.setServerName("localhost");
         ds.setPortNumber(port);
         ds.setDatabaseName(dbName);
@@ -133,7 +133,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private int detectPort() throws IOException
     {
-        ServerSocket socket = new ServerSocket(0);
+        final ServerSocket socket = new ServerSocket(0);
         try {
             return socket.getLocalPort();
         } finally {
@@ -149,7 +149,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void initdb()
     {
-        StopWatch watch = new StopWatch();
+        final StopWatch watch = new StopWatch();
         watch.start();
         system(pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER, "-D", dataDirectory.getPath(), "-E", "UTF-8");
         LOG.info("%s initdb completed in %s", instanceId, watch);
@@ -157,18 +157,18 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void startPostmaster() throws IOException
     {
-        StopWatch watch = new StopWatch();
+        final StopWatch watch = new StopWatch();
         watch.start();
         Preconditions.checkState(started.getAndSet(true) == false, "Postmaster already started");
 
-        List<String> args = Lists.newArrayList(
+        final List<String> args = Lists.newArrayList(
                 pgBin("postgres"),
                 "-D", dataDirectory.getPath(),
                 "-p", Integer.toString(port),
                 "-i",
                 "-F");
 
-        for (Entry<String, String> config : postgresConfig.entrySet())
+        for (final Entry<String, String> config : postgresConfig.entrySet())
         {
             args.add("-c");
             args.add(config.getKey() + "=" + config.getValue());
@@ -184,46 +184,31 @@ public class EmbeddedPostgreSQL implements Closeable
         waitForServerStartup(watch);
     }
 
-    /*
-     * Enable Java 7 only features
-     */
-    private void enableRedirects(ProcessBuilder builder)
-    {
-        try {
-            ProcessBuilder.class.getMethod("redirectErrorStream", boolean.class).invoke(builder, true);
-            Class<?> redirectClass = Class.forName("java.lang.ProcessBuilder$Redirect");
-            Object inherit = redirectClass.getField("INHERIT").get(null);
-            ProcessBuilder.class.getMethod("redirectOutput", redirectClass).invoke(builder, inherit);
-        } catch (Exception e) {
-            LOG.infoDebug(e, "Could not redirect output, probably not running on Java 7");
-        }
-    }
-
     private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
     {
         Throwable lastCause = null;
-        long start = System.nanoTime();
-        long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
+        final long start = System.nanoTime();
+        final long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
         while (System.nanoTime() - start < maxWaitNs) {
             try {
                 checkReady();
                 LOG.info("%s postmaster startup finished in %s", instanceId, watch);
                 return;
-            } catch (SQLException e) {
+            } catch (final SQLException e) {
                 lastCause = e;
                 LOG.trace(e);
             }
 
             try {
                 throw new IOException(String.format("%s postmaster exited with value %d, check standard out for more detail!", instanceId, postmaster.exitValue()));
-            } catch (IllegalThreadStateException e) {
+            } catch (final IllegalThreadStateException e) {
                 // Process is not yet dead, loop and try again
                 LOG.trace(e);
             }
 
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
             }
@@ -233,11 +218,11 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void checkReady() throws SQLException
     {
-        Connection c = getPostgresDatabase().getConnection();
+        final Connection c = getPostgresDatabase().getConnection();
         try {
-            Statement s = c.createStatement();
+            final Statement s = c.createStatement();
             try {
-                ResultSet rs = s.executeQuery("SELECT 1"); // NOPMD
+                final ResultSet rs = s.executeQuery("SELECT 1"); // NOPMD
                 Preconditions.checkState(rs.next() == true, "expecting single row");
                 Preconditions.checkState(1 == rs.getInt(1), "expecting 1");
                 Preconditions.checkState(rs.next() == false, "expecting single row");
@@ -251,7 +236,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private Thread newCloserThread()
     {
-        Thread closeThread = new Thread(new Runnable() {
+        final Thread closeThread = new Thread(new Runnable() {
             @Override
             public void run()
             {
@@ -268,12 +253,12 @@ public class EmbeddedPostgreSQL implements Closeable
         if (closed.getAndSet(true)) {
             return;
         }
-        StopWatch watch = new StopWatch();
+        final StopWatch watch = new StopWatch();
         watch.start();
         try {
             pgCtl(dataDirectory, "stop");
             LOG.info("%s shut down postmaster in %s", instanceId, watch);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             LOG.error(e, "Could not stop postmaster %s", instanceId);
         }
         if (lock != null) {
@@ -295,20 +280,20 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void cleanOldDataDirectories(File parentDirectory)
     {
-        for (File dir : parentDirectory.listFiles())
+        for (final File dir : parentDirectory.listFiles())
         {
             if (!dir.isDirectory()) {
                 continue;
             }
 
-            File lockFile = new File(dir, LOCK_FILE_NAME);
+            final File lockFile = new File(dir, LOCK_FILE_NAME);
             if (!lockFile.exists()) {
                 continue;
             }
             try {
-                FileOutputStream fos = new FileOutputStream(lockFile);
+                final FileOutputStream fos = new FileOutputStream(lockFile);
                 try {
-                    FileLock lock = fos.getChannel().tryLock();
+                    final FileLock lock = fos.getChannel().tryLock();
                     if (lock != null) {
                         LOG.info("Found stale data directory %s", dir);
                         if (new File(dir, "postmaster.pid").exists()) {
@@ -320,9 +305,9 @@ public class EmbeddedPostgreSQL implements Closeable
                 } finally {
                     fos.close();
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 LOG.error(e);
-            } catch (OverlappingFileLockException e) {
+            } catch (final OverlappingFileLockException e) {
                 // The directory belongs to another instance in this VM.
                 LOG.trace(e);
             }
@@ -368,11 +353,11 @@ public class EmbeddedPostgreSQL implements Closeable
     private static List<String> system(String... command)
     {
         try {
-            Process process = new ProcessBuilder(command).start();
+            final Process process = new ProcessBuilder(command).start();
             Preconditions.checkState(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
-            InputStream stream = process.getInputStream();
+            final InputStream stream = process.getInputStream();
             return IOUtils.readLines(stream);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw Throwables.propagate(e);
         }
     }
@@ -392,15 +377,15 @@ public class EmbeddedPostgreSQL implements Closeable
         File pgTbz;
         try {
             pgTbz = File.createTempFile("pgpg", "pgpg");
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new ExceptionInInitializerError(e);
         }
         try {
-            DigestInputStream pgArchiveData = new DigestInputStream(
+            final DigestInputStream pgArchiveData = new DigestInputStream(
                     EmbeddedPostgreSQL.class.getResourceAsStream(String.format("/postgresql-%s-%s.tbz", UNAME_S, UNAME_M)),
                     MessageDigest.getInstance("MD5"));
 
-            FileOutputStream os = new FileOutputStream(pgTbz);
+            final FileOutputStream os = new FileOutputStream(pgTbz);
             IOUtils.copy(pgArchiveData, os);
             pgArchiveData.close();
             os.close();
@@ -415,7 +400,7 @@ public class EmbeddedPostgreSQL implements Closeable
                 mkdirs(PG_DIR);
                 system("tar", "-x", "-f", pgTbz.getPath(), "-C", PG_DIR.getPath());
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new ExceptionInInitializerError(e);
         } finally {
             Preconditions.checkState(pgTbz.delete(), "could not delete %s", pgTbz);
