@@ -52,6 +52,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
+import com.google.common.io.Files;
+
 import com.nesscomputing.logging.Log;
 
 public class EmbeddedPostgreSQL implements Closeable
@@ -174,8 +176,9 @@ public class EmbeddedPostgreSQL implements Closeable
             args.add(config.getKey() + "=" + config.getValue());
         }
 
-        ProcessBuilder builder = new ProcessBuilder(args);
-        enableRedirects(builder);
+        final ProcessBuilder builder = new ProcessBuilder(args);
+        builder.redirectErrorStream(true);
+        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         postmaster = builder.start();
         LOG.info("%s postmaster started as %s on port %s.  Waiting up to %sms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
@@ -393,12 +396,14 @@ public class EmbeddedPostgreSQL implements Closeable
             PG_DIGEST = Hex.encodeHexString(pgArchiveData.getMessageDigest().digest());
 
             PG_DIR = new File(TMP_DIR, String.format("PG-%s", PG_DIGEST));
+            final File pgDirExists = new File(PG_DIR, ".exists");
 
-            if (!PG_DIR.exists())
+            if (!pgDirExists.exists())
             {
                 LOG.info("Extracting Postgres...");
                 mkdirs(PG_DIR);
                 system("tar", "-x", "-f", pgTbz.getPath(), "-C", PG_DIR.getPath());
+                Files.touch(pgDirExists);
             }
         } catch (final Exception e) {
             throw new ExceptionInInitializerError(e);
