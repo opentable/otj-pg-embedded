@@ -17,78 +17,105 @@
   </scm>
 
   <groupId>com.nesscomputing.components</groupId>
-  <artifactId>ness-pg-parent</artifactId>
+  <artifactId>ness-pg-embedded</artifactId>
   <version>2.4.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <description>Ness specific postgres code.</description>
+  <description>Embedded PostgreSQL driver</description>
+  
+  <dependencies>
+    <dependency>
+      <groupId>com.nesscomputing.components</groupId>
+      <artifactId>ness-logging</artifactId>
+      <version>1.1.0</version>
+    </dependency>
 
-  <modules>
-    <module>pg</module>
-    <module>pg-embedded</module>
-  </modules>
+    <dependency>
+      <groupId>com.nesscomputing.components</groupId>
+      <artifactId>ness-config</artifactId>
+      <version>2.2.0</version>
+    </dependency>
 
-  <dependencyManagement>
-	  <dependencies>
-  	    <dependency>
-	      <groupId>com.nesscomputing.components</groupId>
-	      <artifactId>ness-lifecycle</artifactId>
-	      <version>1.2.2</version>
-	    </dependency>
+    <dependency>
+      <groupId>org.jdbi</groupId>
+      <artifactId>jdbi</artifactId>
+      <version>2.38.1</version>
+    </dependency>
 
-	    <dependency>
-	      <groupId>com.nesscomputing.components</groupId>
-	      <artifactId>ness-logging</artifactId>
-	      <version>1.1.0</version>
-	    </dependency>
 
-	    <dependency>
-	      <groupId>com.nesscomputing.components</groupId>
-	      <artifactId>ness-config</artifactId>
-	      <version>2.2.0</version>
-	    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
 
-	    <dependency>
-	      <groupId>org.jdbi</groupId>
-	      <artifactId>jdbi</artifactId>
-	      <version>2.38.1</version>
-	    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
 
-	    <dependency>
-	      <groupId>com.nesscomputing.testing</groupId>
-	      <artifactId>findbugs-annotations</artifactId>
-	      <version>2.0.0</version>
-	    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
 
-      <dependency>
-        <groupId>postgresql</groupId>
-        <artifactId>postgresql</artifactId>
-        <version>9.1-901-1.jdbc4</version>
-      </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+    </dependency>
 
-	    <dependency>
-	      <groupId>c3p0</groupId>
-	      <artifactId>c3p0</artifactId>
-	      <version>0.9.1.2</version>
-	    </dependency>
+    <dependency>
+      <groupId>commons-configuration</groupId>
+      <artifactId>commons-configuration</artifactId>
+    </dependency>
 
-	    <dependency>
-	      <groupId>com.nesscomputing.migratory</groupId>
-	      <artifactId>migratory-core</artifactId>
-	      <version>3.1.1</version>
-	    </dependency>
 
-	    <dependency>
-	      <groupId>com.nesscomputing.components</groupId>
-	      <artifactId>ness-integration-testing</artifactId>
-	      <version>3.1.0</version>
-	    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <optional>true</optional>
+    </dependency>
 
-	    <dependency>
-	      <groupId>org.mockito</groupId>
-	      <artifactId>mockito-core</artifactId>
-	      <version>1.9.0</version>
-	      <scope>test</scope>
-	    </dependency>
-	  </dependencies>
-	</dependencyManagement>
+    <dependency>
+      <groupId>postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>9.1-901-1.jdbc4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.nesscomputing.migratory</groupId>
+      <artifactId>migratory-core</artifactId>
+      <version>3.1.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.nesscomputing.components</groupId>
+      <artifactId>ness-integration-testing</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit-dep</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>com.nesscomputing.testing</groupId>
+      <artifactId>kawala-lessio</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.objenesis</groupId>
+      <artifactId>objenesis</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.9.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>
