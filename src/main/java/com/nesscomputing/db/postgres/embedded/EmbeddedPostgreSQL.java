@@ -46,6 +46,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.postgresql.jdbc2.optional.SimpleDataSource;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -59,6 +60,7 @@ import com.nesscomputing.logging.Log;
 public class EmbeddedPostgreSQL implements Closeable
 {
     private static final Log LOG = Log.findLog();
+    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
 
     private static final String PG_STOP_MODE = "fast";
     private static final String PG_STOP_WAIT_S = "5";
@@ -85,25 +87,32 @@ public class EmbeddedPostgreSQL implements Closeable
     private volatile Process postmaster;
     private volatile FileOutputStream lockStream;
     private volatile FileLock lock;
+    private final boolean cleanDataDirectory;
 
-    EmbeddedPostgreSQL(File parentDirectory, Map<String, String> postgresConfig) throws IOException
+    EmbeddedPostgreSQL(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig) throws IOException
     {
+        this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
-
-        Preconditions.checkNotNull(parentDirectory, "null parent directory");
-        mkdirs(parentDirectory);
-
-        cleanOldDataDirectories(parentDirectory);
 
         port = detectPort();
 
-        dataDirectory = new File(parentDirectory, instanceId.toString());
-        LOG.trace("%s postgres data directory is %s", instanceId, dataDirectory);
-        Preconditions.checkState(dataDirectory.mkdir(), "Failed to mkdir %s", dataDirectory);
+        if (parentDirectory != null) {
+            mkdirs(parentDirectory);
+            cleanOldDataDirectories(parentDirectory);
+            this.dataDirectory = Objects.firstNonNull(dataDirectory, new File(parentDirectory, instanceId.toString()));
+        } else {
+            this.dataDirectory = dataDirectory;
+        }
+        Preconditions.checkArgument(this.dataDirectory != null, "null data directory");
+        LOG.trace("%s postgres data directory is %s", instanceId, this.dataDirectory);
+        Preconditions.checkState(this.dataDirectory.exists() || this.dataDirectory.mkdir(), "Failed to mkdir %s", this.dataDirectory);
 
-        lockFile = new File(dataDirectory, LOCK_FILE_NAME);
+        lockFile = new File(this.dataDirectory, LOCK_FILE_NAME);
 
-        initdb();
+        if (cleanDataDirectory || !new File(dataDirectory, "postgresql.conf").exists()) {
+            initdb();
+        }
+
         lock();
         startPostmaster();
     }
@@ -126,6 +135,11 @@ public class EmbeddedPostgreSQL implements Closeable
         ds.setDatabaseName(dbName);
         ds.setUser(userName);
         return ds;
+    }
+
+    public String getJdbcUrl(String userName, String dbName)
+    {
+        return String.format(JDBC_FORMAT, port, dbName, userName);
     }
 
     public int getPort()
@@ -221,19 +235,14 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void checkReady() throws SQLException
     {
-        final Connection c = getPostgresDatabase().getConnection();
-        try {
-            final Statement s = c.createStatement();
-            try {
-                final ResultSet rs = s.executeQuery("SELECT 1"); // NOPMD
-                Preconditions.checkState(rs.next() == true, "expecting single row");
-                Preconditions.checkState(1 == rs.getInt(1), "expecting 1");
-                Preconditions.checkState(rs.next() == false, "expecting single row");
-            } finally {
-                s.close();
+        try (final Connection c = getPostgresDatabase().getConnection()) {
+            try (final Statement s = c.createStatement()) {
+                try (final ResultSet rs = s.executeQuery("SELECT 1")) { // NOPMD
+                    Preconditions.checkState(rs.next() == true, "expecting single row");
+                    Preconditions.checkState(1 == rs.getInt(1), "expecting 1");
+                    Preconditions.checkState(rs.next() == false, "expecting single row");
+                }
             }
-        } finally {
-            c.close();
         }
     }
 
@@ -269,7 +278,7 @@ public class EmbeddedPostgreSQL implements Closeable
         }
         Closeables.closeQuietly(lockStream);
 
-        if (System.getProperty("ness.epg.no-cleanup") == null) {
+        if (cleanDataDirectory && System.getProperty("ness.epg.no-cleanup") == null) {
             FileUtils.deleteDirectory(dataDirectory);
         } else {
             LOG.info("Did not clean up directory %s", dataDirectory.getAbsolutePath());
@@ -296,14 +305,15 @@ public class EmbeddedPostgreSQL implements Closeable
             try {
                 final FileOutputStream fos = new FileOutputStream(lockFile);
                 try {
-                    final FileLock lock = fos.getChannel().tryLock();
-                    if (lock != null) {
-                        LOG.info("Found stale data directory %s", dir);
-                        if (new File(dir, "postmaster.pid").exists()) {
-                            pgCtl(dir, "stop");
-                            LOG.info("Shut down orphaned postmaster!");
+                    try (FileLock lock = fos.getChannel().tryLock()) {
+                        if (lock != null) {
+                            LOG.info("Found stale data directory %s", dir);
+                            if (new File(dir, "postmaster.pid").exists()) {
+                                pgCtl(dir, "stop");
+                                LOG.info("Shut down orphaned postmaster!");
+                            }
+                            FileUtils.deleteDirectory(dir);
                         }
-                        FileUtils.deleteDirectory(dir);
                     }
                 } finally {
                     fos.close();
@@ -335,21 +345,36 @@ public class EmbeddedPostgreSQL implements Closeable
     public static class Builder
     {
         private final File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
+        private File dataDirectory;
         private final Map<String, String> config = Maps.newHashMap();
+        private boolean cleanDataDirectory = true;
 
         Builder() {
             config.put("timezone", "UTC");
             config.put("max_connections", "300");
         }
 
-        public void setServerConfig(String key, String value)
+        public Builder setCleanDataDirectory(boolean cleanDataDirectory)
+        {
+            this.cleanDataDirectory = cleanDataDirectory;
+            return this;
+        }
+
+        public Builder setDataDirectory(File directory)
+        {
+            dataDirectory = directory;
+            return this;
+        }
+
+        public Builder setServerConfig(String key, String value)
         {
             config.put(key, value);
+            return this;
         }
 
         public EmbeddedPostgreSQL start() throws IOException
         {
-            return new EmbeddedPostgreSQL(parentDirectory, config);
+            return new EmbeddedPostgreSQL(parentDirectory, dataDirectory, cleanDataDirectory, config);
         }
     }
 
@@ -358,8 +383,9 @@ public class EmbeddedPostgreSQL implements Closeable
         try {
             final Process process = new ProcessBuilder(command).start();
             Preconditions.checkState(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
-            final InputStream stream = process.getInputStream();
-            return IOUtils.readLines(stream);
+            try (InputStream stream = process.getInputStream()) {
+                return IOUtils.readLines(stream);
+            }
         } catch (final Exception e) {
             throw Throwables.propagate(e);
         }
