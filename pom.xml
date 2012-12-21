@@ -6,7 +6,7 @@
   <parent>
     <groupId>com.nesscomputing</groupId>
     <artifactId>ness-oss-parent</artifactId>
-    <version>20</version>
+    <version>23</version>
   </parent>
 
   <scm>
@@ -25,7 +25,7 @@
     <dependency>
       <groupId>com.nesscomputing.components</groupId>
       <artifactId>ness-logging</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
     </dependency>
 
     <dependency>
@@ -88,12 +88,12 @@
     <dependency>
       <groupId>com.nesscomputing.components</groupId>
       <artifactId>ness-integration-testing</artifactId>
-      <version>3.1.0</version>
+      <version>3.1.1</version>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
-      <artifactId>junit-dep</artifactId>
+      <artifactId>junit</artifactId>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
