@@ -13,12 +13,12 @@
     <connection>scm:git:git://github.com/NessComputing/components-ness-pg.git</connection>
     <developerConnection>scm:git:git@github.com:NessComputing/components-ness-pg.git</developerConnection>
     <url>http://github.com/NessComputing/components-ness-pg</url>
-    <tag>ness-pg-embedded-2.4.1</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <groupId>com.nesscomputing.components</groupId>
   <artifactId>ness-pg-embedded</artifactId>
-  <version>2.4.1</version>
+  <version>2.4.2-SNAPSHOT</version>
   <description>Embedded PostgreSQL driver</description>
   
   <dependencies>
