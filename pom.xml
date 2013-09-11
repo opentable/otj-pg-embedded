@@ -40,6 +40,11 @@
       <version>2.38.1</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
 
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -89,6 +94,7 @@
       <groupId>com.nesscomputing.components</groupId>
       <artifactId>ness-integration-testing</artifactId>
       <version>3.3.0</version>
+      <optional>true</optional>
     </dependency>
 
     <dependency>

@@ -22,7 +22,6 @@ import org.junit.rules.ExternalResource;
 import com.nesscomputing.config.Config;
 import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQLController;
 import com.nesscomputing.testing.lessio.AllowAll;
-import com.nesscomputing.testing.tweaked.TweakedModule;
 
 @AllowAll
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
@@ -52,11 +51,8 @@ public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
         return control.getTweakedConfig(dbModuleName);
     }
 
-    /**
-     * @return a {@link TweakedModule} which gives services database URLs
-     */
-    public TweakedModule getTweakedModule(final String dbModuleName)
+    public EmbeddedPostgreSQLController getController()
     {
-        return control.getTweakedModule(dbModuleName);
+        return control;
     }
 }

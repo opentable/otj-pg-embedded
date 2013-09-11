@@ -28,25 +28,25 @@ import java.util.concurrent.SynchronousQueue;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 
-import org.apache.commons.configuration.MapConfiguration;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.tweak.HandleCallback;
-
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import org.apache.commons.configuration.MapConfiguration;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.Handle;
+import org.skife.jdbi.v2.tweak.HandleCallback;
+
 import com.nesscomputing.config.Config;
 import com.nesscomputing.migratory.Migratory;
 import com.nesscomputing.migratory.MigratoryConfig;
 import com.nesscomputing.migratory.MigratoryContext;
 import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
 import com.nesscomputing.migratory.migration.MigrationPlan;
-import com.nesscomputing.testing.tweaked.TweakedModule;
 
 public class EmbeddedPostgreSQLController
 {
@@ -124,20 +124,6 @@ public class EmbeddedPostgreSQLController
     }
 
     /**
-     * @return a {@link TweakedModule} which gives services database URLs
-     */
-    public TweakedModule getTweakedModule(final String dbModuleName)
-    {
-        return new TweakedModule() {
-            @Override
-            public Map<String, String> getServiceConfigTweaks()
-            {
-                return getConfigurationTweak(dbModuleName);
-            }
-        };
-    }
-
-    /**
      * @return a JDBC uri for a self-contained environment.  No two invocations will return the same database.
      */
     public String getJdbcUri()
@@ -151,7 +137,10 @@ public class EmbeddedPostgreSQLController
         return String.format(JDBC_FORMAT, db.port, db.dbName);
     }
 
-    private ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
+    /**
+     * Return configuration tweaks in a format appropriate for ness-jdbc DatabaseModule.
+     */
+    public ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
     {
         final DbInfo db = cluster.getNextDb();
         return ImmutableMap.of("ness.db." + dbModuleName + ".uri", getJdbcUri(db),
