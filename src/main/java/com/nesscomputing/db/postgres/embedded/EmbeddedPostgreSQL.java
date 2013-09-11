@@ -40,12 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.postgresql.jdbc2.optional.SimpleDataSource;
-
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -55,11 +49,17 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
-import com.nesscomputing.logging.Log;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.postgresql.jdbc2.optional.SimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EmbeddedPostgreSQL implements Closeable
 {
-    private static final Log LOG = Log.findLog();
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgreSQL.class);
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
 
     private static final String PG_STOP_MODE = "fast";
@@ -213,14 +213,14 @@ public class EmbeddedPostgreSQL implements Closeable
                 return;
             } catch (final SQLException e) {
                 lastCause = e;
-                LOG.trace(e);
+                LOG.trace("While waiting for server startup", e);
             }
 
             try {
                 throw new IOException(String.format("%s postmaster exited with value %d, check standard out for more detail!", instanceId, postmaster.exitValue()));
             } catch (final IllegalThreadStateException e) {
                 // Process is not yet dead, loop and try again
-                LOG.trace(e);
+                LOG.trace("While waiting for server startup", e);
             }
 
             try {
@@ -271,7 +271,7 @@ public class EmbeddedPostgreSQL implements Closeable
             pgCtl(dataDirectory, "stop");
             LOG.info("%s shut down postmaster in %s", instanceId, watch);
         } catch (final Exception e) {
-            LOG.error(e, "Could not stop postmaster %s", instanceId);
+            LOG.error("Could not stop postmaster " + instanceId, e);
         }
         if (lock != null) {
             lock.release();
@@ -319,10 +319,10 @@ public class EmbeddedPostgreSQL implements Closeable
                     fos.close();
                 }
             } catch (final IOException e) {
-                LOG.error(e);
+                LOG.error("While cleaning old data directories", e);
             } catch (final OverlappingFileLockException e) {
                 // The directory belongs to another instance in this VM.
-                LOG.trace(e);
+                LOG.trace("While cleaning old data directories", e);
             }
         }
     }
