@@ -104,7 +104,7 @@ public class EmbeddedPostgreSQL implements Closeable
             this.dataDirectory = dataDirectory;
         }
         Preconditions.checkArgument(this.dataDirectory != null, "null data directory");
-        LOG.trace("%s postgres data directory is %s", instanceId, this.dataDirectory);
+        LOG.trace("{} postgres data directory is {}", instanceId, this.dataDirectory);
         Preconditions.checkState(this.dataDirectory.exists() || this.dataDirectory.mkdir(), "Failed to mkdir %s", this.dataDirectory);
 
         lockFile = new File(this.dataDirectory, LOCK_FILE_NAME);
@@ -168,7 +168,7 @@ public class EmbeddedPostgreSQL implements Closeable
         final StopWatch watch = new StopWatch();
         watch.start();
         system(pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER, "-D", dataDirectory.getPath(), "-E", "UTF-8");
-        LOG.info("%s initdb completed in %s", instanceId, watch);
+        LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
     private void startPostmaster() throws IOException
@@ -194,7 +194,7 @@ public class EmbeddedPostgreSQL implements Closeable
         builder.redirectErrorStream(true);
         builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         postmaster = builder.start();
-        LOG.info("%s postmaster started as %s on port %s.  Waiting up to %sms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
+        LOG.info("{} postmaster started as {} on port {}.  Waiting up to {}ms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
@@ -209,7 +209,7 @@ public class EmbeddedPostgreSQL implements Closeable
         while (System.nanoTime() - start < maxWaitNs) {
             try {
                 checkReady();
-                LOG.info("%s postmaster startup finished in %s", instanceId, watch);
+                LOG.info("{} postmaster startup finished in {}", instanceId, watch);
                 return;
             } catch (final SQLException e) {
                 lastCause = e;
@@ -269,7 +269,7 @@ public class EmbeddedPostgreSQL implements Closeable
         watch.start();
         try {
             pgCtl(dataDirectory, "stop");
-            LOG.info("%s shut down postmaster in %s", instanceId, watch);
+            LOG.info("{} shut down postmaster in {}", instanceId, watch);
         } catch (final Exception e) {
             LOG.error("Could not stop postmaster " + instanceId, e);
         }
@@ -281,7 +281,7 @@ public class EmbeddedPostgreSQL implements Closeable
         if (cleanDataDirectory && System.getProperty("ness.epg.no-cleanup") == null) {
             FileUtils.deleteDirectory(dataDirectory);
         } else {
-            LOG.info("Did not clean up directory %s", dataDirectory.getAbsolutePath());
+            LOG.info("Did not clean up directory {}", dataDirectory.getAbsolutePath());
         }
     }
 
@@ -307,7 +307,7 @@ public class EmbeddedPostgreSQL implements Closeable
                 try {
                     try (FileLock lock = fos.getChannel().tryLock()) {
                         if (lock != null) {
-                            LOG.info("Found stale data directory %s", dir);
+                            LOG.info("Found stale data directory {}", dir);
                             if (new File(dir, "postmaster.pid").exists()) {
                                 pgCtl(dir, "stop");
                                 LOG.info("Shut down orphaned postmaster!");
@@ -403,7 +403,7 @@ public class EmbeddedPostgreSQL implements Closeable
         UNAME_S = system("uname", "-s").get(0);
         UNAME_M = system("uname", "-m").get(0);
 
-        LOG.info("Detected a %s %s system", UNAME_S, UNAME_M);
+        LOG.info("Detected a {} {} system", UNAME_S, UNAME_M);
 
         File pgTbz;
         try {
@@ -439,7 +439,7 @@ public class EmbeddedPostgreSQL implements Closeable
             Preconditions.checkState(pgTbz.delete(), "could not delete %s", pgTbz);
         }
 
-        LOG.info("Postgres binaries at %s", PG_DIR);
+        LOG.info("Postgres binaries at {}", PG_DIR);
     }
 
     @Override
