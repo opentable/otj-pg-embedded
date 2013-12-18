@@ -424,14 +424,32 @@ public class EmbeddedPostgreSQL implements Closeable
             PG_DIGEST = Hex.encodeHexString(pgArchiveData.getMessageDigest().digest());
 
             PG_DIR = new File(TMP_DIR, String.format("PG-%s", PG_DIGEST));
+
+            mkdirs(PG_DIR);
+            final File unpackLockFile = new File(PG_DIR, LOCK_FILE_NAME);
             final File pgDirExists = new File(PG_DIR, ".exists");
 
-            if (!pgDirExists.exists())
-            {
-                LOG.info("Extracting Postgres...");
-                mkdirs(PG_DIR);
-                system("tar", "-x", "-f", pgTbz.getPath(), "-C", PG_DIR.getPath());
-                Files.touch(pgDirExists);
+            if (!pgDirExists.exists()) {
+                try (final FileOutputStream lockStream = new FileOutputStream(unpackLockFile);
+                                final FileLock unpackLock = lockStream.getChannel().tryLock()) {
+                    if (unpackLock != null) {
+                        try {
+                            Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
+                            LOG.info("Extracting Postgres...");
+                            system("tar", "-x", "-f", pgTbz.getPath(), "-C", PG_DIR.getPath());
+                            Files.touch(pgDirExists);
+                        }
+                        finally {
+                            unpackLockFile.delete();
+                        }
+                    }
+                    else {
+                        // the other guy is unpacking for us.
+                        while (!pgDirExists.exists()) {
+                            Thread.sleep(1000L);
+                        }
+                    }
+                }
             }
         } catch (final Exception e) {
             throw new ExceptionInInitializerError(e);
