@@ -26,6 +26,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -438,21 +439,24 @@ public class EmbeddedPostgreSQL implements Closeable
                             LOG.info("Extracting Postgres...");
                             system("tar", "-x", "-f", pgTbz.getPath(), "-C", PG_DIR.getPath());
                             Files.touch(pgDirExists);
+                        } finally {
+                            Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
                         }
-                        finally {
-                            unpackLockFile.delete();
-                        }
-                    }
-                    else {
+                    } else {
                         // the other guy is unpacking for us.
-                        while (!pgDirExists.exists()) {
+                        int maxAttempts = 60;
+                        while (!pgDirExists.exists() && --maxAttempts > 0) {
                             Thread.sleep(1000L);
                         }
+                        Preconditions.checkState(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
                     }
                 }
             }
-        } catch (final Exception e) {
+        } catch (final IOException | NoSuchAlgorithmException e) {
             throw new ExceptionInInitializerError(e);
+        } catch (final InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new ExceptionInInitializerError(ie);
         } finally {
             Preconditions.checkState(pgTbz.delete(), "could not delete %s", pgTbz);
         }
