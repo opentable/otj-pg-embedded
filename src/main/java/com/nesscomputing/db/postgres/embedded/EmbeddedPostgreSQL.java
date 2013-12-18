@@ -396,7 +396,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private static void mkdirs(File dir)
     {
-        Preconditions.checkState(dir.mkdirs() || (dir.isDirectory() && dir.exists()),
+        Preconditions.checkState(dir.mkdirs() || (dir.isDirectory() && dir.exists()), // NOPMD
                 "could not create %s", dir);
     }
 
