@@ -253,7 +253,12 @@ public class EmbeddedPostgreSQL implements Closeable
             @Override
             public void run()
             {
-                Closeables.closeQuietly(EmbeddedPostgreSQL.this);
+                try {
+                    Closeables.close(EmbeddedPostgreSQL.this, true);
+                }
+                catch (IOException ex) {
+                    LOG.error("Unexpected IOException from Closeables.close", ex);
+                }
             }
         });
         closeThread.setName("postgres-" + instanceId + "-closer");
@@ -277,7 +282,7 @@ public class EmbeddedPostgreSQL implements Closeable
         if (lock != null) {
             lock.release();
         }
-        Closeables.closeQuietly(lockStream);
+        Closeables.close(lockStream, true);
 
         if (cleanDataDirectory && System.getProperty("ness.epg.no-cleanup") == null) {
             FileUtils.deleteDirectory(dataDirectory);
