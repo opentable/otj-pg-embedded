@@ -324,11 +324,11 @@ public class EmbeddedPostgreSQL implements Closeable
                 } finally {
                     fos.close();
                 }
-            } catch (final IOException e) {
-                LOG.error("While cleaning old data directories", e);
             } catch (final OverlappingFileLockException e) {
                 // The directory belongs to another instance in this VM.
                 LOG.trace("While cleaning old data directories", e);
+            } catch (final Exception e) {
+                LOG.warn("While cleaning old data directories", e);
             }
         }
     }
