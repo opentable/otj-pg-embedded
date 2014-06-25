@@ -315,8 +315,12 @@ public class EmbeddedPostgreSQL implements Closeable
                         if (lock != null) {
                             LOG.info("Found stale data directory {}", dir);
                             if (new File(dir, "postmaster.pid").exists()) {
-                                pgCtl(dir, "stop");
-                                LOG.info("Shut down orphaned postmaster!");
+                                try {
+                                    pgCtl(dir, "stop");
+                                    LOG.info("Shut down orphaned postmaster!");
+                                } catch (Exception e) {
+                                    LOG.warn("Failed to stop postmaster " + dir, e);
+                                }
                             }
                             FileUtils.deleteDirectory(dir);
                         }
@@ -324,11 +328,11 @@ public class EmbeddedPostgreSQL implements Closeable
                 } finally {
                     fos.close();
                 }
-            } catch (final IOException e) {
-                LOG.error("While cleaning old data directories", e);
             } catch (final OverlappingFileLockException e) {
                 // The directory belongs to another instance in this VM.
                 LOG.trace("While cleaning old data directories", e);
+            } catch (final Exception e) {
+                LOG.warn("While cleaning old data directories", e);
             }
         }
     }
