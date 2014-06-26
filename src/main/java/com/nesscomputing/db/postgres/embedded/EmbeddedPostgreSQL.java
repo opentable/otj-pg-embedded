@@ -319,7 +319,11 @@ public class EmbeddedPostgreSQL implements Closeable
                                     pgCtl(dir, "stop");
                                     LOG.info("Shut down orphaned postmaster!");
                                 } catch (Exception e) {
-                                    LOG.warn("Failed to stop postmaster " + dir, e);
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.warn("Failed to stop postmaster " + dir, e);
+                                    } else {
+                                        LOG.warn("Failed to stop postmaster " + dir + ": " + e.getMessage());
+                                    }
                                 }
                             }
                             FileUtils.deleteDirectory(dir);
