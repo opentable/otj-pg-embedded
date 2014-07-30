@@ -18,7 +18,7 @@
 
   <groupId>com.nesscomputing.components</groupId>
   <artifactId>ness-pg-embedded</artifactId>
-  <version>2.6.2-SNAPSHOT</version>
+  <version>2.6.3-SNAPSHOT</version>
   <description>Embedded PostgreSQL driver</description>
   
   <dependencies>
