@@ -1,16 +1,10 @@
-Ness Computing PostgreSQL CComponent
-====================================
+OpenTable Embedded PostgreSQL Component
+=======================================
 
-Component Charter
------------------
-
-* Encapsulates all postgres specific code.
-* Allows access to DDL specifics such as creating databases, schemas or users.
-
-Component Level
----------------
-
-* Uses configuration, logging, lifecycle.
+Allows embedding PostgreSQL into Java application code with
+no external dependencies.  Excellent for allowing you to unit
+test with a "real" Postgres without requiring end users to install
+and set up a database cluster.
 
 ----
-Copyright (C) 2012 Ness Computing, Inc.
+Copyright (C) 2014 OpenTable, Inc
