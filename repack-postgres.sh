@@ -18,12 +18,12 @@ tar cjf $OLDPWD/target/generated-resources/postgresql-Linux-x86_64.tbz \
   lib \
   bin/initdb \
   bin/pg_ctl \
-  bin/postmaster
+  bin/postgres
 popd
 
 rm -fr $PACKDIR && mkdir -p $PACKDIR
 
-tar xzf $OSX_DIST -C $PACKDIR
+unzip -q -d $PACKDIR $OSX_DIST
 pushd $PACKDIR/pgsql
 tar cjf $OLDPWD/target/generated-resources/postgresql-Darwin-x86_64.tbz \
   share/postgresql \
@@ -31,6 +31,7 @@ tar cjf $OLDPWD/target/generated-resources/postgresql-Darwin-x86_64.tbz \
   lib/postgresql/*.so \
   bin/initdb \
   bin/pg_ctl \
-  bin/postgres \
-  bin/postmaster
+  bin/postgres
 popd
+
+rm -rf $PACKDIR
