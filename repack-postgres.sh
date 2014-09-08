@@ -9,7 +9,7 @@ OSX_DIST=dist/postgresql-$VERSION-osx-binaries.zip
 
 mkdir -p dist/ target/generated-resources/
 [ -e $LINUX_DIST ] || wget -O $LINUX_DIST "http://get.enterprisedb.com/postgresql/postgresql-$VERSION-linux-x64-binaries.tar.gz"
-[ -e $OSX_DIST ] || wget "http://get.enterprisedb.com/postgresql/postgresql-$VERSION-osx-binaries.zip"
+[ -e $OSX_DIST ] || wget -O $OSX_DIST "http://get.enterprisedb.com/postgresql/postgresql-$VERSION-osx-binaries.zip"
 
 tar xzf $LINUX_DIST -C $PACKDIR
 pushd $PACKDIR/pgsql
