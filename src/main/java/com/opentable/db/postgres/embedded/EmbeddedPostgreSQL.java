@@ -284,7 +284,7 @@ public class EmbeddedPostgreSQL implements Closeable
         }
         Closeables.close(lockStream, true);
 
-        if (cleanDataDirectory && System.getProperty("ness.epg.no-cleanup") == null) {
+        if (cleanDataDirectory && System.getProperty("ot.epg.no-cleanup") == null) {
             FileUtils.deleteDirectory(dataDirectory);
         } else {
             LOG.info("Did not clean up directory {}", dataDirectory.getAbsolutePath());
