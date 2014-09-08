@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.nesscomputing.db.postgres.embedded;
+package com.opentable.db.postgres.embedded;
 
 import java.io.IOException;
 import java.net.URI;

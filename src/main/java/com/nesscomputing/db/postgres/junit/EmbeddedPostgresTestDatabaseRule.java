@@ -17,11 +17,10 @@ package com.nesscomputing.db.postgres.junit;
 
 import java.net.URI;
 
-import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQLController;
-
 import org.junit.rules.ExternalResource;
 
 import com.opentable.config.Config;
+import com.opentable.db.postgres.embedded.EmbeddedPostgreSQLController;
 
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 {

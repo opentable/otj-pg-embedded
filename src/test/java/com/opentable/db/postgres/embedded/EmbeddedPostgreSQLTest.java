@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.nesscomputing.db.postgres.embedded;
+package com.opentable.db.postgres.embedded;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -23,25 +23,30 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import org.junit.Rule;
 import org.junit.Test;
 
-public class EmbeddedPostgreSQLRuleTest
-{
-    @Rule
-    public EmbeddedPostgreSQLRule epg = new EmbeddedPostgreSQLRule();
+import com.opentable.db.postgres.embedded.EmbeddedPostgreSQL;
 
+public class EmbeddedPostgreSQLTest
+{
     @Test
-    public void testRule() throws Exception {
-        Connection c = epg.getEmbeddedPostgreSQL().getPostgresDatabase().getConnection();
+    public void testEmbeddedPg() throws Exception
+    {
+        EmbeddedPostgreSQL pg = EmbeddedPostgreSQL.start();
+
         try {
-            Statement s = c.createStatement();
-            ResultSet rs = s.executeQuery("SELECT 1");
-            assertTrue(rs.next());
-            assertEquals(1, rs.getInt(1));
-            assertFalse(rs.next());
+            Connection c = pg.getPostgresDatabase().getConnection();
+            try {
+                Statement s = c.createStatement();
+                ResultSet rs = s.executeQuery("SELECT 1");
+                assertTrue(rs.next());
+                assertEquals(1, rs.getInt(1));
+                assertFalse(rs.next());
+            } finally {
+                c.close();
+            }
         } finally {
-            c.close();
+            pg.close();
         }
     }
 }
