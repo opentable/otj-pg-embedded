@@ -34,6 +34,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.nesscomputing.migratory.Migratory;
+import com.nesscomputing.migratory.MigratoryConfig;
+import com.nesscomputing.migratory.MigratoryContext;
+import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
+import com.nesscomputing.migratory.migration.MigrationPlan;
 
 import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -41,12 +46,7 @@ import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.Handle;
 import org.skife.jdbi.v2.tweak.HandleCallback;
 
-import com.nesscomputing.config.Config;
-import com.nesscomputing.migratory.Migratory;
-import com.nesscomputing.migratory.MigratoryConfig;
-import com.nesscomputing.migratory.MigratoryContext;
-import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
-import com.nesscomputing.migratory.migration.MigrationPlan;
+import com.opentable.config.Config;
 
 public class EmbeddedPostgreSQLController
 {
