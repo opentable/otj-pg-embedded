@@ -309,7 +309,8 @@ public class EmbeddedPostgreSQL implements Closeable
             }
 
             final File lockFile = new File(dir, LOCK_FILE_NAME);
-            if (!lockFile.exists()) {
+            final boolean isTooNew = System.currentTimeMillis() - lockFile.lastModified() < 10 * 60 * 1000;
+            if (!lockFile.exists() || isTooNew) {
                 continue;
             }
             try {
