@@ -74,7 +74,7 @@ public class EmbeddedPostgreSQLController
      * Each schema set has its own database cluster.  The template1 database has the schema preloaded so that
      * each test case need only create a new database and not re-invoke Migratory.
      */
-    private synchronized static Cluster getCluster(URI baseUrl, String[] personalities) throws IOException
+    private static synchronized Cluster getCluster(URI baseUrl, String[] personalities) throws IOException
     {
         final Entry<URI, Set<String>> key = Maps.immutableEntry(baseUrl, (Set<String>)ImmutableSet.copyOf(personalities));
 
