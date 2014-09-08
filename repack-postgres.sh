@@ -27,7 +27,11 @@ unzip -q -d $PACKDIR $OSX_DIST
 pushd $PACKDIR/pgsql
 tar cjf $OLDPWD/target/generated-resources/postgresql-Darwin-x86_64.tbz \
   share/postgresql \
-  lib/*.dylib \
+  lib/libiconv.2.dylib \
+  lib/libxml2.2.dylib \
+  lib/libssl.1.0.0.dylib \
+  lib/libcrypto.1.0.0.dylib \
+  lib/libuuid.16.dylib \
   lib/postgresql/*.so \
   bin/initdb \
   bin/pg_ctl \
