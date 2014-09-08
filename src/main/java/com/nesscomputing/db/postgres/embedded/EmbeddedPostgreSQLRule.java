@@ -17,12 +17,10 @@ package com.nesscomputing.db.postgres.embedded;
 
 import java.io.IOException;
 
+import com.google.common.base.Preconditions;
+
 import org.junit.rules.ExternalResource;
 
-import com.google.common.base.Preconditions;
-import com.nesscomputing.testing.lessio.AllowAll;
-
-@AllowAll
 public class EmbeddedPostgreSQLRule extends ExternalResource
 {
     private volatile EmbeddedPostgreSQL epg;

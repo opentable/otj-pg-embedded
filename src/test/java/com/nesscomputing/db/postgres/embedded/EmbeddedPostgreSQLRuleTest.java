@@ -26,10 +26,6 @@ import java.sql.Statement;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQLRule;
-import com.nesscomputing.testing.lessio.AllowNetworkAccess;
-
-@AllowNetworkAccess(endpoints = {"127.0.0.1:*"})
 public class EmbeddedPostgreSQLRuleTest
 {
     @Rule

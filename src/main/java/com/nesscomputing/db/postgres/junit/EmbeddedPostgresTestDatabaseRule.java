@@ -23,7 +23,6 @@ import com.nesscomputing.config.Config;
 import com.nesscomputing.db.postgres.embedded.EmbeddedPostgreSQLController;
 import com.nesscomputing.testing.lessio.AllowAll;
 
-@AllowAll
 public class EmbeddedPostgresTestDatabaseRule extends ExternalResource
 {
     private final EmbeddedPostgreSQLController control;
