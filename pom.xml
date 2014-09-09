@@ -17,14 +17,14 @@
 
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.basepom</groupId>
-    <artifactId>basepom-standard-oss</artifactId>
-    <version>6</version>
+    <groupId>com.opentable</groupId>
+    <artifactId>otj-parent-oss</artifactId>
+    <version>20-SNAPSHOT</version>
   </parent>
 
   <scm>
     <connection>scm:git:git://github.com/opentable/otj-pg-embedded.git</connection>
-    <developerConnection>scm:git:git@github.com:NessComputing/otj-pg-embedded.git</developerConnection>
+    <developerConnection>scm:git:git@github.com:opentable/otj-pg-embedded.git</developerConnection>
     <url>http://github.com/opentable/otj-pg-embedded</url>
     <tag>HEAD</tag>
   </scm>
@@ -37,6 +37,8 @@
   <properties>
     <project.build.generated-resources>${project.build.directory}/generated-resources</project.build.generated-resources>
     <project.build.targetJdk>1.8</project.build.targetJdk>
+    <ot.skip.check-build>true</ot.skip.check-build>
+    <ot.build.allow-joda-time>true</ot.build.allow-joda-time>
   </properties>
 
   <build>
