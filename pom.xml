@@ -126,7 +126,7 @@
     <dependency>
       <groupId>com.nesscomputing.migratory</groupId>
       <artifactId>migratory-core</artifactId>
-      <version>3.1.1</version>
+      <version>4.1.0</version>
       <exclusions>
         <exclusion>
           <artifactId>jsr305</artifactId>
