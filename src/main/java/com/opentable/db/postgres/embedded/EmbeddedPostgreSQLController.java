@@ -141,8 +141,8 @@ public class EmbeddedPostgreSQLController
     public ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
     {
         final DbInfo db = cluster.getNextDb();
-        return ImmutableMap.of("ness.db." + dbModuleName + ".uri", getJdbcUri(db),
-                               "ness.db." + dbModuleName + ".ds.user", db.user);
+        return ImmutableMap.of("ot.db." + dbModuleName + ".uri", getJdbcUri(db),
+                               "ot.db." + dbModuleName + ".ds.user", db.user);
     }
 
     private static class DatabasePreparerLocator extends AbstractSqlResourceLocator
