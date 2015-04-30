@@ -88,12 +88,11 @@ public class EmbeddedPostgreSQL implements Closeable
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
 
-    EmbeddedPostgreSQL(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig) throws IOException
+    EmbeddedPostgreSQL(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig, int port) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
-
-        port = detectPort();
+        this.port = port;
 
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
@@ -146,7 +145,7 @@ public class EmbeddedPostgreSQL implements Closeable
         return port;
     }
 
-    private int detectPort() throws IOException
+    private static int detectPort() throws IOException
     {
         final ServerSocket socket = new ServerSocket(0);
         try {
@@ -362,9 +361,10 @@ public class EmbeddedPostgreSQL implements Closeable
     public static class Builder
     {
         private final File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
-        private File dataDirectory;
+        private File builderDataDirectory;
         private final Map<String, String> config = Maps.newHashMap();
-        private boolean cleanDataDirectory = true;
+        private boolean builderCleanDataDirectory = true;
+        private int builderPort = 0;
 
         Builder() {
             config.put("timezone", "UTC");
@@ -375,13 +375,13 @@ public class EmbeddedPostgreSQL implements Closeable
 
         public Builder setCleanDataDirectory(boolean cleanDataDirectory)
         {
-            this.cleanDataDirectory = cleanDataDirectory;
+            builderCleanDataDirectory = cleanDataDirectory;
             return this;
         }
 
         public Builder setDataDirectory(File directory)
         {
-            dataDirectory = directory;
+            builderDataDirectory = directory;
             return this;
         }
 
@@ -391,9 +391,19 @@ public class EmbeddedPostgreSQL implements Closeable
             return this;
         }
 
+        public Builder setPort(int port)
+        {
+            builderPort = port;
+            return this;
+        }
+
         public EmbeddedPostgreSQL start() throws IOException
         {
-            return new EmbeddedPostgreSQL(parentDirectory, dataDirectory, cleanDataDirectory, config);
+            if (builderPort == 0)
+            {
+                builderPort = detectPort();
+            }
+            return new EmbeddedPostgreSQL(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort);
         }
     }
 
