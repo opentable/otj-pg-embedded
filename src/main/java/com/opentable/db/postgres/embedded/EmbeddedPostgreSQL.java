@@ -299,7 +299,11 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private void cleanOldDataDirectories(File parentDirectory)
     {
-        for (final File dir : parentDirectory.listFiles())
+        final File[] children = parentDirectory.listFiles();
+        if (children == null) {
+            return;
+        }
+        for (final File dir : children)
         {
             if (!dir.isDirectory()) {
                 continue;
