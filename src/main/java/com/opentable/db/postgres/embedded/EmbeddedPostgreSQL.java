@@ -414,7 +414,9 @@ public class EmbeddedPostgreSQL implements Closeable
     private static List<String> system(String... command)
     {
         try {
-            final Process process = new ProcessBuilder(command).start();
+            final ProcessBuilder builder = new ProcessBuilder(command);
+            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            final Process process = builder.start();
             Preconditions.checkState(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
             try (InputStream stream = process.getInputStream()) {
                 return IOUtils.readLines(stream);
