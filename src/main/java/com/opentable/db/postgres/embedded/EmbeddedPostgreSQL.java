@@ -13,6 +13,8 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,10 +38,12 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.sql.DataSource;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -65,15 +69,12 @@ public class EmbeddedPostgreSQL implements Closeable
     private static final String PG_STOP_WAIT_S = "5";
     private static final String PG_SUPERUSER = "postgres";
     private static final int PG_STARTUP_WAIT_MS = 10 * 1000;
-
-    private static final String PG_DIGEST;
+    private static final String LOCK_FILE_NAME = "epg-lock";
 
     private static final String TMP_DIR_LOC = System.getProperty("java.io.tmpdir");
     private static final File TMP_DIR = new File(TMP_DIR_LOC, "embedded-pg");
 
-    private static final String LOCK_FILE_NAME = "epg-lock";
-    private static final String UNAME_S, UNAME_M;
-    private static final File PG_DIR;
+    private final File pgDir;
 
     private final File dataDirectory, lockFile;
     private final UUID instanceId = UUID.randomUUID();
@@ -88,16 +89,17 @@ public class EmbeddedPostgreSQL implements Closeable
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
 
-    EmbeddedPostgreSQL(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig, int port) throws IOException
+    EmbeddedPostgreSQL(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig, int port, PgBinaryResolver pgBinaryResolver) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
         this.port = port;
+        this.pgDir = prepareBinaries(pgBinaryResolver);
 
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
             cleanOldDataDirectories(parentDirectory);
-            this.dataDirectory = Objects.firstNonNull(dataDirectory, new File(parentDirectory, instanceId.toString()));
+            this.dataDirectory = firstNonNull(dataDirectory, new File(parentDirectory, instanceId.toString()));
         } else {
             this.dataDirectory = dataDirectory;
         }
@@ -347,9 +349,9 @@ public class EmbeddedPostgreSQL implements Closeable
         }
     }
 
-    private static String pgBin(String binaryName)
+    private String pgBin(String binaryName)
     {
-        return new File(PG_DIR, "bin/" + binaryName).getPath();
+        return new File(pgDir, "bin/" + binaryName).getPath();
     }
 
     public static EmbeddedPostgreSQL start() throws IOException
@@ -369,6 +371,7 @@ public class EmbeddedPostgreSQL implements Closeable
         private final Map<String, String> config = Maps.newHashMap();
         private boolean builderCleanDataDirectory = true;
         private int builderPort = 0;
+        private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
 
         Builder() {
             config.put("timezone", "UTC");
@@ -401,13 +404,18 @@ public class EmbeddedPostgreSQL implements Closeable
             return this;
         }
 
+        public Builder setPgBinaryResolver(PgBinaryResolver pgBinaryResolver) {
+            this.pgBinaryResolver = pgBinaryResolver;
+            return this;
+        }
+
         public EmbeddedPostgreSQL start() throws IOException
         {
             if (builderPort == 0)
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgreSQL(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort);
+            return new EmbeddedPostgreSQL(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort, pgBinaryResolver);
         }
     }
 
@@ -426,74 +434,87 @@ public class EmbeddedPostgreSQL implements Closeable
         }
     }
 
-    private static void mkdirs(File dir)
+    private void mkdirs(File dir)
     {
         Preconditions.checkState(dir.mkdirs() || (dir.isDirectory() && dir.exists()), // NOPMD
                 "could not create %s", dir);
     }
 
-    static {
-        UNAME_S = system("uname", "-s").get(0);
-        UNAME_M = system("uname", "-m").get(0);
+    private static final AtomicReference<File> BINARY_DIR = new AtomicReference<>();
+    private static final Lock PREPARE_BINARIES_LOCK = new ReentrantLock();
 
-        LOG.info("Detected a {} {} system", UNAME_S, UNAME_M);
-
-        File pgTbz;
+    private File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
+        PREPARE_BINARIES_LOCK.lock();
         try {
-            pgTbz = File.createTempFile("pgpg", "pgpg");
-        } catch (final IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        try {
-            final DigestInputStream pgArchiveData = new DigestInputStream(
-                    EmbeddedPostgreSQL.class.getResourceAsStream(String.format("/postgresql-%s-%s.tbz", UNAME_S, UNAME_M)),
-                    MessageDigest.getInstance("MD5"));
+            if(BINARY_DIR.get() != null) {
+                return BINARY_DIR.get();
+            }
 
-            final FileOutputStream os = new FileOutputStream(pgTbz);
-            IOUtils.copy(pgArchiveData, os);
-            pgArchiveData.close();
-            os.close();
+            String system = system("uname", "-s").get(0);
+            String machineHardware = system("uname", "-m").get(0);
 
-            PG_DIGEST = Hex.encodeHexString(pgArchiveData.getMessageDigest().digest());
+            LOG.info("Detected a {} {} system", system, machineHardware);
+            File pgDir;
+            File pgTbz;
+            try {
+                pgTbz = File.createTempFile("pgpg", "pgpg");
+            } catch (final IOException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+            try {
+                final DigestInputStream pgArchiveData = new DigestInputStream(
+                        pgBinaryResolver.getPgBinary(system, machineHardware),
+                        MessageDigest.getInstance("MD5"));
 
-            PG_DIR = new File(TMP_DIR, String.format("PG-%s", PG_DIGEST));
+                final FileOutputStream os = new FileOutputStream(pgTbz);
+                IOUtils.copy(pgArchiveData, os);
+                pgArchiveData.close();
+                os.close();
 
-            mkdirs(PG_DIR);
-            final File unpackLockFile = new File(PG_DIR, LOCK_FILE_NAME);
-            final File pgDirExists = new File(PG_DIR, ".exists");
+                String pgDigest = Hex.encodeHexString(pgArchiveData.getMessageDigest().digest());
 
-            if (!pgDirExists.exists()) {
-                try (final FileOutputStream lockStream = new FileOutputStream(unpackLockFile);
-                                final FileLock unpackLock = lockStream.getChannel().tryLock()) {
-                    if (unpackLock != null) {
-                        try {
-                            Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
-                            LOG.info("Extracting Postgres...");
-                            system("tar", "-x", "-f", pgTbz.getPath(), "-C", PG_DIR.getPath());
-                            Files.touch(pgDirExists);
-                        } finally {
-                            Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
+                pgDir = new File(TMP_DIR, String.format("PG-%s", pgDigest));
+
+                mkdirs(pgDir);
+                final File unpackLockFile = new File(pgDir, LOCK_FILE_NAME);
+                final File pgDirExists = new File(pgDir, ".exists");
+
+                if (!pgDirExists.exists()) {
+                    try (final FileOutputStream lockStream = new FileOutputStream(unpackLockFile);
+                                    final FileLock unpackLock = lockStream.getChannel().tryLock()) {
+                        if (unpackLock != null) {
+                            try {
+                                Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
+                                LOG.info("Extracting Postgres...");
+                                system("tar", "-x", "-f", pgTbz.getPath(), "-C", pgDir.getPath());
+                                Files.touch(pgDirExists);
+                            } finally {
+                                Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
+                            }
+                        } else {
+                            // the other guy is unpacking for us.
+                            int maxAttempts = 60;
+                            while (!pgDirExists.exists() && --maxAttempts > 0) {
+                                Thread.sleep(1000L);
+                            }
+                            Preconditions.checkState(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
                         }
-                    } else {
-                        // the other guy is unpacking for us.
-                        int maxAttempts = 60;
-                        while (!pgDirExists.exists() && --maxAttempts > 0) {
-                            Thread.sleep(1000L);
-                        }
-                        Preconditions.checkState(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
                     }
                 }
+            } catch (final IOException | NoSuchAlgorithmException e) {
+                throw new ExceptionInInitializerError(e);
+            } catch (final InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new ExceptionInInitializerError(ie);
+            } finally {
+                Preconditions.checkState(pgTbz.delete(), "could not delete %s", pgTbz);
             }
-        } catch (final IOException | NoSuchAlgorithmException e) {
-            throw new ExceptionInInitializerError(e);
-        } catch (final InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new ExceptionInInitializerError(ie);
+            BINARY_DIR.set(pgDir);
+            LOG.info("Postgres binaries at {}", pgDir);
+            return pgDir;
         } finally {
-            Preconditions.checkState(pgTbz.delete(), "could not delete %s", pgTbz);
+            PREPARE_BINARIES_LOCK.unlock();
         }
-
-        LOG.info("Postgres binaries at {}", PG_DIR);
     }
 
     @Override
