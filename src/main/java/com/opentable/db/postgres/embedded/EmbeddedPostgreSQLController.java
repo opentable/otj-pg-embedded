@@ -15,6 +15,9 @@ package com.opentable.db.postgres.embedded;
 
 import java.io.IOException;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,6 +28,7 @@ import java.util.concurrent.SynchronousQueue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
+import javax.sql.DataSource;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -32,19 +36,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.nesscomputing.migratory.Migratory;
-import com.nesscomputing.migratory.MigratoryConfig;
-import com.nesscomputing.migratory.MigratoryContext;
-import com.nesscomputing.migratory.locator.AbstractSqlResourceLocator;
-import com.nesscomputing.migratory.migration.MigrationPlan;
 
-import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.Handle;
-import org.skife.jdbi.v2.tweak.HandleCallback;
-
-import com.opentable.config.Config;
 
 public class EmbeddedPostgreSQLController
 {
@@ -57,13 +50,14 @@ public class EmbeddedPostgreSQLController
     @GuardedBy("EmbeddedPostgreSQLController.class")
     private static final Map<Entry<URI, Set<String>>, Cluster> CLUSTERS = Maps.newHashMap();
 
+    private final DatabaseMigrator migrator;
     private final Cluster cluster;
 
     public EmbeddedPostgreSQLController(URI baseUrl, String[] personalities)
     {
         try {
             cluster = getCluster(baseUrl, personalities);
-        } catch (final IOException e) {
+        } catch (final IOException | SQLException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -72,7 +66,7 @@ public class EmbeddedPostgreSQLController
      * Each schema set has its own database cluster.  The template1 database has the schema preloaded so that
      * each test case need only create a new database and not re-invoke Migratory.
      */
-    private static synchronized Cluster getCluster(URI baseUrl, String[] personalities) throws IOException
+    private synchronized Cluster getCluster(URI baseUrl, String[] personalities) throws IOException, SQLException
     {
         final Entry<URI, Set<String>> key = Maps.immutableEntry(baseUrl, (Set<String>)ImmutableSet.copyOf(personalities));
 
@@ -83,42 +77,14 @@ public class EmbeddedPostgreSQLController
 
         result = new Cluster(EmbeddedPostgreSQL.start());
 
-        final DBI dbi = new DBI(result.getPg().getTemplateDatabase());
-        final Migratory migratory = new Migratory(new MigratoryConfig() {}, dbi, dbi);
-        migratory.addLocator(new DatabasePreparerLocator(migratory, baseUrl));
-
-        final MigrationPlan plan = new MigrationPlan();
-        int priority = 100;
-
-        for (final String personality : personalities) {
-            plan.addMigration(personality, Integer.MAX_VALUE, priority--);
+        try (Connection c = result.getPg().getTemplateDatabase().getConnection()) {
+            migrator.migrate(c);
         }
-
-        migratory.dbMigrate(plan);
 
         result.start();
 
         CLUSTERS.put(key, result);
         return result;
-    }
-
-    /**
-     * Override a {@link Config} to set <code>ness.db.[db-name].uri</code> to a unique
-     * database in the cluster.
-     */
-    public Config getTweakedConfig(Config config, String dbModuleName)
-    {
-        return Config.getOverriddenConfig(config,
-                new MapConfiguration(getConfigurationTweak(dbModuleName)));
-    }
-
-
-    /**
-     * Shorthand for <code>getTweakedConfig(Config.getEmptyConfig(), dbModuleName)</code>.
-     */
-    public Config getTweakedConfig(String dbModuleName)
-    {
-        return getTweakedConfig(Config.getEmptyConfig(), dbModuleName);
     }
 
     /**
@@ -136,30 +102,13 @@ public class EmbeddedPostgreSQLController
     }
 
     /**
-     * Return configuration tweaks in a format appropriate for ness-jdbc DatabaseModule.
+     * Return configuration tweaks in a format appropriate for otj-jdbc DatabaseModule.
      */
     public ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
     {
         final DbInfo db = cluster.getNextDb();
         return ImmutableMap.of("ot.db." + dbModuleName + ".uri", getJdbcUri(db),
                                "ot.db." + dbModuleName + ".ds.user", db.user);
-    }
-
-    private static class DatabasePreparerLocator extends AbstractSqlResourceLocator
-    {
-        private final URI baseUri;
-
-        protected DatabasePreparerLocator(final MigratoryContext migratoryContext, final URI baseUri)
-        {
-            super(migratoryContext);
-            this.baseUri = baseUri;
-        }
-
-        @Override
-        protected Entry<URI, String> getBaseInformation(final String personalityName, final String databaseType)
-        {
-            return Maps.immutableEntry(URI.create(baseUri.toString() + "/" + personalityName), ".*\\.sql");
-        }
     }
 
     /**
@@ -169,13 +118,11 @@ public class EmbeddedPostgreSQLController
     private static class Cluster implements Runnable
     {
         private final EmbeddedPostgreSQL pg;
-        private final DBI pgDb;
         private final SynchronousQueue<DbInfo> nextDatabase = new SynchronousQueue<DbInfo>();
 
         Cluster(EmbeddedPostgreSQL pg)
         {
             this.pg = pg;
-            pgDb = new DBI(pg.getPostgresDatabase());
 
         }
 
@@ -187,10 +134,14 @@ public class EmbeddedPostgreSQLController
             service.shutdown();
         }
 
-        DbInfo getNextDb()
+        DbInfo getNextDb() throws SQLException
         {
             try {
-                return nextDatabase.take();
+                final DbInfo next = nextDatabase.take();
+                if (next.ex != null) {
+                    throw next.ex;
+                }
+                return next;
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e);
@@ -207,9 +158,18 @@ public class EmbeddedPostgreSQLController
         {
             while (true) {
                 final String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
-                create(pgDb, newDbName, "postgres");
+                SQLException failure = null;
                 try {
-                    nextDatabase.put(new DbInfo(newDbName, pg.getPort(), "postgres"));
+                    create(pg.getPostgresDatabase(), newDbName, "postgres");
+                } catch (SQLException e) {
+                    failure = e;
+                }
+                try {
+                    if (failure == null) {
+                        nextDatabase.put(new DbInfo(newDbName, pg.getPort(), "postgres"));
+                    } else {
+                        nextDatabase.put(new DbInfo(failure));
+                    }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
                     return;
@@ -218,18 +178,15 @@ public class EmbeddedPostgreSQLController
         }
     }
 
-    private static void create(final DBI dbi, @Nonnull final String dbName, @Nonnull final String userName)
+    private static void create(final DataSource connectDb, @Nonnull final String dbName, @Nonnull final String userName) throws SQLException
     {
         Preconditions.checkArgument(dbName != null, "the database name must not be null!");
         Preconditions.checkArgument(userName != null, "the user name must not be null!");
 
-        dbi.withHandle(new HandleCallback<Void>() {
-                @Override
-                public Void withHandle(final Handle handle) {
-                    handle.createStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName)).execute();
-                    return null;
-                }
-            });
+        try (Connection c = connectDb.getConnection();
+             PreparedStatement stmt = c.prepareStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName))) {
+            stmt.executeQuery();
+        }
     }
 
     private static class DbInfo
@@ -237,11 +194,20 @@ public class EmbeddedPostgreSQLController
         private final String dbName;
         private final int port;
         private final String user;
+        private final SQLException ex;
 
         DbInfo(String dbName, int port, String user) {
             this.dbName = dbName;
             this.port = port;
             this.user = user;
+            this.ex = null;
+        }
+
+        DbInfo(SQLException e) {
+            this.dbName = null;
+            this.port = -1;
+            this.user = null;
+            this.ex = e;
         }
     }
 }
