@@ -56,13 +56,13 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.postgresql.jdbc2.optional.SimpleDataSource;
+import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EmbeddedPostgreSQL implements Closeable
+public class EmbeddedPostgres implements Closeable
 {
-    private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgreSQL.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
 
     private static final String PG_STOP_MODE = "fast";
@@ -89,7 +89,7 @@ public class EmbeddedPostgreSQL implements Closeable
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
 
-    EmbeddedPostgreSQL(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig, int port, PgBinaryResolver pgBinaryResolver) throws IOException
+    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig, int port, PgBinaryResolver pgBinaryResolver) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
@@ -129,7 +129,7 @@ public class EmbeddedPostgreSQL implements Closeable
 
     public DataSource getDatabase(String userName, String dbName)
     {
-        final SimpleDataSource ds = new SimpleDataSource();
+        final PGSimpleDataSource ds = new PGSimpleDataSource();
         ds.setServerName("localhost");
         ds.setPortNumber(port);
         ds.setDatabaseName(dbName);
@@ -250,7 +250,7 @@ public class EmbeddedPostgreSQL implements Closeable
             public void run()
             {
                 try {
-                    Closeables.close(EmbeddedPostgreSQL.this, true);
+                    Closeables.close(EmbeddedPostgres.this, true);
                 }
                 catch (IOException ex) {
                     LOG.error("Unexpected IOException from Closeables.close", ex);
@@ -345,12 +345,12 @@ public class EmbeddedPostgreSQL implements Closeable
         return new File(pgDir, "bin/" + binaryName).getPath();
     }
 
-    public static EmbeddedPostgreSQL start() throws IOException
+    public static EmbeddedPostgres start() throws IOException
     {
         return builder().start();
     }
 
-    public static EmbeddedPostgreSQL.Builder builder()
+    public static EmbeddedPostgres.Builder builder()
     {
         return new Builder();
     }
@@ -399,13 +399,13 @@ public class EmbeddedPostgreSQL implements Closeable
             return this;
         }
 
-        public EmbeddedPostgreSQL start() throws IOException
+        public EmbeddedPostgres start() throws IOException
         {
             if (builderPort == 0)
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgreSQL(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort, pgBinaryResolver);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort, pgBinaryResolver);
         }
     }
 

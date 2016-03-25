@@ -23,14 +23,14 @@ import java.sql.Statement;
 
 import org.junit.Test;
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgreSQL;
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 
 public class EmbeddedPostgreSQLTest
 {
     @Test
     public void testEmbeddedPg() throws Exception
     {
-        EmbeddedPostgreSQL pg = EmbeddedPostgreSQL.start();
+        EmbeddedPostgres pg = EmbeddedPostgres.start();
 
         try {
             Connection c = pg.getPostgresDatabase().getConnection();

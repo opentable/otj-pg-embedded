@@ -24,12 +24,12 @@ import java.sql.Statement;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgreSQLRule;
+import com.opentable.db.postgres.junit.EmbeddedPostgresRule;
 
 public class EmbeddedPostgreSQLRuleTest
 {
     @Rule
-    public EmbeddedPostgreSQLRule epg = new EmbeddedPostgreSQLRule();
+    public EmbeddedPostgresRule epg = new EmbeddedPostgresRule();
 
     @Test
     public void testRule() throws Exception {

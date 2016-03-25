@@ -23,6 +23,8 @@ import org.junit.rules.TestRule;
 
 public class EmbeddedPostgresRules
 {
+    public static EmbeddedPostgresRule
+
     /**
      * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
      * The rule contributes Config switches to configure each test case to get its own database.

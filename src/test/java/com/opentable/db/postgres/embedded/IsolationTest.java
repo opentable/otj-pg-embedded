@@ -20,15 +20,15 @@ import java.sql.Statement;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgreSQLRule;
+import com.opentable.db.postgres.junit.EmbeddedPostgresRule;
 
 public class IsolationTest
 {
     @Rule
-    public EmbeddedPostgreSQLRule pg1 = new EmbeddedPostgreSQLRule();
+    public EmbeddedPostgresRule pg1 = new EmbeddedPostgresRule();
 
     @Rule
-    public EmbeddedPostgreSQLRule pg2 = new EmbeddedPostgreSQLRule();
+    public EmbeddedPostgresRule pg2 = new EmbeddedPostgresRule();
 
     @Test
     public void testIsolation() throws Exception
@@ -53,7 +53,7 @@ public class IsolationTest
         s.execute("CREATE TABLE public.foo (a INTEGER)");
     }
 
-    private Connection getConnection(EmbeddedPostgreSQLRule epg) throws SQLException
+    private Connection getConnection(EmbeddedPostgresRule epg) throws SQLException
     {
         return epg.getEmbeddedPostgreSQL().getPostgresDatabase().getConnection();
     }

@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opentable.db.postgres.embedded;
+package com.opentable.db.postgres.junit;
 
 import java.io.IOException;
 
@@ -19,20 +19,22 @@ import com.google.common.base.Preconditions;
 
 import org.junit.rules.ExternalResource;
 
-public class EmbeddedPostgreSQLRule extends ExternalResource
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
+
+public class EmbeddedPostgresRule extends ExternalResource
 {
-    private volatile EmbeddedPostgreSQL epg;
+    private volatile EmbeddedPostgres epg;
 
     @Override
     protected void before() throws Throwable
     {
         super.before();
-        epg = EmbeddedPostgreSQL.start();
+        epg = EmbeddedPostgres.start();
     }
 
-    public EmbeddedPostgreSQL getEmbeddedPostgreSQL()
+    public EmbeddedPostgres getEmbeddedPostgres()
     {
-        EmbeddedPostgreSQL epg = this.epg;
+        EmbeddedPostgres epg = this.epg;
         Preconditions.checkState(epg != null, "JUnit test not started yet!");
         return epg;
     }

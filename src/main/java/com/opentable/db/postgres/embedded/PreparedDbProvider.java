@@ -14,14 +14,12 @@
 package com.opentable.db.postgres.embedded;
 
 import java.io.IOException;
-import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
@@ -33,13 +31,12 @@ import javax.sql.DataSource;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.postgresql.ds.PGSimpleDataSource;
 
-public class EmbeddedPostgreSQLController
+public class PreparedDbProvider
 {
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s";
 
@@ -47,16 +44,15 @@ public class EmbeddedPostgreSQLController
      * Each database cluster's <code>template1</code> database has a unique set of schema
      * loaded so that the databases may be cloned.
      */
-    @GuardedBy("EmbeddedPostgreSQLController.class")
-    private static final Map<Entry<URI, Set<String>>, Cluster> CLUSTERS = Maps.newHashMap();
+    @GuardedBy("PreparedDbProvider.class")
+    private static final Map<DatabasePreparer, PrepPipeline> CLUSTERS = new HashMap<>();
 
-    private final DatabaseMigrator migrator;
-    private final Cluster cluster;
+    private final PrepPipeline dbPreparer;
 
-    public EmbeddedPostgreSQLController(URI baseUrl, String[] personalities)
+    public PreparedDbProvider(DatabasePreparer preparer)
     {
         try {
-            cluster = getCluster(baseUrl, personalities);
+            dbPreparer = createOrFindPreparer(preparer);
         } catch (final IOException | SQLException e) {
             throw Throwables.propagate(e);
         }
@@ -64,36 +60,49 @@ public class EmbeddedPostgreSQLController
 
     /**
      * Each schema set has its own database cluster.  The template1 database has the schema preloaded so that
-     * each test case need only create a new database and not re-invoke Migratory.
+     * each test case need only create a new database and not re-invoke your preparer.
      */
-    private synchronized Cluster getCluster(URI baseUrl, String[] personalities) throws IOException, SQLException
+    private synchronized PrepPipeline createOrFindPreparer(DatabasePreparer preparer) throws IOException, SQLException
     {
-        final Entry<URI, Set<String>> key = Maps.immutableEntry(baseUrl, (Set<String>)ImmutableSet.copyOf(personalities));
-
-        Cluster result = CLUSTERS.get(key);
+        PrepPipeline result = CLUSTERS.get(preparer);
         if (result != null) {
             return result;
         }
 
-        result = new Cluster(EmbeddedPostgreSQL.start());
+        result = new PrepPipeline(EmbeddedPostgres.start());
 
         try (Connection c = result.getPg().getTemplateDatabase().getConnection()) {
-            migrator.migrate(c);
+            preparer.prepare(c);
         }
 
         result.start();
 
-        CLUSTERS.put(key, result);
+        CLUSTERS.put(preparer, result);
         return result;
     }
 
     /**
-     * @return a JDBC uri for a self-contained environment.  No two invocations will return the same database.
+     * Create a new database, and return it as a JDBC connection string.
+     * No two invocations will return the same database.
      */
-    public String getJdbcUri()
+    public String createDatabase() throws SQLException
     {
-        final DbInfo db = cluster.getNextDb();
+        final DbInfo db = dbPreparer.getNextDb();
         return getJdbcUri(db);
+    }
+
+    /**
+     * Create a new database, and return it as a DataSource.
+     * No two invocations will return the same database.
+     */
+    public DataSource createDataSource() throws SQLException
+    {
+        final DbInfo db = dbPreparer.getNextDb();
+        final PGSimpleDataSource ds = new PGSimpleDataSource();
+        ds.setPortNumber(db.port);
+        ds.setDatabaseName(db.dbName);
+        ds.setUser(db.user);
+        return ds;
     }
 
     private String getJdbcUri(DbInfo db)
@@ -104,9 +113,9 @@ public class EmbeddedPostgreSQLController
     /**
      * Return configuration tweaks in a format appropriate for otj-jdbc DatabaseModule.
      */
-    public ImmutableMap<String, String> getConfigurationTweak(String dbModuleName)
+    public ImmutableMap<String, String> getConfigurationTweak(String dbModuleName) throws SQLException
     {
-        final DbInfo db = cluster.getNextDb();
+        final DbInfo db = dbPreparer.getNextDb();
         return ImmutableMap.of("ot.db." + dbModuleName + ".uri", getJdbcUri(db),
                                "ot.db." + dbModuleName + ".ds.user", db.user);
     }
@@ -115,15 +124,14 @@ public class EmbeddedPostgreSQLController
      * Spawns a background thread that prepares databases ahead of time for speed, and then uses a
      * synchronous queue to hand the prepared databases off to test cases.
      */
-    private static class Cluster implements Runnable
+    private static class PrepPipeline implements Runnable
     {
-        private final EmbeddedPostgreSQL pg;
+        private final EmbeddedPostgres pg;
         private final SynchronousQueue<DbInfo> nextDatabase = new SynchronousQueue<DbInfo>();
 
-        Cluster(EmbeddedPostgreSQL pg)
+        PrepPipeline(EmbeddedPostgres pg)
         {
             this.pg = pg;
-
         }
 
         void start()
@@ -148,7 +156,7 @@ public class EmbeddedPostgreSQLController
             }
         }
 
-        EmbeddedPostgreSQL getPg()
+        EmbeddedPostgres getPg()
         {
             return pg;
         }
