@@ -376,7 +376,6 @@ public class EmbeddedPostgreSQL implements Closeable
         Builder() {
             config.put("timezone", "UTC");
             config.put("synchronous_commit", "off");
-            config.put("checkpoint_segments", "64");
             config.put("max_connections", "300");
         }
 
