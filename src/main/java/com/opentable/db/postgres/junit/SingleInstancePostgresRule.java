@@ -14,6 +14,8 @@
 package com.opentable.db.postgres.junit;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import com.google.common.base.Preconditions;
 
@@ -21,15 +23,19 @@ import org.junit.rules.ExternalResource;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 
-public class EmbeddedPostgresRule extends ExternalResource
+public class SingleInstancePostgresRule extends ExternalResource
 {
     private volatile EmbeddedPostgres epg;
+    private volatile Connection postgresConnection;
+
+    SingleInstancePostgresRule() { }
 
     @Override
     protected void before() throws Throwable
     {
         super.before();
         epg = EmbeddedPostgres.start();
+        postgresConnection = epg.getPostgresDatabase().getConnection();
     }
 
     public EmbeddedPostgres getEmbeddedPostgres()
@@ -47,6 +53,10 @@ public class EmbeddedPostgresRule extends ExternalResource
         } catch (IOException e) {
             throw new AssertionError(e);
         }
-        super.after();
+        try {
+            postgresConnection.close();
+        } catch (SQLException e) {
+            throw new AssertionError(e);
+        }
     }
 }

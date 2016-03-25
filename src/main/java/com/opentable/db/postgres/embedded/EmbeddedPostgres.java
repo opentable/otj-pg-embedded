@@ -451,12 +451,11 @@ public class EmbeddedPostgres implements Closeable
             } catch (final IOException e) {
                 throw new ExceptionInInitializerError(e);
             }
-            try {
-                final DigestInputStream pgArchiveData = new DigestInputStream(
+            try (final DigestInputStream pgArchiveData = new DigestInputStream(
                         pgBinaryResolver.getPgBinary(system, machineHardware),
                         MessageDigest.getInstance("MD5"));
-
-                final FileOutputStream os = new FileOutputStream(pgTbz);
+                final FileOutputStream os = new FileOutputStream(pgTbz))
+            {
                 IOUtils.copy(pgArchiveData, os);
                 pgArchiveData.close();
                 os.close();

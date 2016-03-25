@@ -24,24 +24,22 @@ import java.sql.Statement;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRule;
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
+import com.opentable.db.postgres.junit.SingleInstancePostgresRule;
 
-public class EmbeddedPostgreSQLRuleTest
+public class SingleInstanceRuleTest
 {
     @Rule
-    public EmbeddedPostgresRule epg = new EmbeddedPostgresRule();
+    public SingleInstancePostgresRule epg = EmbeddedPostgresRules.singleInstance();
 
     @Test
     public void testRule() throws Exception {
-        Connection c = epg.getEmbeddedPostgreSQL().getPostgresDatabase().getConnection();
-        try {
+        try (Connection c = epg.getEmbeddedPostgres().getPostgresDatabase().getConnection()) {
             Statement s = c.createStatement();
             ResultSet rs = s.executeQuery("SELECT 1");
             assertTrue(rs.next());
             assertEquals(1, rs.getInt(1));
             assertFalse(rs.next());
-        } finally {
-            c.close();
         }
     }
 }

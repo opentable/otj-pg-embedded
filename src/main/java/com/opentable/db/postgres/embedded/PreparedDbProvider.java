@@ -49,7 +49,11 @@ public class PreparedDbProvider
 
     private final PrepPipeline dbPreparer;
 
-    public PreparedDbProvider(DatabasePreparer preparer)
+    public static PreparedDbProvider forPreparer(DatabasePreparer preparer) {
+        return new PreparedDbProvider(preparer);
+    }
+
+    private PreparedDbProvider(DatabasePreparer preparer)
     {
         try {
             dbPreparer = createOrFindPreparer(preparer);
@@ -71,9 +75,7 @@ public class PreparedDbProvider
 
         result = new PrepPipeline(EmbeddedPostgres.start());
 
-        try (Connection c = result.getPg().getTemplateDatabase().getConnection()) {
-            preparer.prepare(c);
-        }
+        preparer.prepare(result.getPg().getTemplateDatabase());
 
         result.start();
 
@@ -193,7 +195,7 @@ public class PreparedDbProvider
 
         try (Connection c = connectDb.getConnection();
              PreparedStatement stmt = c.prepareStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName))) {
-            stmt.executeQuery();
+            stmt.execute();
         }
     }
 

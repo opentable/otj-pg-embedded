@@ -13,37 +13,25 @@
  */
 package com.opentable.db.postgres.junit;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-
-import javax.annotation.Nonnull;
-
 import org.junit.rules.TestRule;
+
+import com.opentable.db.postgres.embedded.DatabasePreparer;
 
 public class EmbeddedPostgresRules
 {
-    public static EmbeddedPostgresRule
-
     /**
-     * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
-     * The rule contributes Config switches to configure each test case to get its own database.
+     * Create a vanilla Postgres cluster -- just initialized, no customizations applied.
      */
-    public static EmbeddedPostgresTestDatabaseRule embeddedDatabaseRule(@Nonnull final URL baseUrl, final String... personalities)
-    {
-        try {
-            return embeddedDatabaseRule(baseUrl.toURI(), personalities);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
+    public static SingleInstancePostgresRule singleInstance() {
+        return new SingleInstancePostgresRule();
     }
 
     /**
      * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
      * The rule contributes Config switches to configure each test case to get its own database.
      */
-    public static EmbeddedPostgresTestDatabaseRule embeddedDatabaseRule(@Nonnull final URI baseUri, final String... personalities)
+    public static PreparedDbRule preparedDatabase(DatabasePreparer preparer)
     {
-        return new EmbeddedPostgresTestDatabaseRule(baseUri, personalities);
+        return new PreparedDbRule(preparer);
     }
 }

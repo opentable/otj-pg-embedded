@@ -23,28 +23,18 @@ import java.sql.Statement;
 
 import org.junit.Test;
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgres;
-
-public class EmbeddedPostgreSQLTest
+public class EmbeddedPostgresTest
 {
     @Test
     public void testEmbeddedPg() throws Exception
     {
-        EmbeddedPostgres pg = EmbeddedPostgres.start();
-
-        try {
-            Connection c = pg.getPostgresDatabase().getConnection();
-            try {
-                Statement s = c.createStatement();
-                ResultSet rs = s.executeQuery("SELECT 1");
-                assertTrue(rs.next());
-                assertEquals(1, rs.getInt(1));
-                assertFalse(rs.next());
-            } finally {
-                c.close();
-            }
-        } finally {
-            pg.close();
+        try (EmbeddedPostgres pg = EmbeddedPostgres.start();
+             Connection c = pg.getPostgresDatabase().getConnection()) {
+            Statement s = c.createStatement();
+            ResultSet rs = s.executeQuery("SELECT 1");
+            assertTrue(rs.next());
+            assertEquals(1, rs.getInt(1));
+            assertFalse(rs.next());
         }
     }
 }

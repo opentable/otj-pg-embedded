@@ -20,30 +20,25 @@ import java.sql.Statement;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRule;
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
+import com.opentable.db.postgres.junit.SingleInstancePostgresRule;
 
 public class IsolationTest
 {
     @Rule
-    public EmbeddedPostgresRule pg1 = new EmbeddedPostgresRule();
+    public SingleInstancePostgresRule pg1 = EmbeddedPostgresRules.singleInstance();
 
     @Rule
-    public EmbeddedPostgresRule pg2 = new EmbeddedPostgresRule();
+    public SingleInstancePostgresRule pg2 = EmbeddedPostgresRules.singleInstance();
 
     @Test
     public void testIsolation() throws Exception
     {
-        Connection c = getConnection(pg1);
-        try {
+        try (Connection c = getConnection(pg1)) {
             makeTable(c);
-            Connection c2 = getConnection(pg2);
-            try {
+            try (Connection c2 = getConnection(pg2)) {
                 makeTable(c2);
-            } finally {
-                c2.close();
             }
-        } finally {
-            c.close();
         }
     }
 
@@ -53,8 +48,8 @@ public class IsolationTest
         s.execute("CREATE TABLE public.foo (a INTEGER)");
     }
 
-    private Connection getConnection(EmbeddedPostgresRule epg) throws SQLException
+    private Connection getConnection(SingleInstancePostgresRule epg) throws SQLException
     {
-        return epg.getEmbeddedPostgreSQL().getPostgresDatabase().getConnection();
+        return epg.getEmbeddedPostgres().getPostgresDatabase().getConnection();
     }
 }
