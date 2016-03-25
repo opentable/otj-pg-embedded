@@ -149,11 +149,8 @@ public class EmbeddedPostgreSQL implements Closeable
 
     private static int detectPort() throws IOException
     {
-        final ServerSocket socket = new ServerSocket(0);
-        try {
+        try (final ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            socket.close();
         }
     }
 
@@ -316,29 +313,23 @@ public class EmbeddedPostgreSQL implements Closeable
             if (!lockFile.exists() || isTooNew) {
                 continue;
             }
-            try {
-                final FileOutputStream fos = new FileOutputStream(lockFile);
-                try {
-                    try (FileLock lock = fos.getChannel().tryLock()) {
-                        if (lock != null) {
-                            LOG.info("Found stale data directory {}", dir);
-                            if (new File(dir, "postmaster.pid").exists()) {
-                                try {
-                                    pgCtl(dir, "stop");
-                                    LOG.info("Shut down orphaned postmaster!");
-                                } catch (Exception e) {
-                                    if (LOG.isDebugEnabled()) {
-                                        LOG.warn("Failed to stop postmaster " + dir, e);
-                                    } else {
-                                        LOG.warn("Failed to stop postmaster " + dir + ": " + e.getMessage());
-                                    }
-                                }
+            try (final FileOutputStream fos = new FileOutputStream(lockFile);
+                 final FileLock lock = fos.getChannel().tryLock()) {
+                if (lock != null) {
+                    LOG.info("Found stale data directory {}", dir);
+                    if (new File(dir, "postmaster.pid").exists()) {
+                        try {
+                            pgCtl(dir, "stop");
+                            LOG.info("Shut down orphaned postmaster!");
+                        } catch (Exception e) {
+                            if (LOG.isDebugEnabled()) {
+                                LOG.warn("Failed to stop postmaster " + dir, e);
+                            } else {
+                                LOG.warn("Failed to stop postmaster " + dir + ": " + e.getMessage());
                             }
-                            FileUtils.deleteDirectory(dir);
                         }
                     }
-                } finally {
-                    fos.close();
+                    FileUtils.deleteDirectory(dir);
                 }
             } catch (final OverlappingFileLockException e) {
                 // The directory belongs to another instance in this VM.
