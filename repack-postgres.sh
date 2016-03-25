@@ -31,7 +31,7 @@ tar cjf $OLDPWD/target/generated-resources/postgresql-Darwin-x86_64.tbz \
   lib/libxml2.2.dylib \
   lib/libssl.1.0.0.dylib \
   lib/libcrypto.1.0.0.dylib \
-  lib/libuuid.16.dylib \
+  lib/libuuid.1.1.dylib \
   lib/postgresql/*.so \
   bin/initdb \
   bin/pg_ctl \
