@@ -73,12 +73,10 @@ public class PreparedDbProvider
             return result;
         }
 
-        result = new PrepPipeline(EmbeddedPostgres.start());
+        final EmbeddedPostgres pg = EmbeddedPostgres.start();
+        preparer.prepare(pg.getTemplateDatabase());
 
-        preparer.prepare(result.getPg().getTemplateDatabase());
-
-        result.start();
-
+        result = new PrepPipeline(pg).start();
         CLUSTERS.put(preparer, result);
         return result;
     }
@@ -136,12 +134,13 @@ public class PreparedDbProvider
             this.pg = pg;
         }
 
-        void start()
+        PrepPipeline start()
         {
             final ExecutorService service = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
                 .setDaemon(true).setNameFormat("cluster-" + pg + "-preparer").build());
             service.submit(this);
             service.shutdown();
+            return this;
         }
 
         DbInfo getNextDb() throws SQLException
