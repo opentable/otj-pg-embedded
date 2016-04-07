@@ -36,7 +36,6 @@
 
   <properties>
     <project.build.targetJdk>1.8</project.build.targetJdk>
-    <ot.skip.check-build>true</ot.skip.check-build>
     <ot.build.allow-joda-time>true</ot.build.allow-joda-time>
   </properties>
 
