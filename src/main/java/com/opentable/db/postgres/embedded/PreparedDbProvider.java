@@ -157,11 +157,6 @@ public class PreparedDbProvider
             }
         }
 
-        EmbeddedPostgres getPg()
-        {
-            return pg;
-        }
-
         @Override
         public void run()
         {
