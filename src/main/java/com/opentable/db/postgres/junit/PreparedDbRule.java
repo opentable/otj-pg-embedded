@@ -15,6 +15,8 @@ package com.opentable.db.postgres.junit;
 
 import javax.sql.DataSource;
 
+import com.google.common.base.Preconditions;
+
 import org.junit.rules.ExternalResource;
 
 import com.opentable.db.postgres.embedded.DatabasePreparer;
@@ -27,6 +29,7 @@ public class PreparedDbRule extends ExternalResource {
     private volatile PreparedDbProvider provider;
 
     PreparedDbRule(DatabasePreparer preparer) {
+        Preconditions.checkArgument(preparer != null, "null preparer");
         this.preparer = preparer;
     }
 
@@ -43,10 +46,12 @@ public class PreparedDbRule extends ExternalResource {
     }
 
     public DataSource getTestDatabase() {
+        Preconditions.checkState(dataSource != null, "not initialized");
         return dataSource;
     }
 
     public PreparedDbProvider getDbProvider() {
+        Preconditions.checkState(provider != null, "not initialized");
         return provider;
     }
 }
