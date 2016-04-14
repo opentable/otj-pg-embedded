@@ -11,21 +11,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.opentable.db.postgres.embedded;
 
-import static java.lang.String.format;
+import java.sql.SQLException;
 
-import java.io.InputStream;
+import javax.sql.DataSource;
 
-/**
- * Resolves pre-bundled binaries from within the JAR file.
- */
-final class BundledPostgresBinaryResolver implements PgBinaryResolver {
+import org.flywaydb.core.Flyway;
 
-    @Override
-    public InputStream getPgBinary(String system, String machineHardware) {
-        return EmbeddedPostgres.class.getResourceAsStream(format("/postgresql-%s-%s.tbz", system, machineHardware));
+public class FlywayPreparer implements DatabasePreparer {
+
+    private final Flyway flyway;
+
+    public static FlywayPreparer forClasspathLocation(String... locations) {
+        Flyway f = new Flyway();
+        f.setLocations(locations);
+        return new FlywayPreparer(f);
     }
 
+    private FlywayPreparer(Flyway flyway) {
+        this.flyway = flyway;
+    }
+
+    @Override
+    public void prepare(DataSource ds) throws SQLException {
+        flyway.setDataSource(ds);
+        flyway.migrate();
+    }
 }

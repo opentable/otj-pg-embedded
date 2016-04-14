@@ -11,21 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.opentable.db.postgres.embedded;
 
-import static java.lang.String.format;
+import java.sql.Connection;
+import java.sql.SQLException;
 
-import java.io.InputStream;
+import javax.sql.DataSource;
 
-/**
- * Resolves pre-bundled binaries from within the JAR file.
- */
-final class BundledPostgresBinaryResolver implements PgBinaryResolver {
+public interface DatabaseConnectionPreparer extends DatabasePreparer {
 
     @Override
-    public InputStream getPgBinary(String system, String machineHardware) {
-        return EmbeddedPostgres.class.getResourceAsStream(format("/postgresql-%s-%s.tbz", system, machineHardware));
+    default void prepare(DataSource ds) throws SQLException {
+        try (Connection c = ds.getConnection()) {
+            prepare(c);
+        }
     }
 
+    void prepare(Connection conn) throws SQLException;
 }

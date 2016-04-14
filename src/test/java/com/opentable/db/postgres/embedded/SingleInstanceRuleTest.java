@@ -13,8 +13,12 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 import org.junit.Rule;
@@ -23,33 +27,19 @@ import org.junit.Test;
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule;
 
-public class IsolationTest
+public class SingleInstanceRuleTest
 {
     @Rule
-    public SingleInstancePostgresRule pg1 = EmbeddedPostgresRules.singleInstance();
-
-    @Rule
-    public SingleInstancePostgresRule pg2 = EmbeddedPostgresRules.singleInstance();
+    public SingleInstancePostgresRule epg = EmbeddedPostgresRules.singleInstance();
 
     @Test
-    public void testIsolation() throws Exception
-    {
-        try (Connection c = getConnection(pg1)) {
-            makeTable(c);
-            try (Connection c2 = getConnection(pg2)) {
-                makeTable(c2);
-            }
+    public void testRule() throws Exception {
+        try (Connection c = epg.getEmbeddedPostgres().getPostgresDatabase().getConnection()) {
+            Statement s = c.createStatement();
+            ResultSet rs = s.executeQuery("SELECT 1");
+            assertTrue(rs.next());
+            assertEquals(1, rs.getInt(1));
+            assertFalse(rs.next());
         }
-    }
-
-    private void makeTable(Connection c) throws SQLException
-    {
-        Statement s = c.createStatement();
-        s.execute("CREATE TABLE public.foo (a INTEGER)");
-    }
-
-    private Connection getConnection(SingleInstancePostgresRule epg) throws SQLException
-    {
-        return epg.getEmbeddedPostgres().getPostgresDatabase().getConnection();
     }
 }

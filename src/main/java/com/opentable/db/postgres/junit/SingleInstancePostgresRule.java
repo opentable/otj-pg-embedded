@@ -11,28 +11,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.opentable.db.postgres.embedded;
+package com.opentable.db.postgres.junit;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import com.google.common.base.Preconditions;
 
 import org.junit.rules.ExternalResource;
 
-public class EmbeddedPostgreSQLRule extends ExternalResource
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
+
+public class SingleInstancePostgresRule extends ExternalResource
 {
-    private volatile EmbeddedPostgreSQL epg;
+    private volatile EmbeddedPostgres epg;
+    private volatile Connection postgresConnection;
+
+    SingleInstancePostgresRule() { }
 
     @Override
     protected void before() throws Throwable
     {
         super.before();
-        epg = EmbeddedPostgreSQL.start();
+        epg = EmbeddedPostgres.start();
+        postgresConnection = epg.getPostgresDatabase().getConnection();
     }
 
-    public EmbeddedPostgreSQL getEmbeddedPostgreSQL()
+    public EmbeddedPostgres getEmbeddedPostgres()
     {
-        EmbeddedPostgreSQL epg = this.epg;
+        EmbeddedPostgres epg = this.epg;
         Preconditions.checkState(epg != null, "JUnit test not started yet!");
         return epg;
     }
@@ -45,6 +53,10 @@ public class EmbeddedPostgreSQLRule extends ExternalResource
         } catch (IOException e) {
             throw new AssertionError(e);
         }
-        super.after();
+        try {
+            postgresConnection.close();
+        } catch (SQLException e) {
+            throw new AssertionError(e);
+        }
     }
 }

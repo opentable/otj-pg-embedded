@@ -21,27 +21,20 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import org.junit.Rule;
 import org.junit.Test;
 
-import com.opentable.db.postgres.embedded.EmbeddedPostgreSQLRule;
-
-public class EmbeddedPostgreSQLRuleTest
+public class EmbeddedPostgresTest
 {
-    @Rule
-    public EmbeddedPostgreSQLRule epg = new EmbeddedPostgreSQLRule();
-
     @Test
-    public void testRule() throws Exception {
-        Connection c = epg.getEmbeddedPostgreSQL().getPostgresDatabase().getConnection();
-        try {
+    public void testEmbeddedPg() throws Exception
+    {
+        try (EmbeddedPostgres pg = EmbeddedPostgres.start();
+             Connection c = pg.getPostgresDatabase().getConnection()) {
             Statement s = c.createStatement();
             ResultSet rs = s.executeQuery("SELECT 1");
             assertTrue(rs.next());
             assertEquals(1, rs.getInt(1));
             assertFalse(rs.next());
-        } finally {
-            c.close();
         }
     }
 }
