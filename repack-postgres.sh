@@ -1,5 +1,5 @@
 #!/bin/bash -ex
-VERSION=9.5.1-1
+VERSION=9.5.2-1
 
 cd `dirname $0`
 
