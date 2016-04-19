@@ -13,13 +13,24 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Closeables;
+import com.google.common.io.Files;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.sql.DataSource;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
@@ -42,23 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.sql.DataSource;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.io.Closeables;
-import com.google.common.io.Files;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.postgresql.ds.PGSimpleDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 public class EmbeddedPostgres implements Closeable
 {
@@ -433,6 +428,27 @@ public class EmbeddedPostgres implements Closeable
     private static final AtomicReference<File> BINARY_DIR = new AtomicReference<>();
     private static final Lock PREPARE_BINARIES_LOCK = new ReentrantLock();
 
+    /**
+     * Get current operating system string. The string is used in the appropriate postgres binary name.
+     *
+     * @return Current operating system string.
+     */
+    private static String getOS(){
+        return SystemUtils.IS_OS_WINDOWS ? "Windows" : system("uname", "-s").get(0);
+    }
+
+    /**
+     * Get the machine architecture string. The string is used in the appropriate postgres binary name.
+     *
+     * @return Current machine architecture string.
+     */
+    private static String getArchitecture(){
+        if (!SystemUtils.IS_OS_WINDOWS)
+            return system("uname", "-m").get(0);
+
+        return "amd64".equals(SystemUtils.OS_ARCH) || SystemUtils.OS_ARCH == null ? "x86_64" : SystemUtils.OS_ARCH;
+    }
+
     private File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
         PREPARE_BINARIES_LOCK.lock();
         try {
@@ -440,8 +456,8 @@ public class EmbeddedPostgres implements Closeable
                 return BINARY_DIR.get();
             }
 
-            String system = system("uname", "-s").get(0);
-            String machineHardware = system("uname", "-m").get(0);
+            final String system = getOS();
+            final String machineHardware = getArchitecture();
 
             LOG.info("Detected a {} {} system", system, machineHardware);
             File pgDir;
