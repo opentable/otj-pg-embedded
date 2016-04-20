@@ -53,7 +53,8 @@ tar cjf $OLDPWD/target/generated-resources/postgresql-Windows-x86_64.tbz \
   lib/*.dll \
   bin/initdb.exe \
   bin/pg_ctl.exe \
-  bin/postgres.exe
+  bin/postgres.exe \
+  bin/*.dll
 popd
 
 rm -rf $PACKDIR
