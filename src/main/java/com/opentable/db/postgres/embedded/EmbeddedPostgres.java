@@ -455,8 +455,9 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
      * @return Current machine architecture string.
      */
     private static String getArchitecture(){
-        if (!SystemUtils.IS_OS_WINDOWS)
+        if (!SystemUtils.IS_OS_WINDOWS) {
             return system("uname", "-m").get(0);
+        }
 
         return "amd64".equals(SystemUtils.OS_ARCH) || SystemUtils.OS_ARCH == null ? "x86_64" : SystemUtils.OS_ARCH;
     }
@@ -472,7 +473,7 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                 final FileInputStream fin = new FileInputStream(tbzPath);
                 final BufferedInputStream in = new BufferedInputStream(fin);
                 final ByteArrayOutputStream tarOut = new ByteArrayOutputStream();
-                final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
+                final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in)
         ) {
             final byte[] buffer = new byte[4096];
             int n;
