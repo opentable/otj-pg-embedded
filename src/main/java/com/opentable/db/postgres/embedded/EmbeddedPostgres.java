@@ -21,6 +21,9 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -419,7 +422,7 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private void mkdirs(File dir)
+    private static void mkdirs(File dir)
     {
         Preconditions.checkState(dir.mkdirs() || (dir.isDirectory() && dir.exists()), // NOPMD
                 "could not create %s", dir);
@@ -447,6 +450,52 @@ public class EmbeddedPostgres implements Closeable
             return system("uname", "-m").get(0);
 
         return "amd64".equals(SystemUtils.OS_ARCH) || SystemUtils.OS_ARCH == null ? "x86_64" : SystemUtils.OS_ARCH;
+    }
+
+    /**
+     * Unpack archive compressed by tar with bzip2 compression.
+     *
+     * @param tbzPath The archive path.
+     * @param targetDir The directory to extract the content to.
+     */
+    private static void extractTbz(final String tbzPath, final String targetDir) throws IOException {
+        try (
+                final FileInputStream fin = new FileInputStream(tbzPath);
+                final BufferedInputStream in = new BufferedInputStream(fin);
+                final ByteArrayOutputStream tarOut = new ByteArrayOutputStream();
+                final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
+        ) {
+            final byte[] buffer = new byte[4096];
+            int n;
+            while (-1 != (n = bzIn.read(buffer))) {
+                tarOut.write(buffer, 0, n);
+            }
+
+            final TarArchiveInputStream tarIn = new TarArchiveInputStream(new ByteArrayInputStream(tarOut.toByteArray()));
+            TarArchiveEntry entry;
+            String individualFile;
+            int offset;
+            FileOutputStream outputFile;
+
+            while ((entry = tarIn.getNextTarEntry()) != null) {
+                individualFile = entry.getName();
+                LOG.debug(individualFile);
+                final File fsObject = new File(targetDir + "/" + individualFile);
+                if (entry.isFile()) {
+                    byte[] content = new byte[(int) entry.getSize()];
+                    offset = 0;
+                    tarIn.read(content, offset, content.length - offset);
+                    mkdirs(fsObject.getParentFile());
+                    outputFile = new FileOutputStream(fsObject);
+                    IOUtils.write(content, outputFile);
+                    outputFile.close();
+                } else if (entry.isDirectory()) {
+                    mkdirs(fsObject);
+                }
+            }
+
+            tarIn.close();
+        }
     }
 
     private File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
@@ -491,8 +540,10 @@ public class EmbeddedPostgres implements Closeable
                             try {
                                 Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
                                 LOG.info("Extracting Postgres...");
-                                system("tar", "-x", "-f", pgTbz.getPath(), "-C", pgDir.getPath());
+                                extractTbz(pgTbz.getPath(), pgDir.getPath());
                                 Files.touch(pgDirExists);
+                            } catch (Exception e){
+                                LOG.error(e.getMessage());
                             } finally {
                                 Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
                             }
