@@ -485,7 +485,8 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                 if (entry.isFile()) {
                     byte[] content = new byte[(int) entry.getSize()];
                     offset = 0;
-                    tarIn.read(content, offset, content.length - offset);
+                    int read = tarIn.read(content, offset, content.length - offset);
+                    Preconditions.checkState(read != -1, "could not read %s", individualFile);
                     mkdirs(fsObject.getParentFile());
                     outputFile = new FileOutputStream(fsObject);
                     IOUtils.write(content, outputFile);
