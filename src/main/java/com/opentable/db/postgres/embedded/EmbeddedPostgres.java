@@ -58,7 +58,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
-public class EmbeddedPostgres implements Closeable
+public class EmbeddedPostgres implements AutoCloseable, Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
@@ -340,7 +340,8 @@ public class EmbeddedPostgres implements Closeable
 
     private String pgBin(String binaryName)
     {
-        return new File(pgDir, "bin/" + binaryName).getPath();
+        final String extension = SystemUtils.IS_OS_WINDOWS ? ".exe" : "";
+        return new File(pgDir, "bin/" + binaryName + extension).getPath();
     }
 
     public static EmbeddedPostgres start() throws IOException
