@@ -33,19 +33,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -475,6 +469,10 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                 final ByteArrayOutputStream tarOut = new ByteArrayOutputStream();
                 final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in)
         ) {
+            if (!SystemUtils.IS_OS_WINDOWS) {
+                system("tar", "-x", "-f", tbzPath, "-C", targetDir);
+            }
+
             final byte[] buffer = new byte[4096];
             int n;
             while (-1 != (n = bzIn.read(buffer))) {
@@ -489,12 +487,14 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
 
             while ((entry = tarIn.getNextTarEntry()) != null) {
                 individualFile = entry.getName();
-                LOG.debug(individualFile);
                 final File fsObject = new File(targetDir + "/" + individualFile);
-                if (entry.isFile()) {
-                    byte[] content = new byte[(int) entry.getSize()];
+                if (entry.isSymbolicLink()) {
+                    final Path target = FileSystems.getDefault().getPath(entry.getLinkName());
+                    java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
+                } else if (entry.isFile()) {
+                    final byte[] content = new byte[(int) entry.getSize()];
                     offset = 0;
-                    int read = tarIn.read(content, offset, content.length - offset);
+                    final int read = tarIn.read(content, offset, content.length - offset);
                     Preconditions.checkState(read != -1, "could not read %s", individualFile);
                     mkdirs(fsObject.getParentFile());
                     outputFile = new FileOutputStream(fsObject);
@@ -509,7 +509,7 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
         }
     }
 
-    private File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
+    private static File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
         PREPARE_BINARIES_LOCK.lock();
         try {
             if(BINARY_DIR.get() != null) {
