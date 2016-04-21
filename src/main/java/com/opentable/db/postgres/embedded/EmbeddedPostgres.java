@@ -457,55 +457,56 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
     }
 
     /**
-     * Unpack archive compressed by tar with bzip2 compression.
+     * Unpack archive compressed by tar with bzip2 compression. By default system tar is used (faster). If not found, then the
+     * java implementation takes place.
      *
      * @param tbzPath The archive path.
      * @param targetDir The directory to extract the content to.
      */
     private static void extractTbz(final String tbzPath, final String targetDir) throws IOException {
-        try (
-                final FileInputStream fin = new FileInputStream(tbzPath);
-                final BufferedInputStream in = new BufferedInputStream(fin);
-                final ByteArrayOutputStream tarOut = new ByteArrayOutputStream();
-                final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in)
-        ) {
-            if (!SystemUtils.IS_OS_WINDOWS) {
-                system("tar", "-x", "-f", tbzPath, "-C", targetDir);
-            }
-
-            final byte[] buffer = new byte[4096];
-            int n;
-            while (-1 != (n = bzIn.read(buffer))) {
-                tarOut.write(buffer, 0, n);
-            }
-
-            final TarArchiveInputStream tarIn = new TarArchiveInputStream(new ByteArrayInputStream(tarOut.toByteArray()));
-            TarArchiveEntry entry;
-            String individualFile;
-            int offset;
-            FileOutputStream outputFile;
-
-            while ((entry = tarIn.getNextTarEntry()) != null) {
-                individualFile = entry.getName();
-                final File fsObject = new File(targetDir + "/" + individualFile);
-                if (entry.isSymbolicLink()) {
-                    final Path target = FileSystems.getDefault().getPath(entry.getLinkName());
-                    java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
-                } else if (entry.isFile()) {
-                    final byte[] content = new byte[(int) entry.getSize()];
-                    offset = 0;
-                    final int read = tarIn.read(content, offset, content.length - offset);
-                    Preconditions.checkState(read != -1, "could not read %s", individualFile);
-                    mkdirs(fsObject.getParentFile());
-                    outputFile = new FileOutputStream(fsObject);
-                    IOUtils.write(content, outputFile);
-                    outputFile.close();
-                } else if (entry.isDirectory()) {
-                    mkdirs(fsObject);
+        try {
+            system("tar", "-x", "-f", tbzPath, "-C", targetDir);
+        } catch (final Exception e) {
+            try (
+                    final FileInputStream fin = new FileInputStream(tbzPath);
+                    final BufferedInputStream in = new BufferedInputStream(fin);
+                    final ByteArrayOutputStream tarOut = new ByteArrayOutputStream();
+                    final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in)
+            ) {
+                final byte[] buffer = new byte[4096];
+                int n;
+                while (-1 != (n = bzIn.read(buffer))) {
+                    tarOut.write(buffer, 0, n);
                 }
-            }
 
-            tarIn.close();
+                final TarArchiveInputStream tarIn = new TarArchiveInputStream(new ByteArrayInputStream(tarOut.toByteArray()));
+                TarArchiveEntry entry;
+                String individualFile;
+                int offset;
+                FileOutputStream outputFile;
+
+                while ((entry = tarIn.getNextTarEntry()) != null) {
+                    individualFile = entry.getName();
+                    final File fsObject = new File(targetDir + "/" + individualFile);
+                    if (entry.isSymbolicLink()) {
+                        final Path target = FileSystems.getDefault().getPath(entry.getLinkName());
+                        java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
+                    } else if (entry.isFile()) {
+                        final byte[] content = new byte[(int) entry.getSize()];
+                        offset = 0;
+                        final int read = tarIn.read(content, offset, content.length - offset);
+                        Preconditions.checkState(read != -1, "could not read %s", individualFile);
+                        mkdirs(fsObject.getParentFile());
+                        outputFile = new FileOutputStream(fsObject);
+                        IOUtils.write(content, outputFile);
+                        outputFile.close();
+                    } else if (entry.isDirectory()) {
+                        mkdirs(fsObject);
+                    }
+                }
+
+                tarIn.close();
+            }
         }
     }
 
@@ -553,10 +554,8 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                                 LOG.info("Extracting Postgres...");
                                 extractTbz(pgTbz.getPath(), pgDir.getPath());
                                 Files.touch(pgDirExists);
-                            } catch (Exception e){
+                            } catch (Exception e) {
                                 LOG.error(e.getMessage());
-                            } finally {
-                                Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
                             }
                         } else {
                             // the other guy is unpacking for us.
@@ -565,6 +564,10 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                                 Thread.sleep(1000L);
                             }
                             Preconditions.checkState(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
+                        }
+                    } finally {
+                        if (unpackLockFile.exists()) {
+                            Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
                         }
                     }
                 }
