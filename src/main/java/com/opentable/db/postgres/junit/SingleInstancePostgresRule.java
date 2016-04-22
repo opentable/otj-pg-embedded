@@ -49,13 +49,13 @@ public class SingleInstancePostgresRule extends ExternalResource
     protected void after()
     {
         try {
-            epg.close();
-        } catch (IOException e) {
+            postgresConnection.close();
+        } catch (SQLException e) {
             throw new AssertionError(e);
         }
         try {
-            postgresConnection.close();
-        } catch (SQLException e) {
+            epg.close();
+        } catch (IOException e) {
             throw new AssertionError(e);
         }
     }
