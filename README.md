@@ -26,7 +26,9 @@ You can easily integrate Flyway database schema migration:
 
 ```java
 @Rule
-public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(FlywayPreparer.forClasspathLocation("db/my-db-schema"));
+public PreparedDbRule db =
+    EmbeddedPostgresRules.preparedDatabase(
+        FlywayPreparer.forClasspathLocation("db/my-db-schema"));
 ````
 
 This will create an independent database for every test with the given schema loaded from the classpath.
