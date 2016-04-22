@@ -33,12 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +44,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -68,7 +65,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
-public class EmbeddedPostgres implements AutoCloseable, Closeable
+public class EmbeddedPostgres implements Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
@@ -471,38 +468,28 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
      * @param tbzPath The archive path.
      * @param targetDir The directory to extract the content to.
      */
-    private static void extractTbz(final String tbzPath, final String targetDir) throws IOException {
+    private static void extractTbz(String tbzPath, String targetDir) throws IOException {
         try {
             system("tar", "-x", "-f", tbzPath, "-C", targetDir);
-        } catch (final Exception e) {
+        } catch (Exception e) {
             try (
-                    final FileInputStream fin = new FileInputStream(tbzPath);
-                    final BufferedInputStream in = new BufferedInputStream(fin);
-                    final ByteArrayOutputStream tarOut = new ByteArrayOutputStream();
-                    final BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in)
+                    InputStream in = java.nio.file.Files.newInputStream(Paths.get(tbzPath));
+                    BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
+                    TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
             ) {
-                final byte[] buffer = new byte[4096];
-                int n;
-                while (-1 != (n = bzIn.read(buffer))) {
-                    tarOut.write(buffer, 0, n);
-                }
-
-                final TarArchiveInputStream tarIn = new TarArchiveInputStream(new ByteArrayInputStream(tarOut.toByteArray()));
                 TarArchiveEntry entry;
                 String individualFile;
-                int offset;
                 FileOutputStream outputFile;
 
                 while ((entry = tarIn.getNextTarEntry()) != null) {
                     individualFile = entry.getName();
-                    final File fsObject = new File(targetDir + "/" + individualFile);
+                    File fsObject = new File(targetDir + "/" + individualFile);
                     if (entry.isSymbolicLink()) {
-                        final Path target = FileSystems.getDefault().getPath(entry.getLinkName());
+                        Path target = FileSystems.getDefault().getPath(entry.getLinkName());
                         java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
                     } else if (entry.isFile()) {
-                        final byte[] content = new byte[(int) entry.getSize()];
-                        offset = 0;
-                        final int read = tarIn.read(content, offset, content.length - offset);
+                        byte[] content = new byte[(int) entry.getSize()];
+                        int read = tarIn.read(content, 0, content.length);
                         Preconditions.checkState(read != -1, "could not read %s", individualFile);
                         mkdirs(fsObject.getParentFile());
                         outputFile = new FileOutputStream(fsObject);
@@ -510,10 +497,13 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                         outputFile.close();
                     } else if (entry.isDirectory()) {
                         mkdirs(fsObject);
+                    } else {
+                        //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
+                        throw new UnsupportedOperationException(
+                                String.format("Unsupported entry found: %s", individualFile)
+                        );
                     }
                 }
-
-                tarIn.close();
             }
         }
     }
@@ -563,7 +553,7 @@ public class EmbeddedPostgres implements AutoCloseable, Closeable
                                 extractTbz(pgTbz.getPath(), pgDir.getPath());
                                 Files.touch(pgDirExists);
                             } catch (Exception e) {
-                                LOG.error(e.getMessage());
+                                LOG.error("while unpacking Postgres", e);
                             }
                         } else {
                             // the other guy is unpacking for us.
