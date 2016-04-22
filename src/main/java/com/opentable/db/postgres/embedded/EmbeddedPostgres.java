@@ -505,7 +505,6 @@ public class EmbeddedPostgres implements Closeable
                 } else if (entry.isDirectory()) {
                     mkdirs(fsObject);
                 } else {
-                    //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
                     throw new UnsupportedOperationException(
                             String.format("Unsupported entry found: %s", individualFile)
                     );
