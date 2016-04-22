@@ -479,40 +479,36 @@ public class EmbeddedPostgres implements Closeable
      */
     private static void extractTbz(String tbzPath, String targetDir) throws IOException
     {
-        try {
-            system("tar", "-x", "-f", tbzPath, "-C", targetDir);
-        } catch (Exception e) {
-            try (
-                    InputStream in = java.nio.file.Files.newInputStream(Paths.get(tbzPath));
-                    BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
-                    TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
-            ) {
-                TarArchiveEntry entry;
-                String individualFile;
-                FileOutputStream outputFile;
+        try (
+                InputStream in = java.nio.file.Files.newInputStream(Paths.get(tbzPath));
+                BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
+                TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
+        ) {
+            TarArchiveEntry entry;
+            String individualFile;
+            FileOutputStream outputFile;
 
-                while ((entry = tarIn.getNextTarEntry()) != null) {
-                    individualFile = entry.getName();
-                    File fsObject = new File(targetDir + "/" + individualFile);
-                    if (entry.isSymbolicLink()) {
-                        Path target = FileSystems.getDefault().getPath(entry.getLinkName());
-                        java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
-                    } else if (entry.isFile()) {
-                        byte[] content = new byte[(int) entry.getSize()];
-                        int read = tarIn.read(content, 0, content.length);
-                        Preconditions.checkState(read != -1, "could not read %s", individualFile);
-                        mkdirs(fsObject.getParentFile());
-                        outputFile = new FileOutputStream(fsObject);
-                        IOUtils.write(content, outputFile);
-                        outputFile.close();
-                    } else if (entry.isDirectory()) {
-                        mkdirs(fsObject);
-                    } else {
-                        //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
-                        throw new UnsupportedOperationException(
-                                String.format("Unsupported entry found: %s", individualFile)
-                        );
-                    }
+            while ((entry = tarIn.getNextTarEntry()) != null) {
+                individualFile = entry.getName();
+                File fsObject = new File(targetDir + "/" + individualFile);
+                if (entry.isSymbolicLink()) {
+                    Path target = FileSystems.getDefault().getPath(entry.getLinkName());
+                    java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
+                } else if (entry.isFile()) {
+                    byte[] content = new byte[(int) entry.getSize()];
+                    int read = tarIn.read(content, 0, content.length);
+                    Preconditions.checkState(read != -1, "could not read %s", individualFile);
+                    mkdirs(fsObject.getParentFile());
+                    outputFile = new FileOutputStream(fsObject);
+                    IOUtils.write(content, outputFile);
+                    outputFile.close();
+                } else if (entry.isDirectory()) {
+                    mkdirs(fsObject);
+                } else {
+                    //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
+                    throw new UnsupportedOperationException(
+                            String.format("Unsupported entry found: %s", individualFile)
+                    );
                 }
             }
         }
