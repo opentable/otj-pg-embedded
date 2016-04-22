@@ -509,6 +509,10 @@ public class EmbeddedPostgres implements Closeable
                             String.format("Unsupported entry found: %s", individualFile)
                     );
                 }
+
+                if (individualFile.startsWith("bin/")) {
+                    fsObject.setExecutable(true);
+                }
             }
         }
     }
