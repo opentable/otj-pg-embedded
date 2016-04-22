@@ -13,26 +13,8 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.io.Closeables;
-import com.google.common.io.Files;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.postgresql.ds.PGSimpleDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.MoreObjects.firstNonNull;
 
-import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -63,7 +45,27 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import javax.sql.DataSource;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Closeables;
+import com.google.common.io.Files;
+
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EmbeddedPostgres implements Closeable
 {
@@ -444,7 +446,8 @@ public class EmbeddedPostgres implements Closeable
      *
      * @return Current operating system string.
      */
-    private static String getOS(){
+    private static String getOS()
+    {
         return SystemUtils.IS_OS_WINDOWS ? "Windows" : system("uname", "-s").get(0);
     }
 
@@ -453,7 +456,8 @@ public class EmbeddedPostgres implements Closeable
      *
      * @return Current machine architecture string.
      */
-    private static String getArchitecture(){
+    private static String getArchitecture()
+    {
         if (!SystemUtils.IS_OS_WINDOWS) {
             return system("uname", "-m").get(0);
         }
@@ -468,7 +472,8 @@ public class EmbeddedPostgres implements Closeable
      * @param tbzPath The archive path.
      * @param targetDir The directory to extract the content to.
      */
-    private static void extractTbz(String tbzPath, String targetDir) throws IOException {
+    private static void extractTbz(String tbzPath, String targetDir) throws IOException
+    {
         try {
             system("tar", "-x", "-f", tbzPath, "-C", targetDir);
         } catch (Exception e) {
@@ -508,7 +513,8 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private static File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
+    private static File prepareBinaries(PgBinaryResolver pgBinaryResolver)
+    {
         PREPARE_BINARIES_LOCK.lock();
         try {
             if(BINARY_DIR.get() != null) {
