@@ -14,6 +14,9 @@
 package com.opentable.db.postgres.embedded;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -22,20 +25,35 @@ import org.flywaydb.core.Flyway;
 public class FlywayPreparer implements DatabasePreparer {
 
     private final Flyway flyway;
+    private final List<String> locations;
 
     public static FlywayPreparer forClasspathLocation(String... locations) {
         Flyway f = new Flyway();
         f.setLocations(locations);
-        return new FlywayPreparer(f);
+        return new FlywayPreparer(f, Arrays.asList(locations));
     }
 
-    private FlywayPreparer(Flyway flyway) {
+    private FlywayPreparer(Flyway flyway, List<String> locations) {
         this.flyway = flyway;
+        this.locations = locations;
     }
 
     @Override
     public void prepare(DataSource ds) throws SQLException {
         flyway.setDataSource(ds);
         flyway.migrate();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (! (obj instanceof FlywayPreparer)) {
+            return false;
+        }
+        return Objects.equals(locations, ((FlywayPreparer) obj).locations);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(locations);
     }
 }
