@@ -25,6 +25,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestInputStream;
@@ -53,7 +54,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
-import com.google.common.io.Files;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -480,7 +480,7 @@ public class EmbeddedPostgres implements Closeable
     private static void extractTbz(String tbzPath, String targetDir) throws IOException
     {
         try (
-                InputStream in = java.nio.file.Files.newInputStream(Paths.get(tbzPath));
+                InputStream in = Files.newInputStream(Paths.get(tbzPath));
                 BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
                 TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
         ) {
@@ -493,7 +493,7 @@ public class EmbeddedPostgres implements Closeable
                 File fsObject = new File(targetDir + "/" + individualFile);
                 if (entry.isSymbolicLink()) {
                     Path target = FileSystems.getDefault().getPath(entry.getLinkName());
-                    java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
+                    Files.createSymbolicLink(fsObject.toPath(), target);
                 } else if (entry.isFile()) {
                     byte[] content = new byte[(int) entry.getSize()];
                     int read = tarIn.read(content, 0, content.length);
@@ -557,7 +557,7 @@ public class EmbeddedPostgres implements Closeable
                                 Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
                                 LOG.info("Extracting Postgres...");
                                 extractTbz(pgTbz.getPath(), pgDir.getPath());
-                                Files.touch(pgDirExists);
+                                Preconditions.checkState(pgDirExists.createNewFile(), "couldn't make .exists file");
                             } catch (Exception e) {
                                 LOG.error("while unpacking Postgres", e);
                             }
