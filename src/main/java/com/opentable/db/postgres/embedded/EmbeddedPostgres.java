@@ -13,8 +13,26 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Closeables;
+import com.google.common.io.Files;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,6 +42,9 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,23 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.sql.DataSource;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.io.Closeables;
-import com.google.common.io.Files;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.postgresql.ds.PGSimpleDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 public class EmbeddedPostgres implements Closeable
 {
@@ -342,7 +347,8 @@ public class EmbeddedPostgres implements Closeable
 
     private String pgBin(String binaryName)
     {
-        return new File(pgDir, "bin/" + binaryName).getPath();
+        final String extension = SystemUtils.IS_OS_WINDOWS ? ".exe" : "";
+        return new File(pgDir, "bin/" + binaryName + extension).getPath();
     }
 
     public static EmbeddedPostgres start() throws IOException
@@ -424,7 +430,7 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private void mkdirs(File dir)
+    private static void mkdirs(File dir)
     {
         Preconditions.checkState(dir.mkdirs() || (dir.isDirectory() && dir.exists()), // NOPMD
                 "could not create %s", dir);
@@ -433,15 +439,84 @@ public class EmbeddedPostgres implements Closeable
     private static final AtomicReference<File> BINARY_DIR = new AtomicReference<>();
     private static final Lock PREPARE_BINARIES_LOCK = new ReentrantLock();
 
-    private File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
+    /**
+     * Get current operating system string. The string is used in the appropriate postgres binary name.
+     *
+     * @return Current operating system string.
+     */
+    private static String getOS(){
+        return SystemUtils.IS_OS_WINDOWS ? "Windows" : system("uname", "-s").get(0);
+    }
+
+    /**
+     * Get the machine architecture string. The string is used in the appropriate postgres binary name.
+     *
+     * @return Current machine architecture string.
+     */
+    private static String getArchitecture(){
+        if (!SystemUtils.IS_OS_WINDOWS) {
+            return system("uname", "-m").get(0);
+        }
+
+        return "amd64".equals(SystemUtils.OS_ARCH) || SystemUtils.OS_ARCH == null ? "x86_64" : SystemUtils.OS_ARCH;
+    }
+
+    /**
+     * Unpack archive compressed by tar with bzip2 compression. By default system tar is used (faster). If not found, then the
+     * java implementation takes place.
+     *
+     * @param tbzPath The archive path.
+     * @param targetDir The directory to extract the content to.
+     */
+    private static void extractTbz(String tbzPath, String targetDir) throws IOException {
+        try {
+            system("tar", "-x", "-f", tbzPath, "-C", targetDir);
+        } catch (Exception e) {
+            try (
+                    InputStream in = java.nio.file.Files.newInputStream(Paths.get(tbzPath));
+                    BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
+                    TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
+            ) {
+                TarArchiveEntry entry;
+                String individualFile;
+                FileOutputStream outputFile;
+
+                while ((entry = tarIn.getNextTarEntry()) != null) {
+                    individualFile = entry.getName();
+                    File fsObject = new File(targetDir + "/" + individualFile);
+                    if (entry.isSymbolicLink()) {
+                        Path target = FileSystems.getDefault().getPath(entry.getLinkName());
+                        java.nio.file.Files.createSymbolicLink(fsObject.toPath(), target);
+                    } else if (entry.isFile()) {
+                        byte[] content = new byte[(int) entry.getSize()];
+                        int read = tarIn.read(content, 0, content.length);
+                        Preconditions.checkState(read != -1, "could not read %s", individualFile);
+                        mkdirs(fsObject.getParentFile());
+                        outputFile = new FileOutputStream(fsObject);
+                        IOUtils.write(content, outputFile);
+                        outputFile.close();
+                    } else if (entry.isDirectory()) {
+                        mkdirs(fsObject);
+                    } else {
+                        //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
+                        throw new UnsupportedOperationException(
+                                String.format("Unsupported entry found: %s", individualFile)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    private static File prepareBinaries(PgBinaryResolver pgBinaryResolver) {
         PREPARE_BINARIES_LOCK.lock();
         try {
             if(BINARY_DIR.get() != null) {
                 return BINARY_DIR.get();
             }
 
-            String system = system("uname", "-s").get(0);
-            String machineHardware = system("uname", "-m").get(0);
+            final String system = getOS();
+            final String machineHardware = getArchitecture();
 
             LOG.info("Detected a {} {} system", system, machineHardware);
             File pgDir;
@@ -475,10 +550,10 @@ public class EmbeddedPostgres implements Closeable
                             try {
                                 Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
                                 LOG.info("Extracting Postgres...");
-                                system("tar", "-x", "-f", pgTbz.getPath(), "-C", pgDir.getPath());
+                                extractTbz(pgTbz.getPath(), pgDir.getPath());
                                 Files.touch(pgDirExists);
-                            } finally {
-                                Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
+                            } catch (Exception e) {
+                                LOG.error("while unpacking Postgres", e);
                             }
                         } else {
                             // the other guy is unpacking for us.
@@ -487,6 +562,10 @@ public class EmbeddedPostgres implements Closeable
                                 Thread.sleep(1000L);
                             }
                             Preconditions.checkState(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
+                        }
+                    } finally {
+                        if (unpackLockFile.exists()) {
+                            Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
                         }
                     }
                 }
