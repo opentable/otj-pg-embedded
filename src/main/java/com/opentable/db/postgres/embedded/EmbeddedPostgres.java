@@ -448,7 +448,16 @@ public class EmbeddedPostgres implements Closeable
      */
     private static String getOS()
     {
-        return SystemUtils.IS_OS_WINDOWS ? "Windows" : system("uname", "-s").get(0);
+        if (SystemUtils.IS_OS_WINDOWS) {
+            return "Windows";
+        }
+        if (SystemUtils.IS_OS_MAC_OSX) {
+            return "Darwin";
+        }
+        if (SystemUtils.IS_OS_LINUX) {
+            return "Linux";
+        }
+        throw new UnsupportedOperationException("Unknown OS " + SystemUtils.OS_NAME);
     }
 
     /**
