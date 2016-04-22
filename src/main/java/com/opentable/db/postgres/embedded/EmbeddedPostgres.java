@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
@@ -485,12 +486,11 @@ public class EmbeddedPostgres implements Closeable
                 TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
         ) {
             TarArchiveEntry entry;
-            String individualFile;
-            FileOutputStream outputFile;
 
             while ((entry = tarIn.getNextTarEntry()) != null) {
-                individualFile = entry.getName();
-                File fsObject = new File(targetDir + "/" + individualFile);
+                final String individualFile = entry.getName();
+                final File fsObject = new File(targetDir + "/" + individualFile);
+
                 if (entry.isSymbolicLink()) {
                     Path target = FileSystems.getDefault().getPath(entry.getLinkName());
                     Files.createSymbolicLink(fsObject.toPath(), target);
@@ -499,9 +499,9 @@ public class EmbeddedPostgres implements Closeable
                     int read = tarIn.read(content, 0, content.length);
                     Preconditions.checkState(read != -1, "could not read %s", individualFile);
                     mkdirs(fsObject.getParentFile());
-                    outputFile = new FileOutputStream(fsObject);
-                    IOUtils.write(content, outputFile);
-                    outputFile.close();
+                    try (OutputStream outputFile = new FileOutputStream(fsObject)) {
+                        IOUtils.write(content, outputFile);
+                    }
                 } else if (entry.isDirectory()) {
                     mkdirs(fsObject);
                 } else {
