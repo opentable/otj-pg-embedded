@@ -467,11 +467,7 @@ public class EmbeddedPostgres implements Closeable
      */
     private static String getArchitecture()
     {
-        if (!SystemUtils.IS_OS_WINDOWS) {
-            return system("uname", "-m").get(0);
-        }
-
-        return "amd64".equals(SystemUtils.OS_ARCH) || SystemUtils.OS_ARCH == null ? "x86_64" : SystemUtils.OS_ARCH;
+        return "amd64".equals(SystemUtils.OS_ARCH) ? "x86_64" : SystemUtils.OS_ARCH;
     }
 
     /**
