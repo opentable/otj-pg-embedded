@@ -1,6 +1,10 @@
 #!/bin/bash -ex
 VERSION=9.5.2-1
 
+RSRC_DIR=$PWD/target/generated-resources
+
+[ -e $RSRC_DIR/.repacked ] && echo "Already repacked, skipping..." && exit 0
+
 cd `dirname $0`
 
 PACKDIR=$(mktemp -d -t wat.XXXXXX)
@@ -15,7 +19,7 @@ mkdir -p dist/ target/generated-resources/
 
 tar xzf $LINUX_DIST -C $PACKDIR
 pushd $PACKDIR/pgsql
-tar cjf $OLDPWD/target/generated-resources/postgresql-Linux-x86_64.tbz \
+tar cjf $RSRC_DIR/postgresql-Linux-x86_64.tbz \
   share/postgresql \
   lib \
   bin/initdb \
@@ -27,7 +31,7 @@ rm -fr $PACKDIR && mkdir -p $PACKDIR
 
 unzip -q -d $PACKDIR $OSX_DIST
 pushd $PACKDIR/pgsql
-tar cjf $OLDPWD/target/generated-resources/postgresql-Darwin-x86_64.tbz \
+tar cjf $RSRC_DIR/postgresql-Darwin-x86_64.tbz \
   share/postgresql \
   lib/libiconv.2.dylib \
   lib/libxml2.2.dylib \
@@ -44,7 +48,7 @@ rm -fr $PACKDIR && mkdir -p $PACKDIR
 
 unzip -q -d $PACKDIR $WINDOWS_DIST
 pushd $PACKDIR/pgsql
-tar cjf $OLDPWD/target/generated-resources/postgresql-Windows-x86_64.tbz \
+tar cjf $RSRC_DIR/postgresql-Windows-x86_64.tbz \
   share \
   lib/iconv.lib \
   lib/libxml2.lib \
@@ -58,3 +62,4 @@ tar cjf $OLDPWD/target/generated-resources/postgresql-Windows-x86_64.tbz \
 popd
 
 rm -rf $PACKDIR
+touch $RSRC_DIR/.repacked
