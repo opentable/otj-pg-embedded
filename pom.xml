@@ -37,6 +37,7 @@
   <properties>
     <project.build.targetJdk>1.8</project.build.targetJdk>
     <ot.build.allow-joda-time>true</ot.build.allow-joda-time>
+    <basepom.test.timeout>1800</basepom.test.timeout>
   </properties>
 
   <build>
