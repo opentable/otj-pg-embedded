@@ -24,8 +24,8 @@ import javax.sql.DataSource;
  *
  * The preparation steps are expected to be deterministic.
  * For efficiency reasons, databases created by DatabasePreparer
- * instances may be pooled, using {@link #hashCode()} and
- * {@link #equals(Object)} to determine equivalence.
+ * instances may be pooled, using {@link Object#hashCode()} and
+ * {@link Object#equals(Object)} to determine equivalence.
  */
 public interface DatabasePreparer {
     void prepare(DataSource ds) throws SQLException;
