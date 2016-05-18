@@ -49,6 +49,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.sql.DataSource;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
@@ -183,17 +184,11 @@ public class EmbeddedPostgres implements Closeable
         Preconditions.checkState(started.getAndSet(true) == false, "Postmaster already started");
 
         final List<String> args = Lists.newArrayList(
-                pgBin("postgres"),
+                pgBin("pg_ctl"),
                 "-D", dataDirectory.getPath(),
-                "-p", Integer.toString(port),
-                "-i",
-                "-F");
-
-        for (final Entry<String, String> config : postgresConfig.entrySet())
-        {
-            args.add("-c");
-            args.add(config.getKey() + "=" + config.getValue());
-        }
+                "-o", Joiner.on(" ").join(createInitOptions()),
+                "start"
+        );
 
         final ProcessBuilder builder = new ProcessBuilder(args);
         builder.redirectErrorStream(true);
@@ -204,6 +199,22 @@ public class EmbeddedPostgres implements Closeable
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
         waitForServerStartup(watch);
+    }
+
+    private List<String> createInitOptions()
+    {
+        final List<String> initOptions = Lists.newArrayList(
+                "-p", Integer.toString(port),
+                "-i", "-F"
+        );
+
+        for (final Entry<String, String> config : postgresConfig.entrySet())
+        {
+            initOptions.add("-c");
+            initOptions.add(config.getKey() + "=" + config.getValue());
+        }
+
+        return initOptions;
     }
 
     private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
@@ -218,13 +229,6 @@ public class EmbeddedPostgres implements Closeable
                 return;
             } catch (final SQLException e) {
                 lastCause = e;
-                LOG.trace("While waiting for server startup", e);
-            }
-
-            try {
-                throw new IOException(String.format("%s postmaster exited with value %d, check standard out for more detail!", instanceId, postmaster.exitValue()));
-            } catch (final IllegalThreadStateException e) {
-                // Process is not yet dead, loop and try again
                 LOG.trace("While waiting for server startup", e);
             }
 
