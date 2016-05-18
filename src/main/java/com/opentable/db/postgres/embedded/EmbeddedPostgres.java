@@ -60,7 +60,6 @@ import com.google.common.io.Closeables;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -68,6 +67,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tukaani.xz.XZInputStream;
 
 public class EmbeddedPostgres implements Closeable
 {
@@ -482,12 +482,12 @@ public class EmbeddedPostgres implements Closeable
      * @param tbzPath The archive path.
      * @param targetDir The directory to extract the content to.
      */
-    private static void extractTbz(String tbzPath, String targetDir) throws IOException
+    private static void extractTxz(String tbzPath, String targetDir) throws IOException
     {
         try (
                 InputStream in = Files.newInputStream(Paths.get(tbzPath));
-                BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
-                TarArchiveInputStream tarIn = new TarArchiveInputStream(bzIn)
+                XZInputStream xzIn = new XZInputStream(in);
+                TarArchiveInputStream tarIn = new TarArchiveInputStream(xzIn)
         ) {
             TarArchiveEntry entry;
 
@@ -564,7 +564,7 @@ public class EmbeddedPostgres implements Closeable
                             try {
                                 Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
                                 LOG.info("Extracting Postgres...");
-                                extractTbz(pgTbz.getPath(), pgDir.getPath());
+                                extractTxz(pgTbz.getPath(), pgDir.getPath());
                                 Preconditions.checkState(pgDirExists.createNewFile(), "couldn't make .exists file");
                             } catch (Exception e) {
                                 LOG.error("while unpacking Postgres", e);

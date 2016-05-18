@@ -19,7 +19,7 @@ mkdir -p dist/ target/generated-resources/
 
 tar xzf $LINUX_DIST -C $PACKDIR
 pushd $PACKDIR/pgsql
-tar cjf $RSRC_DIR/postgresql-Linux-x86_64.tbz \
+tar cJf $RSRC_DIR/postgresql-Linux-x86_64.txz \
   share/postgresql \
   lib \
   bin/initdb \
@@ -31,7 +31,7 @@ rm -fr $PACKDIR && mkdir -p $PACKDIR
 
 unzip -q -d $PACKDIR $OSX_DIST
 pushd $PACKDIR/pgsql
-tar cjf $RSRC_DIR/postgresql-Darwin-x86_64.tbz \
+tar cJf $RSRC_DIR/postgresql-Darwin-x86_64.txz \
   share/postgresql \
   lib/libiconv.2.dylib \
   lib/libxml2.2.dylib \
@@ -48,7 +48,7 @@ rm -fr $PACKDIR && mkdir -p $PACKDIR
 
 unzip -q -d $PACKDIR $WINDOWS_DIST
 pushd $PACKDIR/pgsql
-tar cjf $RSRC_DIR/postgresql-Windows-x86_64.tbz \
+tar cJf $RSRC_DIR/postgresql-Windows-x86_64.txz \
   share \
   lib/iconv.lib \
   lib/libxml2.lib \

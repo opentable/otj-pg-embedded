@@ -25,7 +25,7 @@ final class BundledPostgresBinaryResolver implements PgBinaryResolver {
 
     @Override
     public InputStream getPgBinary(String system, String machineHardware) {
-        return EmbeddedPostgres.class.getResourceAsStream(format("/postgresql-%s-%s.tbz", system, machineHardware));
+        return EmbeddedPostgres.class.getResourceAsStream(format("/postgresql-%s-%s.txz", system, machineHardware));
     }
 
 }
