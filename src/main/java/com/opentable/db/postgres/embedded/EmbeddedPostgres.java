@@ -52,6 +52,7 @@ import javax.sql.DataSource;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.base.Verify;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -114,7 +115,7 @@ public class EmbeddedPostgres implements Closeable
         }
         Preconditions.checkArgument(this.dataDirectory != null, "null data directory");
         LOG.trace("{} postgres data directory is {}", instanceId, this.dataDirectory);
-        Preconditions.checkState(this.dataDirectory.exists() || this.dataDirectory.mkdir(), "Failed to mkdir %s", this.dataDirectory);
+        Verify.verify(this.dataDirectory.exists() || this.dataDirectory.mkdir(), "Failed to mkdir %s", this.dataDirectory);
 
         lockFile = new File(this.dataDirectory, LOCK_FILE_NAME);
 
@@ -166,7 +167,7 @@ public class EmbeddedPostgres implements Closeable
     private void lock() throws IOException
     {
         lockStream = new FileOutputStream(lockFile);
-        Preconditions.checkState((lock = lockStream.getChannel().tryLock()) != null, "could not lock %s", lockFile);
+        Verify.verify((lock = lockStream.getChannel().tryLock()) != null, "could not lock %s", lockFile);
     }
 
     private void initdb()
@@ -224,7 +225,7 @@ public class EmbeddedPostgres implements Closeable
         final long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
         while (System.nanoTime() - start < maxWaitNs) {
             try {
-                checkReady();
+                verifyReady();
                 LOG.info("{} postmaster startup finished in {}", instanceId, watch);
                 return;
             } catch (final SQLException e) {
@@ -242,14 +243,14 @@ public class EmbeddedPostgres implements Closeable
         throw new IOException("Gave up waiting for server to start after " + PG_STARTUP_WAIT_MS + "ms", lastCause);
     }
 
-    private void checkReady() throws SQLException
+    private void verifyReady() throws SQLException
     {
         try (final Connection c = getPostgresDatabase().getConnection()) {
             try (final Statement s = c.createStatement()) {
                 try (final ResultSet rs = s.executeQuery("SELECT 1")) { // NOPMD
-                    Preconditions.checkState(rs.next() == true, "expecting single row");
-                    Preconditions.checkState(1 == rs.getInt(1), "expecting 1");
-                    Preconditions.checkState(rs.next() == false, "expecting single row");
+                    Verify.verify(rs.next() == true, "expecting single row");
+                    Verify.verify(1 == rs.getInt(1), "expecting 1");
+                    Verify.verify(rs.next() == false, "expecting single row");
                 }
             }
         }
@@ -428,7 +429,7 @@ public class EmbeddedPostgres implements Closeable
             final ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             final Process process = builder.start();
-            Preconditions.checkState(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
+            Verify.verify(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
             try (InputStream stream = process.getInputStream()) {
                 return IOUtils.readLines(stream);
             }
@@ -439,7 +440,7 @@ public class EmbeddedPostgres implements Closeable
 
     private static void mkdirs(File dir)
     {
-        Preconditions.checkState(dir.mkdirs() || (dir.isDirectory() && dir.exists()), // NOPMD
+        Verify.verify(dir.mkdirs() || (dir.isDirectory() && dir.exists()), // NOPMD
                 "could not create %s", dir);
     }
 
@@ -501,7 +502,7 @@ public class EmbeddedPostgres implements Closeable
                 } else if (entry.isFile()) {
                     byte[] content = new byte[(int) entry.getSize()];
                     int read = tarIn.read(content, 0, content.length);
-                    Preconditions.checkState(read != -1, "could not read %s", individualFile);
+                    Verify.verify(read != -1, "could not read %s", individualFile);
                     mkdirs(fsObject.getParentFile());
                     try (OutputStream outputFile = new FileOutputStream(fsObject)) {
                         IOUtils.write(content, outputFile);
@@ -565,7 +566,7 @@ public class EmbeddedPostgres implements Closeable
                                 Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
                                 LOG.info("Extracting Postgres...");
                                 extractTxz(pgTbz.getPath(), pgDir.getPath());
-                                Preconditions.checkState(pgDirExists.createNewFile(), "couldn't make .exists file");
+                                Verify.verify(pgDirExists.createNewFile(), "couldn't make .exists file");
                             } catch (Exception e) {
                                 LOG.error("while unpacking Postgres", e);
                             }
@@ -575,11 +576,11 @@ public class EmbeddedPostgres implements Closeable
                             while (!pgDirExists.exists() && --maxAttempts > 0) {
                                 Thread.sleep(1000L);
                             }
-                            Preconditions.checkState(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
+                            Verify.verify(pgDirExists.exists(), "Waited 60 seconds for postgres to be unpacked but it never finished!");
                         }
                     } finally {
                         if (unpackLockFile.exists()) {
-                            Preconditions.checkState(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
+                            Verify.verify(unpackLockFile.delete(), "could not remove lock file %s", unpackLockFile.getAbsolutePath());
                         }
                     }
                 }
@@ -589,7 +590,7 @@ public class EmbeddedPostgres implements Closeable
                 Thread.currentThread().interrupt();
                 throw new ExceptionInInitializerError(ie);
             } finally {
-                Preconditions.checkState(pgTbz.delete(), "could not delete %s", pgTbz);
+                Verify.verify(pgTbz.delete(), "could not delete %s", pgTbz);
             }
             BINARY_DIR.set(pgDir);
             LOG.info("Postgres binaries at {}", pgDir);
