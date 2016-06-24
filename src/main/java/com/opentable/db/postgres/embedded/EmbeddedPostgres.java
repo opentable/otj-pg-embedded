@@ -495,7 +495,7 @@ public class EmbeddedPostgres implements Closeable
                 final String individualFile = entry.getName();
                 final File fsObject = new File(targetDir + "/" + individualFile);
 
-                if (entry.isSymbolicLink()) {
+                if (entry.isSymbolicLink() || entry.isLink()) {
                     Path target = FileSystems.getDefault().getPath(entry.getLinkName());
                     Files.createSymbolicLink(fsObject.toPath(), target);
                 } else if (entry.isFile()) {
