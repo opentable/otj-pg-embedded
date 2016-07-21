@@ -514,7 +514,7 @@ public class EmbeddedPostgres implements Closeable
                     );
                 }
 
-                if (individualFile.startsWith("bin/")) {
+                if (individualFile.startsWith("bin/") || individualFile.startsWith("./bin/")) {
                     fsObject.setExecutable(true);
                 }
             }
