@@ -536,14 +536,20 @@ public class EmbeddedPostgres implements Closeable
             LOG.info("Detected a {} {} system", system, machineHardware);
             File pgDir;
             File pgTbz;
+            final InputStream pgBinary;
             try {
                 pgTbz = File.createTempFile("pgpg", "pgpg");
+                pgBinary = pgBinaryResolver.getPgBinary(system, machineHardware);
             } catch (final IOException e) {
                 throw new ExceptionInInitializerError(e);
             }
+
+            if (pgBinary == null) {
+                throw new IllegalStateException("No Postgres binary found for " + system + " / " + machineHardware);
+            }
+
             try (final DigestInputStream pgArchiveData = new DigestInputStream(
-                        pgBinaryResolver.getPgBinary(system, machineHardware),
-                        MessageDigest.getInstance("MD5"));
+                        pgBinary, MessageDigest.getInstance("MD5"));
                 final FileOutputStream os = new FileOutputStream(pgTbz))
             {
                 IOUtils.copy(pgArchiveData, os);
