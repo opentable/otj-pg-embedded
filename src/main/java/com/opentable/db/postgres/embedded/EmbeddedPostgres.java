@@ -206,7 +206,7 @@ public class EmbeddedPostgres implements Closeable
     {
         final List<String> initOptions = Lists.newArrayList(
                 "-p", Integer.toString(port),
-                "-i", "-F"
+                "-F"
         );
 
         for (final Entry<String, String> config : postgresConfig.entrySet())
