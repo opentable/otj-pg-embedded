@@ -1,5 +1,5 @@
 #!/bin/bash -ex
-VERSION=9.5.3-1
+VERSION=9.6.0-1
 
 RSRC_DIR=$PWD/target/generated-resources
 
