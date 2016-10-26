@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -132,18 +133,39 @@ public class EmbeddedPostgres implements Closeable
         return getDatabase("postgres", "template1");
     }
 
-    public DataSource getPostgresDatabase()
+    public DataSource getTemplateDatabase(Map<String, String> properties)
     {
+        return getDatabase("postgres", "template1", properties);
+    }
+
+    public DataSource getPostgresDatabase() {
         return getDatabase("postgres", "postgres");
     }
 
-    public DataSource getDatabase(String userName, String dbName)
+    public DataSource getPostgresDatabase(Map<String, String> properties)
+    {
+        return getDatabase("postgres", "postgres", properties);
+    }
+
+    public DataSource getDatabase(String userName, String dbName) {
+        return getDatabase(userName, dbName, Collections.emptyMap());
+    }
+
+    public DataSource getDatabase(String userName, String dbName, Map<String, String> properties)
     {
         final PGSimpleDataSource ds = new PGSimpleDataSource();
         ds.setServerName("localhost");
         ds.setPortNumber(port);
         ds.setDatabaseName(dbName);
         ds.setUser(userName);
+
+        properties.forEach((propertyKey, propertyValue) -> {
+            try {
+                ds.setProperty(propertyKey, propertyValue);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
         return ds;
     }
 
