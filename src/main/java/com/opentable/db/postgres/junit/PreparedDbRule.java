@@ -28,7 +28,7 @@ public class PreparedDbRule extends ExternalResource {
     private volatile DataSource dataSource;
     private volatile PreparedDbProvider provider;
 
-    PreparedDbRule(DatabasePreparer preparer) {
+    protected PreparedDbRule(DatabasePreparer preparer) {
         Preconditions.checkArgument(preparer != null, "null preparer");
         this.preparer = preparer;
     }
