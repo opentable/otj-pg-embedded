@@ -82,9 +82,6 @@ public class EmbeddedPostgres implements Closeable
     private static final int PG_STARTUP_WAIT_MS = 10 * 1000;
     private static final String LOCK_FILE_NAME = "epg-lock";
 
-    private static final String TMP_DIR_LOC = System.getProperty("java.io.tmpdir");
-    private static final File TMP_DIR = new File(TMP_DIR_LOC, "embedded-pg");
-
     private final File pgDir;
 
     private final File dataDirectory, lockFile;
@@ -214,8 +211,14 @@ public class EmbeddedPostgres implements Closeable
         );
 
         final ProcessBuilder builder = new ProcessBuilder(args);
+
         builder.redirectErrorStream(true);
-        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+
+        if (Boolean.parseBoolean(System.getProperty("ot.epg.redirect-db-process-output", "true")))
+        {
+            builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        }
+
         postmaster = builder.start();
         LOG.info("{} postmaster started as {} on port {}.  Waiting up to {}ms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
@@ -381,6 +384,12 @@ public class EmbeddedPostgres implements Closeable
         return new File(pgDir, "bin/" + binaryName + extension).getPath();
     }
 
+    private static File getWorkingDirectory()
+    {
+        final File tempWorkingDirectory = new File(System.getProperty("java.io.tmpdir"), "embedded-pg");
+        return new File(System.getProperty("ot.epg.working-dir", tempWorkingDirectory.getPath()));
+    }
+
     public static EmbeddedPostgres start() throws IOException
     {
         return builder().start();
@@ -393,7 +402,7 @@ public class EmbeddedPostgres implements Closeable
 
     public static class Builder
     {
-        private final File parentDirectory = new File(System.getProperty("ness.embedded-pg.dir", TMP_DIR.getPath()));
+        private final File parentDirectory = getWorkingDirectory();
         private File builderDataDirectory;
         private final Map<String, String> config = Maps.newHashMap();
         private boolean builderCleanDataDirectory = true;
@@ -580,7 +589,7 @@ public class EmbeddedPostgres implements Closeable
 
                 String pgDigest = Hex.encodeHexString(pgArchiveData.getMessageDigest().digest());
 
-                pgDir = new File(TMP_DIR, String.format("PG-%s", pgDigest));
+                pgDir = new File(getWorkingDirectory(), String.format("PG-%s", pgDigest));
 
                 mkdirs(pgDir);
                 final File unpackLockFile = new File(pgDir, LOCK_FILE_NAME);
