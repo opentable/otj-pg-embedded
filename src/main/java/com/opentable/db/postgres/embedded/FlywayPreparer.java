@@ -22,6 +22,10 @@ import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
 
+// TODO: Detect missing migration files.
+// cf. https://github.com/flyway/flyway/issues/1496
+// There is also a related @Ignored test in otj-sql.
+
 public class FlywayPreparer implements DatabasePreparer {
 
     private final Flyway flyway;
