@@ -100,12 +100,18 @@ public class EmbeddedPostgres implements Closeable
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
 
-    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, Map<String, String> postgresConfig, int port, PgBinaryResolver pgBinaryResolver) throws IOException
+    private ProcessBuilder.Redirect errorRedirector = ProcessBuilder.Redirect.INHERIT;
+    private ProcessBuilder.Redirect outputRedirector = ProcessBuilder.Redirect.INHERIT;
+
+    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
+        Map<String, String> postgresConfig, int port, PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
         this.port = port;
         this.pgDir = prepareBinaries(pgBinaryResolver);
+        this.errorRedirector = errorRedirector;
+        this.outputRedirector = outputRedirector;
 
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
@@ -196,7 +202,7 @@ public class EmbeddedPostgres implements Closeable
     {
         final StopWatch watch = new StopWatch();
         watch.start();
-        system(pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER, "-D", dataDirectory.getPath(), "-E", "UTF-8");
+        system(errorRedirector, outputRedirector, pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER, "-D", dataDirectory.getPath(), "-E", "UTF-8");
         LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
@@ -215,7 +221,8 @@ public class EmbeddedPostgres implements Closeable
 
         final ProcessBuilder builder = new ProcessBuilder(args);
         builder.redirectErrorStream(true);
-        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        builder.redirectError(outputRedirector);
+        builder.redirectOutput(outputRedirector);
         postmaster = builder.start();
         LOG.info("{} postmaster started as {} on port {}.  Waiting up to {}ms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
@@ -400,6 +407,9 @@ public class EmbeddedPostgres implements Closeable
         private int builderPort = 0;
         private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
 
+        private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.INHERIT;
+        private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.INHERIT;
+
         Builder() {
             config.put("timezone", "UTC");
             config.put("synchronous_commit", "off");
@@ -430,6 +440,18 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
+        public Builder setErrorRedirector(ProcessBuilder.Redirect errRedirector)
+        {
+            this.errRedirector = errRedirector;
+            return this;
+        }
+
+        public Builder setOutputRedirector(ProcessBuilder.Redirect outRedirector)
+        {
+            this.outRedirector = outRedirector;
+            return this;
+        }
+
         public Builder setPgBinaryResolver(PgBinaryResolver pgBinaryResolver) {
             this.pgBinaryResolver = pgBinaryResolver;
             return this;
@@ -441,15 +463,21 @@ public class EmbeddedPostgres implements Closeable
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort, pgBinaryResolver);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort, pgBinaryResolver, errRedirector, outRedirector);
         }
     }
 
     private static List<String> system(String... command)
     {
+        return system(ProcessBuilder.Redirect.INHERIT, ProcessBuilder.Redirect.INHERIT, command);
+    }
+
+    private static List<String> system(ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector, String... command)
+    {
         try {
             final ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            builder.redirectError(errorRedirector);
+            builder.redirectOutput(outputRedirector);
             final Process process = builder.start();
             Verify.verify(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
             try (InputStream stream = process.getInputStream()) {
