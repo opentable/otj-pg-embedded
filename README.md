@@ -20,6 +20,8 @@ This simply has JUnit manage an instance of EmbeddedPostgreSQLRule (start, stop)
 
 Additionally you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db/postgres/embedded/EmbeddedPostgres.java) class directly by manually starting and stopping the instance; see [`EmbeddedPostgresTest`](src/test/java/com/opentable/db/postgres/embedded/EmbeddedPostgresTest.java) for an example.
 
+Default username/password is: postgres/postgres and the default database is 'postgres'
+
 ## Flyway Migrator
 
 You can easily integrate Flyway database schema migration:
