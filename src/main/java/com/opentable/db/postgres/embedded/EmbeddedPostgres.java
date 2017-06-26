@@ -91,6 +91,7 @@ public class EmbeddedPostgres implements Closeable
     private final AtomicBoolean closed = new AtomicBoolean();
 
     private final Map<String, String> postgresConfig;
+    private final Map<String, String> localeConfig;
 
     private volatile Process postmaster;
     private volatile FileOutputStream lockStream;
@@ -101,10 +102,12 @@ public class EmbeddedPostgres implements Closeable
     private ProcessBuilder.Redirect outputRedirector = ProcessBuilder.Redirect.INHERIT;
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
-        Map<String, String> postgresConfig, int port, PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
+        Map<String, String> postgresConfig, Map<String, String> localeConfig, int port,
+        PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
+        this.localeConfig = ImmutableMap.copyOf(localeConfig);
         this.port = port;
         this.pgDir = prepareBinaries(pgBinaryResolver);
         this.errorRedirector = errorRedirector;
@@ -199,7 +202,12 @@ public class EmbeddedPostgres implements Closeable
     {
         final StopWatch watch = new StopWatch();
         watch.start();
-        system(errorRedirector, outputRedirector, pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER, "-D", dataDirectory.getPath(), "-E", "UTF-8");
+        List<String> command = Lists.newArrayList(pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER,
+            "-D", dataDirectory.getPath(), "-E", "UTF-8");
+        if (!localeConfig.isEmpty()) {
+          command.addAll(createLocaleOptions());
+        }
+      system(errorRedirector, outputRedirector, command.toArray(new String[command.size()]));
         LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
@@ -243,6 +251,16 @@ public class EmbeddedPostgres implements Closeable
         }
 
         return initOptions;
+    }
+
+    private List<String> createLocaleOptions()
+    {
+        final List<String> localeOptions = Lists.newArrayList();
+        for (final Entry<String, String> config : localeConfig.entrySet()) {
+          localeOptions.add("--" + config.getKey());
+          localeOptions.add(config.getValue());
+        }
+        return localeOptions;
     }
 
     private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
@@ -407,6 +425,7 @@ public class EmbeddedPostgres implements Closeable
         private final File parentDirectory = getWorkingDirectory();
         private File builderDataDirectory;
         private final Map<String, String> config = Maps.newHashMap();
+        private final Map<String, String> localeConfig = Maps.newHashMap();
         private boolean builderCleanDataDirectory = true;
         private int builderPort = 0;
         private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
@@ -435,6 +454,12 @@ public class EmbeddedPostgres implements Closeable
         public Builder setServerConfig(String key, String value)
         {
             config.put(key, value);
+            return this;
+        }
+
+        public Builder setLocaleConfig(String key, String value)
+        {
+            localeConfig.put(key, value);
             return this;
         }
 
@@ -467,7 +492,7 @@ public class EmbeddedPostgres implements Closeable
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, builderPort, pgBinaryResolver, errRedirector, outRedirector);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, pgBinaryResolver, errRedirector, outRedirector);
         }
     }
 
