@@ -204,10 +204,8 @@ public class EmbeddedPostgres implements Closeable
         watch.start();
         List<String> command = Lists.newArrayList(pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER,
             "-D", dataDirectory.getPath(), "-E", "UTF-8");
-        if (!localeConfig.isEmpty()) {
-          command.addAll(createLocaleOptions());
-        }
-      system(errorRedirector, outputRedirector, command.toArray(new String[command.size()]));
+        command.addAll(createLocaleOptions());
+        system(errorRedirector, outputRedirector, command.toArray(new String[command.size()]));
         LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
