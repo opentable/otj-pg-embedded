@@ -493,7 +493,7 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
-        public Builder setwaitBeforeCheckServerStartupMs(int waitBeforeCheckServerStartupMs) {
+        public Builder setWaitBeforeCheckServerStartupMs(int waitBeforeCheckServerStartupMs) {
             this.waitBeforeCheckServerStartupMs = waitBeforeCheckServerStartupMs;
             return this;
         }
