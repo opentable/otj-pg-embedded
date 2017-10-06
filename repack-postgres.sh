@@ -1,5 +1,7 @@
 #!/bin/bash -ex
-VERSION=9.6.5-1
+# NB: This is the *server* version, which is not to be confused with the client library version.
+# The important compatibility point is the *protocol* version, which hasn't changed in ages.
+VERSION=10.0-1
 
 RSRC_DIR=$PWD/target/generated-resources
 
@@ -33,7 +35,9 @@ unzip -q -d $PACKDIR $OSX_DIST
 pushd $PACKDIR/pgsql
 tar cJf $RSRC_DIR/postgresql-Darwin-x86_64.txz \
   share/postgresql \
-  lib/libiconv.2.dylib \
+  lib/libicudata.57.dylib \
+  lib/libicui18n.57.dylib \
+  lib/libicuuc.57.dylib \
   lib/libxml2.2.dylib \
   lib/libssl.1.0.0.dylib \
   lib/libcrypto.1.0.0.dylib \
