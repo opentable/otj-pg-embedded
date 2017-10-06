@@ -205,7 +205,7 @@ public class EmbeddedPostgres implements Closeable
         List<String> command = Lists.newArrayList(pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER,
             "-D", dataDirectory.getPath(), "-E", "UTF-8");
         command.addAll(createLocaleOptions());
-        system(errorRedirector, outputRedirector, command.toArray(new String[command.size()]));
+        system(command.toArray(new String[command.size()]));
         LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
@@ -228,6 +228,11 @@ public class EmbeddedPostgres implements Closeable
         builder.redirectError(outputRedirector);
         builder.redirectOutput(outputRedirector);
         final Process postmaster = builder.start();
+
+        if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
+            ProcessOutputLogger.logOutput(LOG, postmaster);
+        }
+
         LOG.info("{} postmaster started as {} on port {}.  Waiting up to {}ms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
@@ -428,8 +433,8 @@ public class EmbeddedPostgres implements Closeable
         private int builderPort = 0;
         private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
 
-        private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.INHERIT;
-        private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.INHERIT;
+        private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
+        private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
 
         Builder() {
             config.put("timezone", "UTC");
@@ -496,15 +501,11 @@ public class EmbeddedPostgres implements Closeable
 
     private static List<String> system(String... command)
     {
-        return system(ProcessBuilder.Redirect.INHERIT, ProcessBuilder.Redirect.INHERIT, command);
-    }
-
-    private static List<String> system(ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector, String... command)
-    {
         try {
             final ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectError(errorRedirector);
-            builder.redirectOutput(outputRedirector);
+            builder.redirectError(ProcessBuilder.Redirect.PIPE);
+            builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
+            builder.redirectErrorStream(true);
             final Process process = builder.start();
             Verify.verify(0 == process.waitFor(), "Process %s failed\n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream()));
             try (InputStream stream = process.getInputStream()) {
