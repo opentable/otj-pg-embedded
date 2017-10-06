@@ -18,8 +18,8 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.opentable</groupId>
-    <artifactId>otj-parent-oss</artifactId>
-    <version>50</version>
+    <artifactId>otj-parent-spring</artifactId>
+    <version>115</version>
   </parent>
 
   <scm>
@@ -101,7 +101,6 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
-      <version>4.0</version>
       <optional>true</optional>
     </dependency>
 
@@ -114,7 +113,6 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
-      <version>9.4.1208</version>
     </dependency>
 
     <dependency>
