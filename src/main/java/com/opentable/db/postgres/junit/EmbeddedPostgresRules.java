@@ -17,8 +17,10 @@ import org.junit.rules.TestRule;
 
 import com.opentable.db.postgres.embedded.DatabasePreparer;
 
-public class EmbeddedPostgresRules
-{
+public final class EmbeddedPostgresRules {
+    private EmbeddedPostgresRules() {
+    }
+
     /**
      * Create a vanilla Postgres cluster -- just initialized, no customizations applied.
      */

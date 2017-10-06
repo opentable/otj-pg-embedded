@@ -71,6 +71,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tukaani.xz.XZInputStream;
 
+@SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
 public class EmbeddedPostgres implements Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
@@ -93,13 +94,12 @@ public class EmbeddedPostgres implements Closeable
     private final Map<String, String> postgresConfig;
     private final Map<String, String> localeConfig;
 
-    private volatile Process postmaster;
     private volatile FileOutputStream lockStream;
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
 
-    private ProcessBuilder.Redirect errorRedirector = ProcessBuilder.Redirect.INHERIT;
-    private ProcessBuilder.Redirect outputRedirector = ProcessBuilder.Redirect.INHERIT;
+    private final ProcessBuilder.Redirect errorRedirector;
+    private final ProcessBuilder.Redirect outputRedirector;
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
         Map<String, String> postgresConfig, Map<String, String> localeConfig, int port,
@@ -187,7 +187,7 @@ public class EmbeddedPostgres implements Closeable
 
     private static int detectPort() throws IOException
     {
-        try (final ServerSocket socket = new ServerSocket(0)) {
+        try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         }
     }
@@ -213,7 +213,7 @@ public class EmbeddedPostgres implements Closeable
     {
         final StopWatch watch = new StopWatch();
         watch.start();
-        Preconditions.checkState(started.getAndSet(true) == false, "Postmaster already started");
+        Preconditions.checkState(!started.getAndSet(true), "Postmaster already started");
 
         final List<String> args = Lists.newArrayList(
                 pgBin("pg_ctl"),
@@ -227,7 +227,7 @@ public class EmbeddedPostgres implements Closeable
         builder.redirectErrorStream(true);
         builder.redirectError(outputRedirector);
         builder.redirectOutput(outputRedirector);
-        postmaster = builder.start();
+        final Process postmaster = builder.start();
         LOG.info("{} postmaster started as {} on port {}.  Waiting up to {}ms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
@@ -288,12 +288,12 @@ public class EmbeddedPostgres implements Closeable
 
     private void verifyReady() throws SQLException
     {
-        try (final Connection c = getPostgresDatabase().getConnection()) {
-            try (final Statement s = c.createStatement()) {
-                try (final ResultSet rs = s.executeQuery("SELECT 1")) { // NOPMD
-                    Verify.verify(rs.next() == true, "expecting single row");
+        try (Connection c = getPostgresDatabase().getConnection()) {
+            try (Statement s = c.createStatement()) {
+                try (ResultSet rs = s.executeQuery("SELECT 1")) { // NOPMD
+                    Verify.verify(rs.next(), "expecting single row");
                     Verify.verify(1 == rs.getInt(1), "expecting 1");
-                    Verify.verify(rs.next() == false, "expecting single row");
+                    Verify.verify(!rs.next(), "expecting single row");
                 }
             }
         }
@@ -369,8 +369,8 @@ public class EmbeddedPostgres implements Closeable
             if (!lockFile.exists() || isTooNew) {
                 continue;
             }
-            try (final FileOutputStream fos = new FileOutputStream(lockFile);
-                 final FileLock lock = fos.getChannel().tryLock()) {
+            try (FileOutputStream fos = new FileOutputStream(lockFile);
+                 FileLock lock = fos.getChannel().tryLock()) {
                 if (lock != null) {
                     LOG.info("Found stale data directory {}", dir);
                     if (new File(dir, "postmaster.pid").exists()) {
@@ -625,9 +625,9 @@ public class EmbeddedPostgres implements Closeable
                 throw new IllegalStateException("No Postgres binary found for " + system + " / " + machineHardware);
             }
 
-            try (final DigestInputStream pgArchiveData = new DigestInputStream(
+            try (DigestInputStream pgArchiveData = new DigestInputStream(
                         pgBinary, MessageDigest.getInstance("MD5"));
-                final FileOutputStream os = new FileOutputStream(pgTbz))
+                FileOutputStream os = new FileOutputStream(pgTbz))
             {
                 IOUtils.copy(pgArchiveData, os);
                 pgArchiveData.close();
@@ -642,8 +642,8 @@ public class EmbeddedPostgres implements Closeable
                 final File pgDirExists = new File(pgDir, ".exists");
 
                 if (!pgDirExists.exists()) {
-                    try (final FileOutputStream lockStream = new FileOutputStream(unpackLockFile);
-                                    final FileLock unpackLock = lockStream.getChannel().tryLock()) {
+                    try (FileOutputStream lockStream = new FileOutputStream(unpackLockFile);
+                                    FileLock unpackLock = lockStream.getChannel().tryLock()) {
                         if (unpackLock != null) {
                             try {
                                 Preconditions.checkState(!pgDirExists.exists(), "unpack lock acquired but .exists file is present.");
