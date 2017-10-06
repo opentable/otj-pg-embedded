@@ -555,7 +555,7 @@ public class EmbeddedPostgres implements Closeable
     }
 
     /**
-     * Unpack archive compressed by tar with bzip2 compression. By default system tar is used (faster). If not found, then the
+     * Unpack archive compressed by tar with xz compression. By default system tar is used (faster). If not found, then the
      * java implementation takes place.
      *
      * @param tbzPath The archive path.
