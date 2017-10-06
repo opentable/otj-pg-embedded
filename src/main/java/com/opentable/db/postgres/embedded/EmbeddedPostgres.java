@@ -225,7 +225,7 @@ public class EmbeddedPostgres implements Closeable
         final ProcessBuilder builder = new ProcessBuilder(args);
 
         builder.redirectErrorStream(true);
-        builder.redirectError(outputRedirector);
+        builder.redirectError(errorRedirector);
         builder.redirectOutput(outputRedirector);
         final Process postmaster = builder.start();
 
