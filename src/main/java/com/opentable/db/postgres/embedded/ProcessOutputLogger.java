@@ -24,6 +24,10 @@ import org.slf4j.Logger;
  * Read standard output of process and write lines to given {@link Logger} as INFO;
  * depends on {@link ProcessBuilder#redirectErrorStream(boolean)} being set to {@code true} (since only stdout is
  * read).
+ *
+ * <p>
+ * The use of the input stream is threadsafe since it's used only in a single thread&mdash;the one launched by this
+ * code.
  */
 final class ProcessOutputLogger implements Runnable {
     @SuppressWarnings("PMD.LoggerIsNotStaticFinal")
