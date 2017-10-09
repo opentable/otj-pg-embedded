@@ -43,7 +43,7 @@ final class ProcessOutputLogger implements Runnable {
             try {
                 logger.info(reader.readLine());
             } catch (IOException e) {
-                logger.error("while reading server output");
+                logger.error("while reading output", e);
                 return;
             } finally {
                 try {
