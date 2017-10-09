@@ -102,8 +102,8 @@ public class EmbeddedPostgres implements Closeable
     private final ProcessBuilder.Redirect outputRedirector;
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
-        Map<String, String> postgresConfig, Map<String, String> localeConfig, int port,
-        PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
+                     Map<String, String> postgresConfig, Map<String, String> localeConfig, int port,
+                     PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector, int waitBeforeCheckServerStartupMs) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
@@ -131,7 +131,7 @@ public class EmbeddedPostgres implements Closeable
         }
 
         lock();
-        startPostmaster();
+        startPostmaster(waitBeforeCheckServerStartupMs);
     }
 
     public DataSource getTemplateDatabase()
@@ -209,7 +209,7 @@ public class EmbeddedPostgres implements Closeable
         LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
-    private void startPostmaster() throws IOException
+    private void startPostmaster(int waitBeforeCheckServerStartupMs) throws IOException
     {
         final StopWatch watch = new StopWatch();
         watch.start();
@@ -237,7 +237,7 @@ public class EmbeddedPostgres implements Closeable
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
-        waitForServerStartup(watch);
+        waitForServerStartup(watch, waitBeforeCheckServerStartupMs);
     }
 
     private List<String> createInitOptions()
@@ -266,8 +266,15 @@ public class EmbeddedPostgres implements Closeable
         return localeOptions;
     }
 
-    private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
+    private void waitForServerStartup(StopWatch watch, int waitBeforeCheckServerStartupMs) throws UnknownHostException, IOException
     {
+        try {
+            Thread.sleep(waitBeforeCheckServerStartupMs);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+
         Throwable lastCause = null;
         final long start = System.nanoTime();
         final long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
@@ -436,6 +443,8 @@ public class EmbeddedPostgres implements Closeable
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
         private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
 
+        private int waitBeforeCheckServerStartupMs = 1000;
+
         Builder() {
             config.put("timezone", "UTC");
             config.put("synchronous_commit", "off");
@@ -489,13 +498,18 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
+        public Builder setWaitBeforeCheckServerStartupMs(int waitBeforeCheckServerStartupMs) {
+            this.waitBeforeCheckServerStartupMs = waitBeforeCheckServerStartupMs;
+            return this;
+        }
+
         public EmbeddedPostgres start() throws IOException
         {
             if (builderPort == 0)
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, pgBinaryResolver, errRedirector, outRedirector);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, pgBinaryResolver, errRedirector, outRedirector, waitBeforeCheckServerStartupMs);
         }
     }
 
