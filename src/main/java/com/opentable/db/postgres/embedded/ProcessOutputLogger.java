@@ -45,6 +45,12 @@ final class ProcessOutputLogger implements Runnable {
             } catch (IOException e) {
                 logger.error("while reading server output");
                 return;
+            } finally {
+                try {
+                    reader.close();
+                } catch (final IOException e) {
+                    logger.error("caught i/o exception closing reader", e);
+                }
             }
         }
     }
