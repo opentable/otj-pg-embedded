@@ -17,9 +17,8 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.google.common.base.Preconditions;
-
 import com.google.common.base.Verify;
+
 import org.junit.rules.ExternalResource;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;

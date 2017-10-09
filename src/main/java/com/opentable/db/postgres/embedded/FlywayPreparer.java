@@ -26,7 +26,7 @@ import org.flywaydb.core.Flyway;
 // cf. https://github.com/flyway/flyway/issues/1496
 // There is also a related @Ignored test in otj-sql.
 
-public class FlywayPreparer implements DatabasePreparer {
+public final class FlywayPreparer implements DatabasePreparer {
 
     private final Flyway flyway;
     private final List<String> locations;
