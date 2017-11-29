@@ -134,7 +134,7 @@ public class EmbeddedPostgres implements Closeable
         }
         Preconditions.checkArgument(this.dataDirectory != null, "null data directory");
         LOG.trace("{} postgres data directory is {}", instanceId, this.dataDirectory);
-        Verify.verify(this.dataDirectory.exists() || this.dataDirectory.mkdir(), "Failed to mkdir %s", this.dataDirectory);
+        mkdirs(dataDirectory);
 
         lockFile = new File(this.dataDirectory, LOCK_FILE_NAME);
 

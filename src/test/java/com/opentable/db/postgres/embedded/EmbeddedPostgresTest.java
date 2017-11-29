@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -35,6 +36,16 @@ public class EmbeddedPostgresTest
             assertTrue(rs.next());
             assertEquals(1, rs.getInt(1));
             assertFalse(rs.next());
+        }
+    }
+    
+    @Test
+    public void testEmbeddedPgCreationWithNestedDataDirectory() throws Exception
+    {
+        try (EmbeddedPostgres pg = EmbeddedPostgres.builder()
+                .setDataDirectory(new File("./data-dir-parent/data-dir"))
+                .start()) {
+            // nothing to do
         }
     }
 }
