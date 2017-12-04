@@ -46,7 +46,7 @@ Example:
 ```java
 class ClasspathBinaryResolver implements PgBinaryResolver {
     public InputStream getPgBinary(String system, String machineHardware) throws IOException {
-        ClassPathResource resource = new ClassPathResource(format("pgsql/postgresql-%s-%s.tbz", system, machineHardware));
+        ClassPathResource resource = new ClassPathResource(format("postgresql-%s-%s.txz", system, machineHardware));
         return resource.getInputStream();
     }
 }
