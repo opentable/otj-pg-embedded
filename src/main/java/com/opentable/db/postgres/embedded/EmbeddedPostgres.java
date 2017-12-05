@@ -102,7 +102,7 @@ public class EmbeddedPostgres implements Closeable
     private final ProcessBuilder.Redirect outputRedirector;
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
-        Map<String, String> postgresConfig, Map<String, String> localeConfig, int port,
+        Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
         PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
@@ -131,7 +131,7 @@ public class EmbeddedPostgres implements Closeable
         }
 
         lock();
-        startPostmaster();
+        startPostmaster(connectConfig);
     }
 
     public DataSource getTemplateDatabase()
@@ -209,7 +209,7 @@ public class EmbeddedPostgres implements Closeable
         LOG.info("{} initdb completed in {}", instanceId, watch);
     }
 
-    private void startPostmaster() throws IOException
+    private void startPostmaster(Map<String, String> connectConfig) throws IOException
     {
         final StopWatch watch = new StopWatch();
         watch.start();
@@ -237,7 +237,7 @@ public class EmbeddedPostgres implements Closeable
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
-        waitForServerStartup(watch);
+        waitForServerStartup(watch, connectConfig);
     }
 
     private List<String> createInitOptions()
@@ -266,14 +266,14 @@ public class EmbeddedPostgres implements Closeable
         return localeOptions;
     }
 
-    private void waitForServerStartup(StopWatch watch) throws UnknownHostException, IOException
+    private void waitForServerStartup(StopWatch watch, Map<String, String> connectConfig) throws UnknownHostException, IOException
     {
         Throwable lastCause = null;
         final long start = System.nanoTime();
         final long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
         while (System.nanoTime() - start < maxWaitNs) {
             try {
-                verifyReady();
+                verifyReady(connectConfig);
                 LOG.info("{} postmaster startup finished in {}", instanceId, watch);
                 return;
             } catch (final SQLException e) {
@@ -291,9 +291,9 @@ public class EmbeddedPostgres implements Closeable
         throw new IOException("Gave up waiting for server to start after " + PG_STARTUP_WAIT_MS + "ms", lastCause);
     }
 
-    private void verifyReady() throws SQLException
+    private void verifyReady(Map<String, String> connectConfig) throws SQLException
     {
-        try (Connection c = getPostgresDatabase().getConnection()) {
+        try (Connection c = getPostgresDatabase(connectConfig).getConnection()) {
             try (Statement s = c.createStatement()) {
                 try (ResultSet rs = s.executeQuery("SELECT 1")) { // NOPMD
                     Verify.verify(rs.next(), "expecting single row");
@@ -431,6 +431,7 @@ public class EmbeddedPostgres implements Closeable
         private final Map<String, String> localeConfig = Maps.newHashMap();
         private boolean builderCleanDataDirectory = true;
         private int builderPort = 0;
+        private final Map<String, String> connectConfig = Maps.newHashMap();
         private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
 
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
@@ -466,6 +467,12 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
+        public Builder setConnectConfig(String key, String value)
+        {
+            connectConfig.put(key, value);
+            return this;
+        }
+
         public Builder setPort(int port)
         {
             builderPort = port;
@@ -495,7 +502,7 @@ public class EmbeddedPostgres implements Closeable
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, pgBinaryResolver, errRedirector, outRedirector);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector);
         }
     }
 
