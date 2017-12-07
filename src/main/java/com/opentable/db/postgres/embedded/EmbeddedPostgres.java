@@ -465,44 +465,45 @@ public class EmbeddedPostgres implements Closeable
             this.pgStartupWait = pgStartupWait;
             return this;
         }
-        public Builder setCleanDataDirectory(boolean cleanDataDirectory)
-        {
+        public Builder setCleanDataDirectory(boolean cleanDataDirectory) {
             builderCleanDataDirectory = cleanDataDirectory;
             return this;
         }
 
-        public Builder setDataDirectory(File directory)
-        {
+        public Builder setDataDirectory(Path path) {
+            return setDataDirectory(path.toFile());
+        }
+
+        public Builder setDataDirectory(File directory) {
             builderDataDirectory = directory;
             return this;
         }
 
-        public Builder setServerConfig(String key, String value)
-        {
+        public Builder setDataDirectory(String path) {
+            return setDataDirectory(new File(path));
+        }
+
+        public Builder setServerConfig(String key, String value) {
             config.put(key, value);
             return this;
         }
 
-        public Builder setLocaleConfig(String key, String value)
-        {
+        public Builder setLocaleConfig(String key, String value) {
             localeConfig.put(key, value);
             return this;
         }
 
-        public Builder setConnectConfig(String key, String value)
-        {
+        public Builder setConnectConfig(String key, String value) {
             connectConfig.put(key, value);
             return this;
         }
 
-        public Builder setPort(int port)
-        {
+        public Builder setPort(int port) {
             builderPort = port;
             return this;
         }
 
-        public Builder setErrorRedirector(ProcessBuilder.Redirect errRedirector)
-        {
+        public Builder setErrorRedirector(ProcessBuilder.Redirect errRedirector) {
             this.errRedirector = errRedirector;
             return this;
         }
@@ -518,11 +519,13 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
-        public EmbeddedPostgres start() throws IOException
-        {
+        public EmbeddedPostgres start() throws IOException {
             if (builderPort == 0)
             {
                 builderPort = detectPort();
+            }
+            if (builderDataDirectory == null) {
+                builderDataDirectory = Files.createTempDirectory("epg").toFile();
             }
             return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector, pgStartupWait);
         }
