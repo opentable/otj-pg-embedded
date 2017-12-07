@@ -457,10 +457,11 @@ public class EmbeddedPostgres implements Closeable
         }
 
         public Builder setPGStartupWait(Duration pgStartupWait) {
-            if (pgStartupWait != null && pgStartupWait.isNegative()) {
-                pgStartupWait = null;
-            }
             Objects.requireNonNull(pgStartupWait);
+            if (pgStartupWait.isNegative()) {
+               throw new IllegalArgumentException("Negative durations are not permitted.");
+            }
+
             this.pgStartupWait = pgStartupWait;
             return this;
         }
