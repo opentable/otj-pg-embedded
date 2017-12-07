@@ -457,7 +457,7 @@ public class EmbeddedPostgres implements Closeable
         }
 
         public Builder setPGStartupWait(Duration pgStartupWait) {
-            if (pgStartupWait.isNegative()) {
+            if (pgStartupWait != null && pgStartupWait.isNegative()) {
                 pgStartupWait = null;
             }
             Objects.requireNonNull(pgStartupWait);
