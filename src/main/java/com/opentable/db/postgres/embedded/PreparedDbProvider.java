@@ -24,14 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 
-import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
 import javax.sql.DataSource;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -44,7 +37,7 @@ public class PreparedDbProvider
      * Each database cluster's <code>template1</code> database has a unique set of schema
      * loaded so that the databases may be cloned.
      */
-    @GuardedBy("PreparedDbProvider.class")
+    // @GuardedBy("PreparedDbProvider.class")
     private static final Map<DatabasePreparer, PrepPipeline> CLUSTERS = new HashMap<>();
 
     private final PrepPipeline dbPreparer;
@@ -58,7 +51,7 @@ public class PreparedDbProvider
         try {
             dbPreparer = createOrFindPreparer(preparer);
         } catch (final IOException | SQLException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -113,11 +106,13 @@ public class PreparedDbProvider
     /**
      * Return configuration tweaks in a format appropriate for otj-jdbc DatabaseModule.
      */
-    public ImmutableMap<String, String> getConfigurationTweak(String dbModuleName) throws SQLException
+    public Map<String, String> getConfigurationTweak(String dbModuleName) throws SQLException
     {
         final DbInfo db = dbPreparer.getNextDb();
-        return ImmutableMap.of("ot.db." + dbModuleName + ".uri", getJdbcUri(db),
-                               "ot.db." + dbModuleName + ".ds.user", db.user);
+        final Map<String, String> result = new HashMap<>();
+        result.put("ot.db." + dbModuleName + ".uri", getJdbcUri(db));
+        result.put("ot.db." + dbModuleName + ".ds.user", db.user);
+        return result;
     }
 
     /**
@@ -136,8 +131,12 @@ public class PreparedDbProvider
 
         PrepPipeline start()
         {
-            final ExecutorService service = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
-                .setDaemon(true).setNameFormat("cluster-" + pg + "-preparer").build());
+            final ExecutorService service = Executors.newSingleThreadExecutor(r -> {
+                final Thread t = new Thread(r);
+                t.setDaemon(true);
+                t.setName("cluster-" + pg + "-preparer");
+                return t;
+            });
             service.submit(this);
             service.shutdown();
             return this;
@@ -182,10 +181,14 @@ public class PreparedDbProvider
         }
     }
 
-    private static void create(final DataSource connectDb, @Nonnull final String dbName, @Nonnull final String userName) throws SQLException
+    private static void create(final DataSource connectDb, final String dbName, final String userName) throws SQLException
     {
-        Preconditions.checkArgument(dbName != null, "the database name must not be null!");
-        Preconditions.checkArgument(userName != null, "the user name must not be null!");
+        if (dbName == null) {
+            throw new IllegalStateException("the database name must not be null!");
+        }
+        if (userName == null) {
+            throw new IllegalStateException("the user name must not be null!");
+        }
 
         try (Connection c = connectDb.getConnection();
              PreparedStatement stmt = c.prepareStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName))) {

@@ -17,8 +17,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import com.google.common.base.Verify;
-
 import org.junit.rules.ExternalResource;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
@@ -41,7 +39,9 @@ public class SingleInstancePostgresRule extends ExternalResource
     public EmbeddedPostgres getEmbeddedPostgres()
     {
         EmbeddedPostgres epg = this.epg;
-        Verify.verify(epg != null, "JUnit test not started yet!");
+        if (epg == null) {
+            throw new AssertionError("JUnit test not started yet!");
+        }
         return epg;
     }
 
