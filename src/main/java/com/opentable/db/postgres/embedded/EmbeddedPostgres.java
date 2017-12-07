@@ -82,7 +82,7 @@ public class EmbeddedPostgres implements Closeable
     private static final String PG_STOP_MODE = "fast";
     private static final String PG_STOP_WAIT_S = "5";
     private static final String PG_SUPERUSER = "postgres";
-    private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofMillis(10 * 1000);
+    private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
     private static final String LOCK_FILE_NAME = "epg-lock";
 
     private final File pgDir;

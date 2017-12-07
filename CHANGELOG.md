@@ -1,3 +1,8 @@
+0.10.1
+------
+* add `setPGStartupWait` method to builder to override the default time (10 seconds) for
+waiting for Postgres to start up before throwing an exception.
+
 0.10.0
 ------
 
