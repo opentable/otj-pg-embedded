@@ -1,7 +1,11 @@
-0.10.1
+
+0.11.0
 ------
 * add `setPGStartupWait` method to builder to override the default time (10 seconds) for
 waiting for Postgres to start up before throwing an exception.
+* fix dataDirectory creation under nested subdirectories
+* allow specifying jdbc connection parameters
+* configurable startup time
 
 0.10.0
 ------

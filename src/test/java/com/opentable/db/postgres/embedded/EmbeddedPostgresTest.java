@@ -38,7 +38,7 @@ public class EmbeddedPostgresTest
             assertFalse(rs.next());
         }
     }
-    
+
     @Test
     public void testEmbeddedPgCreationWithNestedDataDirectory() throws Exception
     {
