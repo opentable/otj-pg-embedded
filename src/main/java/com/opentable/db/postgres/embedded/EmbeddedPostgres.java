@@ -36,11 +36,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,11 +82,12 @@ public class EmbeddedPostgres implements Closeable
     private static final String PG_STOP_MODE = "fast";
     private static final String PG_STOP_WAIT_S = "5";
     private static final String PG_SUPERUSER = "postgres";
-    private static final int PG_STARTUP_WAIT_MS = 10 * 1000;
+    private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofMillis(10 * 1000);
     private static final String LOCK_FILE_NAME = "epg-lock";
 
     private final File pgDir;
 
+    private final Duration pgStartupWait;
     private final File dataDirectory, lockFile;
     private final UUID instanceId = UUID.randomUUID();
     private final int port;
@@ -105,6 +108,13 @@ public class EmbeddedPostgres implements Closeable
         Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
         PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
+        this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig, pgBinaryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT);
+    }
+
+    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
+                     Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
+                     PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait) throws IOException
+    {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = ImmutableMap.copyOf(postgresConfig);
         this.localeConfig = ImmutableMap.copyOf(localeConfig);
@@ -112,6 +122,8 @@ public class EmbeddedPostgres implements Closeable
         this.pgDir = prepareBinaries(pgBinaryResolver);
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
+        this.pgStartupWait = pgStartupWait;
+        Objects.requireNonNull(this.pgStartupWait, "Wait time cannot be null");
 
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
@@ -233,7 +245,7 @@ public class EmbeddedPostgres implements Closeable
             ProcessOutputLogger.logOutput(LOG, postmaster);
         }
 
-        LOG.info("{} postmaster started as {} on port {}.  Waiting up to {}ms for server startup to finish.", instanceId, postmaster.toString(), port, PG_STARTUP_WAIT_MS);
+        LOG.info("{} postmaster started as {} on port {}.  Waiting up to {} for server startup to finish.", instanceId, postmaster.toString(), port, pgStartupWait);
 
         Runtime.getRuntime().addShutdownHook(newCloserThread());
 
@@ -270,7 +282,7 @@ public class EmbeddedPostgres implements Closeable
     {
         Throwable lastCause = null;
         final long start = System.nanoTime();
-        final long maxWaitNs = TimeUnit.NANOSECONDS.convert(PG_STARTUP_WAIT_MS, TimeUnit.MILLISECONDS);
+        final long maxWaitNs = TimeUnit.NANOSECONDS.convert(pgStartupWait.toMillis(), TimeUnit.MILLISECONDS);
         while (System.nanoTime() - start < maxWaitNs) {
             try {
                 verifyReady(connectConfig);
@@ -288,7 +300,7 @@ public class EmbeddedPostgres implements Closeable
                 return;
             }
         }
-        throw new IOException("Gave up waiting for server to start after " + PG_STARTUP_WAIT_MS + "ms", lastCause);
+        throw new IOException("Gave up waiting for server to start after " + pgStartupWait.toMillis() + "ms", lastCause);
     }
 
     private void verifyReady(Map<String, String> connectConfig) throws SQLException
@@ -433,6 +445,7 @@ public class EmbeddedPostgres implements Closeable
         private int builderPort = 0;
         private final Map<String, String> connectConfig = Maps.newHashMap();
         private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
+        private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
         private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
@@ -443,6 +456,14 @@ public class EmbeddedPostgres implements Closeable
             config.put("max_connections", "300");
         }
 
+        public Builder setPGStartupWait(Duration pgStartupWait) {
+            if (pgStartupWait.isNegative()) {
+                pgStartupWait = null;
+            }
+            Objects.requireNonNull(pgStartupWait);
+            this.pgStartupWait = pgStartupWait;
+            return this;
+        }
         public Builder setCleanDataDirectory(boolean cleanDataDirectory)
         {
             builderCleanDataDirectory = cleanDataDirectory;
@@ -502,7 +523,7 @@ public class EmbeddedPostgres implements Closeable
             {
                 builderPort = detectPort();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector, pgStartupWait);
         }
     }
 
