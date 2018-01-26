@@ -544,10 +544,18 @@ public class EmbeddedPostgres implements Closeable
             if (dataDirectory == null) {
                 dataDirectory = Files.createTempDirectory("epg").toFile();
             }
-            Map<String, String> startConfig = new HashMap<>();
-            startConfig.putAll(this.config);
-            Map<String, String> localeConfig = new HashMap<>();
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector, pgStartupWait);
+            return new EmbeddedPostgres(parentDirectory, dataDirectory, builderCleanDataDirectory, config, localeConfig, port, connectConfig, pgBinaryResolver, errRedirector, outRedirector, pgStartupWait);
+        }
+
+        // Package private accessors to allow PreparedDbProvider to check that the
+        // builder has no state set that would cause >1 invocations of start()
+        // to conflict with the previously started EmbeddedPostgres.
+        int getBuilderPort() {
+            return builderPort;
+        }
+
+        File getBuilderDataDirectory() {
+            return builderDataDirectory;
         }
     }
 
