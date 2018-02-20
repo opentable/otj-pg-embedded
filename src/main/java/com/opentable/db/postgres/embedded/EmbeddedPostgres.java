@@ -288,7 +288,7 @@ public class EmbeddedPostgres implements Closeable
         return localeOptions;
     }
 
-    private void waitForServerStartup(StopWatch watch, Map<String, String> connectConfig) throws UnknownHostException, IOException
+    private void waitForServerStartup(StopWatch watch, Map<String, String> connectConfig) throws IOException
     {
         Throwable lastCause = null;
         final long start = System.nanoTime();
