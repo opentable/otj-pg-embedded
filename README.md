@@ -7,6 +7,7 @@ test with a "real" Postgres without requiring end users to install
 and set up a database cluster.
 
 [![Build Status](https://travis-ci.org/opentable/otj-pg-embedded.svg)](https://travis-ci.org/opentable/otj-pg-embedded)
+[![Open Source Helpers](https://www.codetriage.com/opentable/otj-pg-embedded/badges/users.svg)](https://www.codetriage.com/opentable/otj-pg-embedded)
 
 ## Basic Usage
 
