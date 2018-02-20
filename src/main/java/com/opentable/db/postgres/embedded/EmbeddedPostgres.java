@@ -20,7 +20,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
@@ -311,6 +315,29 @@ public class EmbeddedPostgres implements Closeable
 
     private void verifyReady(Map<String, String> connectConfig) throws SQLException
     {
+        final InetAddress localhost;
+        try {
+            localhost = InetAddress.getByAddress(new byte[]{127, 0, 0, 1});
+        } catch (final UnknownHostException e) {
+            throw new AssertionError("localhost unknown?", e);
+        }
+        final Socket sock = new Socket();
+        try {
+            sock.setSoTimeout((int) Duration.ofMillis(500).toMillis());
+        } catch (final SocketException e) {
+            throw new RuntimeException("error setting socket timeout", e);
+        }
+        try {
+            sock.connect(new InetSocketAddress(localhost, port), (int) Duration.ofMillis(500).toMillis());
+        } catch (final IOException e) {
+            throw new SQLException("connect failed", e);
+        } finally {
+            try {
+                sock.close();
+            } catch (final IOException e) {
+                LOG.trace("i/o exception closing test socket", e);
+            }
+        }
         try (Connection c = getPostgresDatabase(connectConfig).getConnection() ;
                 Statement s = c.createStatement() ;
                 ResultSet rs = s.executeQuery("SELECT 1"))
