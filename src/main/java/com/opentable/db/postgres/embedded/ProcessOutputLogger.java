@@ -43,18 +43,20 @@ final class ProcessOutputLogger implements Runnable {
 
     @Override
     public void run() {
-        while (process.isAlive()) {
-            try {
-                logger.info(reader.readLine());
-            } catch (IOException e) {
-                logger.error("while reading output", e);
-                return;
-            } finally {
+        try {
+            while (process.isAlive()) {
                 try {
-                    reader.close();
+                    logger.info(reader.readLine());
                 } catch (final IOException e) {
-                    logger.error("caught i/o exception closing reader", e);
+                    logger.error("while reading output", e);
+                    return;
                 }
+            }
+        } finally {
+            try {
+                reader.close();
+            } catch (final IOException e) {
+                logger.error("caught i/o exception closing reader", e);
             }
         }
     }
