@@ -1,3 +1,7 @@
+0.11.1
+------
+* fixed output logging bug (immediate close after first read)
+* quieted down initialization connect logging
 
 0.11.0
 ------
