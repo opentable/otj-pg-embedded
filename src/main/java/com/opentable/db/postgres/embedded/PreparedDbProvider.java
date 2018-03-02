@@ -76,12 +76,36 @@ public class PreparedDbProvider
 
     /**
      * Create a new database, and return it as a JDBC connection string.
-     * No two invocations will return the same database.
+     * NB: No two invocations will return the same database.
      */
     public String createDatabase() throws SQLException
     {
-        final DbInfo db = dbPreparer.getNextDb();
-        return getJdbcUri(db);
+        return getJdbcUri(createNewDatabase());
+    }
+
+    /**
+     * Create a new database, and return the backing info.
+     * This allows you to access the host and port.
+     * More common usage is to call createDatabase() and
+     * get the JDBC connection string.
+     * NB: No two invocations will return the same database.
+     */
+    public DbInfo createNewDatabase() throws SQLException
+    {
+       return dbPreparer.getNextDb();
+    }
+
+    /**
+     * Create a new Datasource given DBInfo.
+     * More common usage is to call createDatasource().
+     */
+    public DataSource createDataSourceFromDBInfo(final DbInfo dbInfo) throws SQLException
+    {
+        final PGSimpleDataSource ds = new PGSimpleDataSource();
+        ds.setPortNumber(dbInfo.port);
+        ds.setDatabaseName(dbInfo.dbName);
+        ds.setUser(dbInfo.user);
+        return ds;
     }
 
     /**
@@ -90,15 +114,11 @@ public class PreparedDbProvider
      */
     public DataSource createDataSource() throws SQLException
     {
-        final DbInfo db = dbPreparer.getNextDb();
-        final PGSimpleDataSource ds = new PGSimpleDataSource();
-        ds.setPortNumber(db.port);
-        ds.setDatabaseName(db.dbName);
-        ds.setUser(db.user);
-        return ds;
+        final DbInfo db = createNewDatabase();
+        return createDataSourceFromDBInfo(db);
     }
 
-    private String getJdbcUri(DbInfo db)
+    String getJdbcUri(DbInfo db)
     {
         return String.format(JDBC_FORMAT, db.port, db.dbName);
     }
@@ -196,7 +216,7 @@ public class PreparedDbProvider
         }
     }
 
-    private static class DbInfo
+    public static class DbInfo
     {
         private final String dbName;
         private final int port;
@@ -215,6 +235,22 @@ public class PreparedDbProvider
             this.port = -1;
             this.user = null;
             this.ex = e;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public String getDbName() {
+            return dbName;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public SQLException getEx() {
+            return ex;
         }
     }
 }
