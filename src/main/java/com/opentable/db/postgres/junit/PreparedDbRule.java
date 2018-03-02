@@ -25,6 +25,7 @@ public class PreparedDbRule extends ExternalResource {
     private final DatabasePreparer preparer;
     private volatile DataSource dataSource;
     private volatile PreparedDbProvider provider;
+    private volatile PreparedDbProvider.DbInfo dbInfo;
 
     protected PreparedDbRule(DatabasePreparer preparer) {
         if (preparer == null) {
@@ -36,12 +37,14 @@ public class PreparedDbRule extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         provider = PreparedDbProvider.forPreparer(preparer);
-        dataSource = provider.createDataSource();
+        dbInfo = provider.createNewDatabase();
+        dataSource = provider.createDataSourceFromDBInfo(dbInfo);
     }
 
     @Override
     protected void after() {
         dataSource = null;
+        dbInfo = null;
         provider = null;
     }
 
@@ -51,6 +54,14 @@ public class PreparedDbRule extends ExternalResource {
        }
         return dataSource;
     }
+
+    public PreparedDbProvider.DbInfo getDbInfo() {
+        if (dbInfo == null) {
+            throw new AssertionError("not initialized");
+        }
+        return dbInfo;
+    }
+
 
     public PreparedDbProvider getDbProvider() {
         if(provider == null) {
