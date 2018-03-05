@@ -114,8 +114,7 @@ public class PreparedDbProvider
      */
     public DataSource createDataSource() throws SQLException
     {
-        final DbInfo db = createNewDatabase();
-        return createDataSourceFromDBInfo(db);
+        return createDataSourceFromDBInfo(createNewDatabase());
     }
 
     String getJdbcUri(DbInfo db)
@@ -189,9 +188,9 @@ public class PreparedDbProvider
                 }
                 try {
                     if (failure == null) {
-                        nextDatabase.put(new DbInfo(newDbName, pg.getPort(), "postgres"));
+                        nextDatabase.put(DbInfo.ok(newDbName, pg.getPort(), "postgres"));
                     } else {
-                        nextDatabase.put(new DbInfo(failure));
+                        nextDatabase.put(DbInfo.error(failure));
                     }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -218,23 +217,24 @@ public class PreparedDbProvider
 
     public static class DbInfo
     {
+        public static DbInfo ok(final String dbName, final int port, final String user) {
+            return new DbInfo(dbName, port, user, null);
+        }
+
+        public static DbInfo error(SQLException e) {
+            return new DbInfo(null, -1, null, e);
+        }
+
         private final String dbName;
         private final int port;
         private final String user;
         private final SQLException ex;
 
-        DbInfo(String dbName, int port, String user) {
+        private DbInfo(final String dbName, final int port, final String user, final SQLException e) {
             this.dbName = dbName;
             this.port = port;
             this.user = user;
             this.ex = null;
-        }
-
-        DbInfo(SQLException e) {
-            this.dbName = null;
-            this.port = -1;
-            this.user = null;
-            this.ex = e;
         }
 
         public int getPort() {
@@ -249,8 +249,12 @@ public class PreparedDbProvider
             return user;
         }
 
-        public SQLException getEx() {
+        public SQLException getException() {
             return ex;
+        }
+
+        public boolean isSuccess() {
+            return ex == null;
         }
     }
 }
