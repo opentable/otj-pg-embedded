@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>137</version>
+    <version>143</version>
   </parent>
 
   <scm>
@@ -38,6 +38,7 @@
     <project.build.targetJdk>1.8</project.build.targetJdk>
     <basepom.test.timeout>1800</basepom.test.timeout>
   </properties>
+
 
   <build>
     <plugins>
