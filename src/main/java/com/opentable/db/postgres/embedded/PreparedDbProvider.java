@@ -80,7 +80,7 @@ public class PreparedDbProvider
      */
     public String createDatabase() throws SQLException
     {
-        return getJdbcUri(createNewDatabase());
+        return getJdbcUri(createNewDB());
     }
 
     /**
@@ -90,21 +90,27 @@ public class PreparedDbProvider
      * get the JDBC connection string.
      * NB: No two invocations will return the same database.
      */
-    public DbInfo createNewDatabase() throws SQLException
+    private DbInfo createNewDB() throws SQLException
     {
        return dbPreparer.getNextDb();
+    }
+
+    public ConnectionInfo createNewDatabase() throws SQLException
+    {
+        final DbInfo dbInfo = createNewDB();
+        return dbInfo == null || !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getDbName(), dbInfo.getPort(), dbInfo.getUser());
     }
 
     /**
      * Create a new Datasource given DBInfo.
      * More common usage is to call createDatasource().
      */
-    public DataSource createDataSourceFromDBInfo(final DbInfo dbInfo) throws SQLException
+    public DataSource createDataSourceFromConnectionInfo(final ConnectionInfo connectionInfo) throws SQLException
     {
         final PGSimpleDataSource ds = new PGSimpleDataSource();
-        ds.setPortNumber(dbInfo.port);
-        ds.setDatabaseName(dbInfo.dbName);
-        ds.setUser(dbInfo.user);
+        ds.setPortNumber(connectionInfo.getPort());
+        ds.setDatabaseName(connectionInfo.getDbName());
+        ds.setUser(connectionInfo.getUser());
         return ds;
     }
 
@@ -114,7 +120,7 @@ public class PreparedDbProvider
      */
     public DataSource createDataSource() throws SQLException
     {
-        return createDataSourceFromDBInfo(createNewDatabase());
+        return createDataSourceFromConnectionInfo(createNewDatabase());
     }
 
     String getJdbcUri(DbInfo db)
