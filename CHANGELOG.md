@@ -1,3 +1,8 @@
+0.11.3
+------
+
+* use a non-milestone Spring release, sorry!
+
 0.11.1
 ------
 * fixed output logging bug (immediate close after first read)
