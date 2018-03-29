@@ -31,14 +31,13 @@
 
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-pg-embedded</artifactId>
-  <version>0.11.2-SNAPSHOT</version>
+  <version>0.11.4-SNAPSHOT</version>
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
     <project.build.targetJdk>1.8</project.build.targetJdk>
     <basepom.test.timeout>1800</basepom.test.timeout>
   </properties>
-
 
   <build>
     <plugins>
