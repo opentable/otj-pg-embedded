@@ -21,6 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import javax.sql.DataSource;
+
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -43,10 +45,7 @@ public class PreparedDbTest {
     public void testDbs() throws Exception {
         try (Connection c = dbA1.getTestDatabase().getConnection();
                 Statement stmt = c.createStatement()) {
-            stmt.execute("INSERT INTO a VALUES(1)");
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(1) FROM a");
-            rs.next();
-            assertEquals(1, rs.getInt(1));
+            commonAssertion(stmt);
         }
         try (Connection c = dbA2.getTestDatabase().getConnection();
                 PreparedStatement stmt = c.prepareStatement("SELECT count(1) FROM a")) {
@@ -57,6 +56,22 @@ public class PreparedDbTest {
         try (Connection c = dbB1.getTestDatabase().getConnection();
                 PreparedStatement stmt = c.prepareStatement("SELECT * FROM b")) {
             stmt.execute();
+        }
+    }
+
+    private void commonAssertion(final Statement stmt) throws SQLException {
+        stmt.execute("INSERT INTO a VALUES(1)");
+        ResultSet rs = stmt.executeQuery("SELECT COUNT(1) FROM a");
+        rs.next();
+        assertEquals(1, rs.getInt(1));
+    }
+
+    @Test
+    public void testEquivalentAccess() throws SQLException {
+        ConnectionInfo dbInfo = dbA1.getConnectionInfo();
+        DataSource dataSource = dbA1.getTestDatabase();
+        try (Connection c = dataSource.getConnection(); Statement stmt = c.createStatement()) {
+            commonAssertion(stmt);
         }
     }
 

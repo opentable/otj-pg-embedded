@@ -76,12 +76,42 @@ public class PreparedDbProvider
 
     /**
      * Create a new database, and return it as a JDBC connection string.
-     * No two invocations will return the same database.
+     * NB: No two invocations will return the same database.
      */
     public String createDatabase() throws SQLException
     {
-        final DbInfo db = dbPreparer.getNextDb();
-        return getJdbcUri(db);
+        return getJdbcUri(createNewDB());
+    }
+
+    /**
+     * Create a new database, and return the backing info.
+     * This allows you to access the host and port.
+     * More common usage is to call createDatabase() and
+     * get the JDBC connection string.
+     * NB: No two invocations will return the same database.
+     */
+    private DbInfo createNewDB() throws SQLException
+    {
+       return dbPreparer.getNextDb();
+    }
+
+    public ConnectionInfo createNewDatabase() throws SQLException
+    {
+        final DbInfo dbInfo = createNewDB();
+        return dbInfo == null || !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getDbName(), dbInfo.getPort(), dbInfo.getUser());
+    }
+
+    /**
+     * Create a new Datasource given DBInfo.
+     * More common usage is to call createDatasource().
+     */
+    public DataSource createDataSourceFromConnectionInfo(final ConnectionInfo connectionInfo) throws SQLException
+    {
+        final PGSimpleDataSource ds = new PGSimpleDataSource();
+        ds.setPortNumber(connectionInfo.getPort());
+        ds.setDatabaseName(connectionInfo.getDbName());
+        ds.setUser(connectionInfo.getUser());
+        return ds;
     }
 
     /**
@@ -90,15 +120,10 @@ public class PreparedDbProvider
      */
     public DataSource createDataSource() throws SQLException
     {
-        final DbInfo db = dbPreparer.getNextDb();
-        final PGSimpleDataSource ds = new PGSimpleDataSource();
-        ds.setPortNumber(db.port);
-        ds.setDatabaseName(db.dbName);
-        ds.setUser(db.user);
-        return ds;
+        return createDataSourceFromConnectionInfo(createNewDatabase());
     }
 
-    private String getJdbcUri(DbInfo db)
+    String getJdbcUri(DbInfo db)
     {
         return String.format(JDBC_FORMAT, db.port, db.dbName);
     }
@@ -169,9 +194,9 @@ public class PreparedDbProvider
                 }
                 try {
                     if (failure == null) {
-                        nextDatabase.put(new DbInfo(newDbName, pg.getPort(), "postgres"));
+                        nextDatabase.put(DbInfo.ok(newDbName, pg.getPort(), "postgres"));
                     } else {
-                        nextDatabase.put(new DbInfo(failure));
+                        nextDatabase.put(DbInfo.error(failure));
                     }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -196,25 +221,46 @@ public class PreparedDbProvider
         }
     }
 
-    private static class DbInfo
+    public static class DbInfo
     {
+        public static DbInfo ok(final String dbName, final int port, final String user) {
+            return new DbInfo(dbName, port, user, null);
+        }
+
+        public static DbInfo error(SQLException e) {
+            return new DbInfo(null, -1, null, e);
+        }
+
         private final String dbName;
         private final int port;
         private final String user;
         private final SQLException ex;
 
-        DbInfo(String dbName, int port, String user) {
+        private DbInfo(final String dbName, final int port, final String user, final SQLException e) {
             this.dbName = dbName;
             this.port = port;
             this.user = user;
             this.ex = null;
         }
 
-        DbInfo(SQLException e) {
-            this.dbName = null;
-            this.port = -1;
-            this.user = null;
-            this.ex = e;
+        public int getPort() {
+            return port;
+        }
+
+        public String getDbName() {
+            return dbName;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public SQLException getException() {
+            return ex;
+        }
+
+        public boolean isSuccess() {
+            return ex == null;
         }
     }
 }

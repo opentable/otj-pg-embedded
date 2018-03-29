@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 
 import org.junit.rules.ExternalResource;
 
+import com.opentable.db.postgres.embedded.ConnectionInfo;
 import com.opentable.db.postgres.embedded.DatabasePreparer;
 import com.opentable.db.postgres.embedded.PreparedDbProvider;
 
@@ -25,6 +26,7 @@ public class PreparedDbRule extends ExternalResource {
     private final DatabasePreparer preparer;
     private volatile DataSource dataSource;
     private volatile PreparedDbProvider provider;
+    private volatile ConnectionInfo connectionInfo;
 
     protected PreparedDbRule(DatabasePreparer preparer) {
         if (preparer == null) {
@@ -36,12 +38,14 @@ public class PreparedDbRule extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         provider = PreparedDbProvider.forPreparer(preparer);
-        dataSource = provider.createDataSource();
+        connectionInfo = provider.createNewDatabase();
+        dataSource = provider.createDataSourceFromConnectionInfo(connectionInfo);
     }
 
     @Override
     protected void after() {
         dataSource = null;
+        connectionInfo = null;
         provider = null;
     }
 
@@ -51,6 +55,14 @@ public class PreparedDbRule extends ExternalResource {
        }
         return dataSource;
     }
+
+    public ConnectionInfo getConnectionInfo() {
+        if (connectionInfo == null) {
+            throw new AssertionError("not initialized");
+        }
+        return connectionInfo;
+    }
+
 
     public PreparedDbProvider getDbProvider() {
         if(provider == null) {

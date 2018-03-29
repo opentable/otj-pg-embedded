@@ -1,3 +1,10 @@
+0.11.4
+------
+* Exposed getConnectionInfo in PreparedDBRule, PreparedDBProvider. The use case is if you need to access
+the port and database name and pass them to a NON-java process. In normal circumstances, you
+should just use getDataSource(), which will return a fully ready DataSource for Java.
+* Update POM to Spring released versions.
+
 0.11.3
 ------
 
