@@ -41,13 +41,25 @@ public class PreparedDbProvider
     private static final Map<DatabasePreparer, PrepPipeline> CLUSTERS = new HashMap<>();
 
     private final PrepPipeline dbPreparer;
+    private final EmbeddedPostgres.Builder embeddedPostgresBuilder;
 
     public static PreparedDbProvider forPreparer(DatabasePreparer preparer) {
-        return new PreparedDbProvider(preparer);
+        return new PreparedDbProvider(preparer, EmbeddedPostgres.builder());
     }
 
-    private PreparedDbProvider(DatabasePreparer preparer)
+    public static PreparedDbProvider forPreparerWithBuilder(DatabasePreparer preparer, EmbeddedPostgres.Builder builder) {
+        if (builder.getBuilderPort() != 0) {
+            throw new IllegalArgumentException("Do not set port on a builder to be used by PreparedDbProvider.");
+        }
+        if (builder.getBuilderDataDirectory() != null) {
+            throw new IllegalArgumentException("Do not set the data directory on a builder to be used by PreparedDbProvider.");
+        }
+        return new PreparedDbProvider(preparer, builder);
+    }
+
+    private PreparedDbProvider(DatabasePreparer preparer, EmbeddedPostgres.Builder builder)
     {
+        embeddedPostgresBuilder = builder;
         try {
             dbPreparer = createOrFindPreparer(preparer);
         } catch (final IOException | SQLException e) {
@@ -66,7 +78,7 @@ public class PreparedDbProvider
             return result;
         }
 
-        final EmbeddedPostgres pg = EmbeddedPostgres.start();
+        final EmbeddedPostgres pg = embeddedPostgresBuilder.start();
         preparer.prepare(pg.getTemplateDatabase());
 
         result = new PrepPipeline(pg).start();
