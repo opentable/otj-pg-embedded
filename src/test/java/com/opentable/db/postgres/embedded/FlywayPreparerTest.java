@@ -15,10 +15,13 @@ package com.opentable.db.postgres.embedded;
 
 import static org.junit.Assert.assertEquals;
 
+import com.opentable.db.postgres.embedded.utils.FlywayConfig;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import java.text.MessageFormat;
+import org.flywaydb.core.Flyway;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -26,8 +29,20 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
 
 public class FlywayPreparerTest {
+
+    private Flyway configuredFlyway = FlywayConfig.get();
+
     @Rule
     public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(FlywayPreparer.forClasspathLocation("db/testing"));
+
+    @Rule
+    public PreparedDbRule customDb = EmbeddedPostgresRules.preparedDatabase(FlywayPreparer.forFlyway(configuredFlyway));
+
+    private String getCustomQuery() {
+        String schemaName = configuredFlyway.getPlaceholders().get("schemaName");
+        String tableName = configuredFlyway.getPlaceholders().get("tableName");
+        return MessageFormat.format("SELECT * FROM {0}.{1}", schemaName, tableName);
+    }
 
     @Test
     public void testTablesMade() throws Exception {
@@ -38,4 +53,16 @@ public class FlywayPreparerTest {
             assertEquals("bar", rs.getString(1));
         }
     }
+
+    @Test
+    public void testCustomTablesMade() throws Exception {
+        try (Connection c = customDb.getTestDatabase().getConnection();
+            Statement s = c.createStatement()) {
+            ResultSet rs = s.executeQuery(getCustomQuery());
+            rs.next();
+            assertEquals(configuredFlyway.getPlaceholders().get("tableValue"), rs.getString(1));
+        }
+    }
+
+
 }

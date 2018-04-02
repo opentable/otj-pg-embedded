@@ -1,0 +1,12 @@
+flyway:
+  locations:
+    - db/placeholders
+  schemas:
+    - bazz
+  placeholderPrefix: "#{"
+  placeholderSuffix: "}"
+  placeholders:
+    bdUser: quux
+    schemaName: bazz
+    tableName: foo
+    tableValue: bar

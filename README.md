@@ -25,7 +25,7 @@ Default username/password is: postgres/postgres and the default database is 'pos
 
 ## Flyway Migrator
 
-You can easily integrate Flyway database schema migration:
+You can easily integrate Flyway database schema migration using, in this case, the schema location as follows:
 
 ```java
 @Rule
@@ -33,6 +33,8 @@ public PreparedDbRule db =
     EmbeddedPostgresRules.preparedDatabase(
         FlywayPreparer.forClasspathLocation("db/my-db-schema"));
 ```
+
+Alternatively, you can configure all `Flyway` properties using the constructor `FlywayPreparer.forFlyway(configuredFlyway)` (see [`FlywayPreparerTest`](src/test/java/com/opentable/db/postgres/embedded/FlywayPreparerTest.java) for an example).
 
 This will create an independent database for every test with the given schema loaded from the classpath.
 Database templates are used so the time cost is relatively small, given the superior isolation truly

@@ -37,6 +37,10 @@ public final class FlywayPreparer implements DatabasePreparer {
         return new FlywayPreparer(f, Arrays.asList(locations));
     }
 
+    public static FlywayPreparer forFlyway(Flyway flyway){
+        return new FlywayPreparer(flyway, Arrays.asList(flyway.getLocations()));
+    }
+
     private FlywayPreparer(Flyway flyway, List<String> locations) {
         this.flyway = flyway;
         this.locations = locations;
