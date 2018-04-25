@@ -17,17 +17,21 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
+import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.postgresql.ds.PGSimpleDataSource;
+
+import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider
 {
@@ -41,13 +45,20 @@ public class PreparedDbProvider
     private static final Map<DatabasePreparer, PrepPipeline> CLUSTERS = new HashMap<>();
 
     private final PrepPipeline dbPreparer;
+    private final Iterable<Consumer<Builder>> customizers;
+
 
     public static PreparedDbProvider forPreparer(DatabasePreparer preparer) {
-        return new PreparedDbProvider(preparer);
+        return forPreparer(preparer, Collections.emptyList());
     }
 
-    private PreparedDbProvider(DatabasePreparer preparer)
+    public static PreparedDbProvider forPreparer(DatabasePreparer preparer, Iterable<Consumer<EmbeddedPostgres.Builder>> customizers) {
+        return new PreparedDbProvider(preparer, customizers);
+    }
+
+    private PreparedDbProvider(DatabasePreparer preparer, Iterable<Consumer<Builder>> customizers)
     {
+        this.customizers = customizers;
         try {
             dbPreparer = createOrFindPreparer(preparer);
         } catch (final IOException | SQLException e) {
@@ -66,7 +77,9 @@ public class PreparedDbProvider
             return result;
         }
 
-        final EmbeddedPostgres pg = EmbeddedPostgres.start();
+        final Builder builder = EmbeddedPostgres.builder();
+        customizers.forEach(c -> c.accept(builder));
+        final EmbeddedPostgres pg = builder.start();
         preparer.prepare(pg.getTemplateDatabase());
 
         result = new PrepPipeline(pg).start();

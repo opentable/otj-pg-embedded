@@ -16,6 +16,9 @@ package com.opentable.db.postgres.junit;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 import org.junit.rules.ExternalResource;
 
@@ -25,6 +28,7 @@ public class SingleInstancePostgresRule extends ExternalResource
 {
     private volatile EmbeddedPostgres epg;
     private volatile Connection postgresConnection;
+    private final List<Consumer<EmbeddedPostgres.Builder>> builderCustomizers = new CopyOnWriteArrayList<>();
 
     SingleInstancePostgresRule() { }
 
@@ -32,8 +36,22 @@ public class SingleInstancePostgresRule extends ExternalResource
     protected void before() throws Throwable
     {
         super.before();
-        epg = EmbeddedPostgres.start();
+        epg = pg();
         postgresConnection = epg.getPostgresDatabase().getConnection();
+    }
+
+    private EmbeddedPostgres pg() throws IOException {
+        final EmbeddedPostgres.Builder builder = EmbeddedPostgres.builder();
+        builderCustomizers.forEach(c -> c.accept(builder));
+        return builder.start();
+    }
+
+    public SingleInstancePostgresRule customize(Consumer<EmbeddedPostgres.Builder> customizer) {
+        if (epg != null) {
+            throw new AssertionError("already started");
+        }
+        builderCustomizers.add(customizer);
+        return this;
     }
 
     public EmbeddedPostgres getEmbeddedPostgres()
