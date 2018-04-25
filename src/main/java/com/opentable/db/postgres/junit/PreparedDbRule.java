@@ -13,12 +13,17 @@
  */
 package com.opentable.db.postgres.junit;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+
 import javax.sql.DataSource;
 
 import org.junit.rules.ExternalResource;
 
 import com.opentable.db.postgres.embedded.ConnectionInfo;
 import com.opentable.db.postgres.embedded.DatabasePreparer;
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import com.opentable.db.postgres.embedded.PreparedDbProvider;
 
 public class PreparedDbRule extends ExternalResource {
@@ -28,6 +33,8 @@ public class PreparedDbRule extends ExternalResource {
     private volatile PreparedDbProvider provider;
     private volatile ConnectionInfo connectionInfo;
 
+    private final List<Consumer<EmbeddedPostgres.Builder>> builderCustomizers = new CopyOnWriteArrayList<>();
+
     protected PreparedDbRule(DatabasePreparer preparer) {
         if (preparer == null) {
             throw new IllegalStateException("null preparer");
@@ -35,9 +42,17 @@ public class PreparedDbRule extends ExternalResource {
         this.preparer = preparer;
     }
 
+    public PreparedDbRule customize(Consumer<EmbeddedPostgres.Builder> customizer) {
+        if (dataSource != null) {
+            throw new AssertionError("already started");
+        }
+        builderCustomizers.add(customizer);
+        return this;
+    }
+
     @Override
     protected void before() throws Throwable {
-        provider = PreparedDbProvider.forPreparer(preparer);
+        provider = PreparedDbProvider.forPreparer(preparer, builderCustomizers);
         connectionInfo = provider.createNewDatabase();
         dataSource = provider.createDataSourceFromConnectionInfo(connectionInfo);
     }
@@ -62,7 +77,6 @@ public class PreparedDbRule extends ExternalResource {
         }
         return connectionInfo;
     }
-
 
     public PreparedDbProvider getDbProvider() {
         if(provider == null) {
