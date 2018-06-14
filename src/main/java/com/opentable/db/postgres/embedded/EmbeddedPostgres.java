@@ -137,7 +137,7 @@ public class EmbeddedPostgres implements Closeable
             throw new IllegalArgumentException("no data directory");
         }
         LOG.trace("{} postgres data directory is {}", instanceId, this.dataDirectory);
-        mkdirs(dataDirectory);
+        mkdirs(this.dataDirectory);
 
         lockFile = new File(this.dataDirectory, LOCK_FILE_NAME);
 
