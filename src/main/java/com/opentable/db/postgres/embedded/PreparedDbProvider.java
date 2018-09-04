@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
@@ -42,11 +43,9 @@ public class PreparedDbProvider
      * loaded so that the databases may be cloned.
      */
     // @GuardedBy("PreparedDbProvider.class")
-    private static final Map<DatabasePreparer, PrepPipeline> CLUSTERS = new HashMap<>();
+    private static final Map<ClusterKey, PrepPipeline> CLUSTERS = new HashMap<>();
 
     private final PrepPipeline dbPreparer;
-    private final Iterable<Consumer<Builder>> customizers;
-
 
     public static PreparedDbProvider forPreparer(DatabasePreparer preparer) {
         return forPreparer(preparer, Collections.emptyList());
@@ -56,11 +55,9 @@ public class PreparedDbProvider
         return new PreparedDbProvider(preparer, customizers);
     }
 
-    private PreparedDbProvider(DatabasePreparer preparer, Iterable<Consumer<Builder>> customizers)
-    {
-        this.customizers = customizers;
+    private PreparedDbProvider(DatabasePreparer preparer, Iterable<Consumer<Builder>> customizers) {
         try {
-            dbPreparer = createOrFindPreparer(preparer);
+            dbPreparer = createOrFindPreparer(preparer, customizers);
         } catch (final IOException | SQLException e) {
             throw new RuntimeException(e);
         }
@@ -70,9 +67,10 @@ public class PreparedDbProvider
      * Each schema set has its own database cluster.  The template1 database has the schema preloaded so that
      * each test case need only create a new database and not re-invoke your preparer.
      */
-    private synchronized PrepPipeline createOrFindPreparer(DatabasePreparer preparer) throws IOException, SQLException
+    private static synchronized PrepPipeline createOrFindPreparer(DatabasePreparer preparer, Iterable<Consumer<Builder>> customizers) throws IOException, SQLException
     {
-        PrepPipeline result = CLUSTERS.get(preparer);
+        final ClusterKey key = new ClusterKey(preparer, customizers);
+        PrepPipeline result = CLUSTERS.get(key);
         if (result != null) {
             return result;
         }
@@ -83,7 +81,7 @@ public class PreparedDbProvider
         preparer.prepare(pg.getTemplateDatabase());
 
         result = new PrepPipeline(pg).start();
-        CLUSTERS.put(preparer, result);
+        CLUSTERS.put(key, result);
         return result;
     }
 
@@ -231,6 +229,36 @@ public class PreparedDbProvider
         try (Connection c = connectDb.getConnection();
              PreparedStatement stmt = c.prepareStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName))) {
             stmt.execute();
+        }
+    }
+
+    private static class ClusterKey {
+
+        private final DatabasePreparer preparer;
+        private final Builder builder;
+
+        ClusterKey(DatabasePreparer preparer, Iterable<Consumer<Builder>> customizers) {
+            this.preparer = preparer;
+            this.builder = EmbeddedPostgres.builder();
+            customizers.forEach(c -> c.accept(this.builder));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ClusterKey that = (ClusterKey) o;
+            return Objects.equals(preparer, that.preparer) &&
+                    Objects.equals(builder, that.builder);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(preparer, builder);
         }
     }
 

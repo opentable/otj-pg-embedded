@@ -51,7 +51,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -571,6 +570,33 @@ public class EmbeddedPostgres implements Closeable
             }
             return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector, pgStartupWait);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Builder builder = (Builder) o;
+            return builderCleanDataDirectory == builder.builderCleanDataDirectory &&
+                    builderPort == builder.builderPort &&
+                    Objects.equals(parentDirectory, builder.parentDirectory) &&
+                    Objects.equals(builderDataDirectory, builder.builderDataDirectory) &&
+                    Objects.equals(config, builder.config) &&
+                    Objects.equals(localeConfig, builder.localeConfig) &&
+                    Objects.equals(connectConfig, builder.connectConfig) &&
+                    Objects.equals(pgBinaryResolver, builder.pgBinaryResolver) &&
+                    Objects.equals(pgStartupWait, builder.pgStartupWait) &&
+                    Objects.equals(errRedirector, builder.errRedirector) &&
+                    Objects.equals(outRedirector, builder.outRedirector);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(parentDirectory, builderDataDirectory, config, localeConfig, builderCleanDataDirectory, builderPort, connectConfig, pgBinaryResolver, pgStartupWait, errRedirector, outRedirector);
+        }
     }
 
     private static List<String> system(String... command)
@@ -601,8 +627,8 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private static final AtomicReference<File> BINARY_DIR = new AtomicReference<>();
     private static final Lock PREPARE_BINARIES_LOCK = new ReentrantLock();
+    private static final Map<PgBinaryResolver, File> PREPARE_BINARIES = new HashMap<>();
 
     /**
      * Get current operating system string. The string is used in the appropriate postgres binary name.
@@ -685,8 +711,8 @@ public class EmbeddedPostgres implements Closeable
     {
         PREPARE_BINARIES_LOCK.lock();
         try {
-            if(BINARY_DIR.get() != null) {
-                return BINARY_DIR.get();
+            if (PREPARE_BINARIES.containsKey(pgBinaryResolver)) {
+                return PREPARE_BINARIES.get(pgBinaryResolver);
             }
 
             final String system = getOS();
@@ -765,7 +791,7 @@ public class EmbeddedPostgres implements Closeable
                     LOG.warn("could not delete {}", pgTbz);
                 }
             }
-            BINARY_DIR.set(pgDir);
+            PREPARE_BINARIES.put(pgBinaryResolver, pgDir);
             LOG.info("Postgres binaries at {}", pgDir);
             return pgDir;
         } finally {
