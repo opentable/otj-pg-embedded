@@ -573,19 +573,20 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private static List<String> system(String... command)
+    private void system(String... command)
     {
         try {
             final ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectError(ProcessBuilder.Redirect.PIPE);
-            builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
             builder.redirectErrorStream(true);
+            builder.redirectError(errorRedirector);
+            builder.redirectOutput(outputRedirector);
             final Process process = builder.start();
+
+            if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
+                ProcessOutputLogger.logOutput(LOG, process);
+            }
             if (0 != process.waitFor()) {
                 throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream())));
-            }
-            try (InputStream stream = process.getInputStream()) {
-                return IOUtils.readLines(stream);
             }
         } catch (final RuntimeException e) { // NOPMD
             throw e;
