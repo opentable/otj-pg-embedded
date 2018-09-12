@@ -66,6 +66,17 @@
           <executable>./repack-postgres.sh</executable>
         </configuration>
       </plugin>
+      <!-- may not be necessary if added in the parent pom-->
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>${dep.plugin.license.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>**/*.yml</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
@@ -137,5 +148,12 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 </project>
