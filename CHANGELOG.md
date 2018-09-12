@@ -1,3 +1,14 @@
+0.12.1
+------
+* Update README on Windows issue
+* PR #79 - add license to POM
+* PR #81 - restore lost 'this' reference
+
+0.12.0
+-------
+* PR #77 - better server customizers
+* Postgres 10.3
+
 0.11.4
 ------
 * Exposed getConnectionInfo in PreparedDBRule, PreparedDBProvider. The use case is if you need to access
