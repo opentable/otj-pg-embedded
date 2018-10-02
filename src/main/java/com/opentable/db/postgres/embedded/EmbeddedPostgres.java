@@ -14,6 +14,15 @@
 package com.opentable.db.postgres.embedded;
 
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,21 +56,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import javax.sql.DataSource;
-
-import static com.opentable.db.postgres.embedded.EmbeddedUtil.*;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.postgresql.ds.PGSimpleDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.LOCK_FILE_NAME;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.getWorkingDirectory;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.mkdirs;
 
 @SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
+
+    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
+    private static final String PG_STOP_MODE = "fast";
+    private static final String PG_STOP_WAIT_S = "5";
+    private static final String PG_SUPERUSER = "postgres";
+    private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
 
     private final File pgDir;
 
@@ -99,8 +106,6 @@ public class EmbeddedPostgres implements Closeable {
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
         this.pgStartupWait = Objects.requireNonNull(pgStartupWait, "Wait time cannot be null");
-        ;
-
 
         if (parentDirectory != null) {
             mkdirs(parentDirectory);

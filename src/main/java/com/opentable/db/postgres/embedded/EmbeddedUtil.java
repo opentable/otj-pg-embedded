@@ -19,22 +19,21 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.tukaani.xz.XZInputStream;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 
-class EmbeddedUtil {
-    static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
-    static final String PG_STOP_MODE = "fast";
-    static final String PG_STOP_WAIT_S = "5";
-    static final String PG_SUPERUSER = "postgres";
-    static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
+final class EmbeddedUtil {
+
     static final String LOCK_FILE_NAME = "epg-lock";
 
-
+    private EmbeddedUtil() {}
     static File getWorkingDirectory() {
         final File tempWorkingDirectory = new File(System.getProperty("java.io.tmpdir"), "embedded-pg");
         return new File(System.getProperty("ot.epg.working-dir", tempWorkingDirectory.getPath()));

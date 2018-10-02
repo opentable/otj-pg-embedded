@@ -13,6 +13,11 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,12 +30,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.opentable.db.postgres.embedded.EmbeddedUtil.*;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.LOCK_FILE_NAME;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.extractTxz;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.getArchitecture;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.getOS;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.getWorkingDirectory;
+import static com.opentable.db.postgres.embedded.EmbeddedUtil.mkdirs;
 
 public class UncompressBundleDirectoryResolver implements PgDirectoryResolver {
 
