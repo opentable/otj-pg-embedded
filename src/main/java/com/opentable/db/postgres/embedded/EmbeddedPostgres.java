@@ -282,7 +282,12 @@ public class EmbeddedPostgres implements Closeable
     {
         final List<String> localeOptions = new ArrayList<>();
         for (final Entry<String, String> config : localeConfig.entrySet()) {
-          localeOptions.add(String.format("--%s=%s", config.getKey(), config.getValue()));
+            if (SystemUtils.IS_OS_WINDOWS) {
+                localeOptions.add(String.format("--%s=%s", config.getKey(), config.getValue()));
+            } else {
+                localeOptions.add("--" + config.getKey());
+                localeOptions.add(config.getValue());
+            }
         }
         return localeOptions;
     }

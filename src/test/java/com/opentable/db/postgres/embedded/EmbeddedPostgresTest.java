@@ -16,6 +16,7 @@ package com.opentable.db.postgres.embedded;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -57,16 +58,27 @@ public class EmbeddedPostgresTest
 
     @Test
     public void testValidLocaleSettingsPassthrough() throws IOException {
-        final EmbeddedPostgres.Builder builder;
-        if (SystemUtils.IS_OS_WINDOWS) {
-            builder = EmbeddedPostgres.builder()
-                    .setLocaleConfig("locale", "en-us")
-                    .setLocaleConfig("lc-messages", "en-us");
-        } else {
-            builder = EmbeddedPostgres.builder()
-                    .setLocaleConfig("locale", "en_US")
-                    .setLocaleConfig("lc-messages", "en_US");
+        try {
+            EmbeddedPostgres.Builder builder = null;
+            if (SystemUtils.IS_OS_WINDOWS) {
+                builder = EmbeddedPostgres.builder()
+                        .setLocaleConfig("locale", "en-us")
+                        .setLocaleConfig("lc-messages", "en-us");
+            } else if (SystemUtils.IS_OS_MAC) {
+                builder = EmbeddedPostgres.builder()
+                        .setLocaleConfig("locale", "en_US")
+                        .setLocaleConfig("lc-messages", "en_US");
+            } else if (SystemUtils.IS_OS_LINUX){
+                builder = EmbeddedPostgres.builder()
+                        .setLocaleConfig("locale", "en_US.utf8")
+                        .setLocaleConfig("lc-messages", "en_US.utf8");
+            } else {
+                fail("System not detected!");
+            }
+            builder.start();
+        } catch (IllegalStateException e){
+            e.printStackTrace();
+            fail("Failed to set locale settings: " + e.getLocalizedMessage());
         }
-        builder.start();
     }
 }
