@@ -17,10 +17,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -51,5 +53,20 @@ public class EmbeddedPostgresTest
                 .start()) {
             // nothing to do
         }
+    }
+
+    @Test
+    public void testValidLocaleSettingsPassthrough() throws IOException {
+        final EmbeddedPostgres.Builder builder;
+        if (SystemUtils.IS_OS_WINDOWS) {
+            builder = EmbeddedPostgres.builder()
+                    .setLocaleConfig("locale", "en-us")
+                    .setLocaleConfig("lc-messages", "en-us");
+        } else {
+            builder = EmbeddedPostgres.builder()
+                    .setLocaleConfig("locale", "en_US")
+                    .setLocaleConfig("lc-messages", "en_US");
+        }
+        builder.start();
     }
 }
