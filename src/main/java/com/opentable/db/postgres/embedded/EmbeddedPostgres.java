@@ -488,7 +488,7 @@ public class EmbeddedPostgres implements Closeable
         private boolean builderCleanDataDirectory = true;
         private int builderPort = 0;
         private final Map<String, String> connectConfig = new HashMap<>();
-        private PgBinaryResolver pgBinaryResolver = new BundledPostgresBinaryResolver();
+        private PgBinaryResolver pgBinaryResolver = DefaultPostgresBinaryResolver.INSTANCE;
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
