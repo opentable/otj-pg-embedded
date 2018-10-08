@@ -463,7 +463,8 @@ public class EmbeddedPostgres implements Closeable
 
     private static File getWorkingDirectory()
     {
-        final File tempWorkingDirectory = new File(System.getProperty("java.io.tmpdir"), "embedded-pg");
+        final String child = "embedded-pg_" + UUID.randomUUID().toString();
+        final File tempWorkingDirectory = new File(System.getProperty("java.io.tmpdir"), child);
         return new File(System.getProperty("ot.epg.working-dir", tempWorkingDirectory.getPath()));
     }
 
