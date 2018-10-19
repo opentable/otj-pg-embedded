@@ -1,3 +1,9 @@
+0.12.2
+------
+* Update POM, fixing some build issues.
+* Cleanup resulting PMD, Spotbugs issues
+* PR #89 - Corrected locale parameter format and detected windows locale
+
 0.12.1
 ------
 * Update README on Windows issue

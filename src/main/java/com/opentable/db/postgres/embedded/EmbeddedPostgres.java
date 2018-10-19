@@ -70,6 +70,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tukaani.xz.XZInputStream;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 @SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
 public class EmbeddedPostgres implements Closeable
 {
@@ -85,7 +87,8 @@ public class EmbeddedPostgres implements Closeable
     private final File pgDir;
 
     private final Duration pgStartupWait;
-    private final File dataDirectory, lockFile;
+    private final File dataDirectory;
+    private final File lockFile;
     private final UUID instanceId = UUID.randomUUID();
     private final int port;
     private final AtomicBoolean started = new AtomicBoolean();
@@ -210,7 +213,7 @@ public class EmbeddedPostgres implements Closeable
     private void lock() throws IOException
     {
         lockStream = new FileOutputStream(lockFile);
-        if ((lock = lockStream.getChannel().tryLock()) == null) {
+        if ((lock = lockStream.getChannel().tryLock()) == null) { //NOPMD
             throw new IllegalStateException("could not lock " + lockFile);
         }
     }
@@ -317,6 +320,7 @@ public class EmbeddedPostgres implements Closeable
         throw new IOException("Gave up waiting for server to start after " + pgStartupWait.toMillis() + "ms", lastCause);
     }
 
+    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION")
     private void verifyReady(Map<String, String> connectConfig) throws SQLException
     {
         final InetAddress localhost;
@@ -653,7 +657,7 @@ public class EmbeddedPostgres implements Closeable
         ) {
             TarArchiveEntry entry;
 
-            while ((entry = tarIn.getNextTarEntry()) != null) {
+            while ((entry = tarIn.getNextTarEntry()) != null) { //NOPMD
                 final String individualFile = entry.getName();
                 final File fsObject = new File(targetDir + "/" + individualFile);
 
@@ -746,7 +750,7 @@ public class EmbeddedPostgres implements Closeable
                         } else {
                             // the other guy is unpacking for us.
                             int maxAttempts = 60;
-                            while (!pgDirExists.exists() && --maxAttempts > 0) {
+                            while (!pgDirExists.exists() && --maxAttempts > 0) { //NOPMD
                                 Thread.sleep(1000L);
                             }
                             if (!pgDirExists.exists()) {
