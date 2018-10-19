@@ -1,3 +1,7 @@
+0.12.3
+------
+* Bug forced re-release
+
 0.12.2
 ------
 * Update POM, fixing some build issues.
