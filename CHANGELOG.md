@@ -1,3 +1,7 @@
+0.12.4 (unreleased) 
+------
+* Apache commons upgrade for CVE
+
 0.12.3
 ------
 * Bug forced re-release
