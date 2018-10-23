@@ -1,4 +1,4 @@
-0.12.4 (unreleased) 
+0.12.4 
 ------
 * Apache commons upgrade for CVE
 
