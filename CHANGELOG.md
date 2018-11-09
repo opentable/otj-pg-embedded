@@ -1,3 +1,7 @@
+0.12.5
+------
+* PR #93 - Add separate Junit5 support directory
+
 0.12.4 
 ------
 * Apache commons upgrade for CVE
