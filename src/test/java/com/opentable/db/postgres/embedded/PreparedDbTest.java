@@ -16,6 +16,7 @@ package com.opentable.db.postgres.embedded;
 import static org.junit.Assert.assertEquals;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -71,6 +72,15 @@ public class PreparedDbTest {
         ConnectionInfo dbInfo = dbA1.getConnectionInfo();
         DataSource dataSource = dbA1.getTestDatabase();
         try (Connection c = dataSource.getConnection(); Statement stmt = c.createStatement()) {
+            commonAssertion(stmt);
+            assertEquals(dbInfo.getUser(), c.getMetaData().getUserName());
+        }
+    }
+
+    @Test
+    public void testDbUri() throws Exception {
+        try (Connection c = DriverManager.getConnection(dbA1.getDbProvider().createDatabase());
+             Statement stmt = c.createStatement()) {
             commonAssertion(stmt);
         }
     }
