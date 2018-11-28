@@ -221,7 +221,7 @@ public class PreparedDbProvider
         }
     }
 
-    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION")
+    @SuppressFBWarnings({"OBL_UNSATISFIED_OBLIGATION", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"})
     private static void create(final DataSource connectDb, final String dbName, final String userName) throws SQLException
     {
         if (dbName == null) {
