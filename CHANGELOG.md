@@ -1,6 +1,7 @@
 0.12.6
 ------
-* PR #94, 95 (shorten thread names, user in connection uri)
+* PR 95 (user in connection uri)
+* PR 94 (shorten thread name) applied and reverted, since it required java 9
 
 0.12.5
 ------

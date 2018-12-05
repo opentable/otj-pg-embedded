@@ -63,7 +63,7 @@ final class ProcessOutputLogger implements Runnable {
 
     static void logOutput(final Logger logger, final Process process) {
         final Thread t = new Thread(new ProcessOutputLogger(logger, process));
-        t.setName("pg-" + process.pid());
+        t.setName("output redirector for " + process);
         t.start();
     }
 }
