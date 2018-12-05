@@ -1,3 +1,7 @@
+0.12.6
+------
+* PR #94, 95 (shorten thread names, user in connection uri)
+
 0.12.5
 ------
 * PR #93 - Add separate Junit5 support directory
