@@ -24,8 +24,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileSystems;
@@ -73,6 +71,7 @@ import org.tukaani.xz.XZInputStream;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
+@SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"}) // java 11 triggers: https://github.com/spotbugs/spotbugs/issues/756
 public class EmbeddedPostgres implements Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
@@ -323,28 +322,12 @@ public class EmbeddedPostgres implements Closeable
     @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION")
     private void verifyReady(Map<String, String> connectConfig) throws SQLException
     {
-        final InetAddress localhost;
-        try {
-            localhost = InetAddress.getByAddress(new byte[]{127, 0, 0, 1});
-        } catch (final UnknownHostException e) {
-            throw new AssertionError("localhost unknown?", e);
-        }
-        final Socket sock = new Socket();
-        try {
+        final InetAddress localhost = InetAddress.getLoopbackAddress();
+        try (Socket sock = new Socket()) {
             sock.setSoTimeout((int) Duration.ofMillis(500).toMillis());
-        } catch (final SocketException e) {
-            throw new RuntimeException("error setting socket timeout", e);
-        }
-        try {
             sock.connect(new InetSocketAddress(localhost, port), (int) Duration.ofMillis(500).toMillis());
         } catch (final IOException e) {
             throw new SQLException("connect failed", e);
-        } finally {
-            try {
-                sock.close();
-            } catch (final IOException e) {
-                LOG.trace("i/o exception closing test socket", e);
-            }
         }
         try (Connection c = getPostgresDatabase(connectConfig).getConnection() ;
                 Statement s = c.createStatement() ;

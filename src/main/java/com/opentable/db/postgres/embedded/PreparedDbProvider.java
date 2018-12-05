@@ -37,7 +37,7 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider
 {
-    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s";
+    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s";
 
     /**
      * Each database cluster's <code>template1</code> database has a unique set of schema
@@ -140,7 +140,7 @@ public class PreparedDbProvider
 
     String getJdbcUri(DbInfo db)
     {
-        return String.format(JDBC_FORMAT, db.port, db.dbName);
+        return String.format(JDBC_FORMAT, db.port, db.dbName, db.user);
     }
 
     /**
@@ -221,7 +221,7 @@ public class PreparedDbProvider
         }
     }
 
-    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION")
+    @SuppressFBWarnings({"OBL_UNSATISFIED_OBLIGATION", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"})
     private static void create(final DataSource connectDb, final String dbName, final String userName) throws SQLException
     {
         if (dbName == null) {
