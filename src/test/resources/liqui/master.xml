@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <preConditions>
+        <dbms type="postgresql"/>
+    </preConditions>
+
+    <changeSet id="11122018140410" author="artem.gavrilov">
+        <comment>Create table `foo`</comment>
+        <sql>
+            CREATE TABLE foo (test VARCHAR);
+        </sql>
+    </changeSet>
+
+    <changeSet id="11122018140810" author="artem.gavrilov">
+        <comment>Fill `foo` table</comment>
+        <sql>INSERT INTO foo VALUES('bar');</sql>
+    </changeSet>
+
+</databaseChangeLog>
+
+

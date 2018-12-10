@@ -110,6 +110,12 @@
       <artifactId>flyway-core</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>3.6.2</version>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.postgresql</groupId>
