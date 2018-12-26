@@ -1,3 +1,7 @@
+0.12.11
+-------
+* PR #84 - Speed up binary extraction.
+
 0.12.10
 -------
 * Add builder option to override working directory (otherwise uses java.io.tmpdir or the ot.epg.working-dir system properties)
