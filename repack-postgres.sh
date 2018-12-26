@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 # NB: This is the *server* version, which is not to be confused with the client library version.
 # The important compatibility point is the *protocol* version, which hasn't changed in ages.
-VERSION=10.3-3
+VERSION=10.6-1
 
 RSRC_DIR=$PWD/target/generated-resources
 

@@ -1,3 +1,7 @@
+0.13.0
+------
+* Postgres 10.6
+
 0.12.11
 -------
 * PR #84 - Speed up binary extraction.
