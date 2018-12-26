@@ -1,3 +1,7 @@
+0.12.7
+-----
+* PR 97 (Support for Liquibase) 
+
 0.12.6
 ------
 * PR 95 (user in connection uri)
