@@ -1,3 +1,7 @@
+0.12.8
+------
+* PR #85 - Fixed Caching of Prepared DBs
+
 0.12.7
 -----
 * PR 97 (Support for Liquibase) 
