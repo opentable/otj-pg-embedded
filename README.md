@@ -23,15 +23,23 @@ Additionally you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db
 
 Default username/password is: postgres/postgres and the default database is 'postgres'
 
-## Flyway Migrator
+## Migrators (Flyway or Liquibase)
 
-You can easily integrate Flyway database schema migration:
-
+You can easily integrate Flyway or Liquibase database schema migration:
+##### Flyway
 ```java
-@Rule
+@Rule 
 public PreparedDbRule db =
     EmbeddedPostgresRules.preparedDatabase(
         FlywayPreparer.forClasspathLocation("db/my-db-schema"));
+```
+
+##### Liquibase
+```java
+@Rule
+public PreparedDbRule db = 
+    EmbeddedPostgresRules.preparedDatabase(
+            LiquibasePreparer.forClasspathLocation("liqui/master.xml"));
 ```
 
 This will create an independent database for every test with the given schema loaded from the classpath.
