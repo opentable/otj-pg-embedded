@@ -1,3 +1,7 @@
+0.12.10
+-------
+* Add builder option to override working directory (otherwise uses java.io.tmpdir or the ot.epg.working-dir system properties)
+
 0.12.9
 ------
 * PR #83 - Logging of initDB process
