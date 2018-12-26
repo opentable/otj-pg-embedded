@@ -19,7 +19,7 @@
   <parent>
     <groupId>com.opentable</groupId>
     <artifactId>otj-parent-spring</artifactId>
-    <version>149</version>
+    <version>174</version>
   </parent>
 
   <scm>
@@ -31,12 +31,15 @@
 
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-pg-embedded</artifactId>
-  <version>0.12.1-SNAPSHOT</version>
+  <version>0.12.11-SNAPSHOT</version>
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
     <project.build.targetJdk>1.8</project.build.targetJdk>
     <basepom.test.timeout>1800</basepom.test.timeout>
+    <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
+    <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
+    <basepom.check.fail-javadoc>false</basepom.check.fail-javadoc>
   </properties>
 
   <licenses>
@@ -83,7 +86,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>1.11</version>
+      <version>1.18</version>
     </dependency>
 
     <dependency>
@@ -109,13 +112,30 @@
     </dependency>
 
     <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>

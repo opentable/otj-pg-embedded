@@ -51,11 +51,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -77,8 +77,10 @@ import org.tukaani.xz.XZInputStream;
 
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
 import static java.nio.file.StandardOpenOption.WRITE;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
+@SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"}) // java 11 triggers: https://github.com/spotbugs/spotbugs/issues/756
 public class EmbeddedPostgres implements Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
@@ -93,7 +95,8 @@ public class EmbeddedPostgres implements Closeable
     private final File pgDir;
 
     private final Duration pgStartupWait;
-    private final File dataDirectory, lockFile;
+    private final File dataDirectory;
+    private final File lockFile;
     private final UUID instanceId = UUID.randomUUID();
     private final int port;
     private final AtomicBoolean started = new AtomicBoolean();
@@ -113,18 +116,21 @@ public class EmbeddedPostgres implements Closeable
         Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
         PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
-        this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig, pgBinaryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT);
+        this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig,
+                pgBinaryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
     }
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
                      Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
-                     PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait) throws IOException
+                     PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector,
+                     ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
+                     Optional<File> overrideWorkingDirectory) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = new HashMap<>(postgresConfig);
         this.localeConfig = new HashMap<>(localeConfig);
         this.port = port;
-        this.pgDir = prepareBinaries(pgBinaryResolver);
+        this.pgDir = prepareBinaries(pgBinaryResolver, overrideWorkingDirectory);
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
         this.pgStartupWait = pgStartupWait;
@@ -218,7 +224,7 @@ public class EmbeddedPostgres implements Closeable
     private void lock() throws IOException
     {
         lockStream = new FileOutputStream(lockFile);
-        if ((lock = lockStream.getChannel().tryLock()) == null) {
+        if ((lock = lockStream.getChannel().tryLock()) == null) { //NOPMD
             throw new IllegalStateException("could not lock " + lockFile);
         }
     }
@@ -290,8 +296,12 @@ public class EmbeddedPostgres implements Closeable
     {
         final List<String> localeOptions = new ArrayList<>();
         for (final Entry<String, String> config : localeConfig.entrySet()) {
-          localeOptions.add("--" + config.getKey());
-          localeOptions.add(config.getValue());
+            if (SystemUtils.IS_OS_WINDOWS) {
+                localeOptions.add(String.format("--%s=%s", config.getKey(), config.getValue()));
+            } else {
+                localeOptions.add("--" + config.getKey());
+                localeOptions.add(config.getValue());
+            }
         }
         return localeOptions;
     }
@@ -321,30 +331,15 @@ public class EmbeddedPostgres implements Closeable
         throw new IOException("Gave up waiting for server to start after " + pgStartupWait.toMillis() + "ms", lastCause);
     }
 
+    @SuppressFBWarnings("OBL_UNSATISFIED_OBLIGATION")
     private void verifyReady(Map<String, String> connectConfig) throws SQLException
     {
-        final InetAddress localhost;
-        try {
-            localhost = InetAddress.getByAddress(new byte[]{127, 0, 0, 1});
-        } catch (final UnknownHostException e) {
-            throw new AssertionError("localhost unknown?", e);
-        }
-        final Socket sock = new Socket();
-        try {
+        final InetAddress localhost = InetAddress.getLoopbackAddress();
+        try (Socket sock = new Socket()) {
             sock.setSoTimeout((int) Duration.ofMillis(500).toMillis());
-        } catch (final SocketException e) {
-            throw new RuntimeException("error setting socket timeout", e);
-        }
-        try {
             sock.connect(new InetSocketAddress(localhost, port), (int) Duration.ofMillis(500).toMillis());
         } catch (final IOException e) {
             throw new SQLException("connect failed", e);
-        } finally {
-            try {
-                sock.close();
-            } catch (final IOException e) {
-                LOG.trace("i/o exception closing test socket", e);
-            }
         }
         try (Connection c = getPostgresDatabase(connectConfig).getConnection() ;
                 Statement s = c.createStatement() ;
@@ -488,6 +483,7 @@ public class EmbeddedPostgres implements Closeable
     public static class Builder
     {
         private final File parentDirectory = getWorkingDirectory();
+        private Optional<File> overrideWorkingDirectory = Optional.empty(); // use tmpdir
         private File builderDataDirectory;
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
@@ -548,6 +544,11 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
+        public Builder setOverrideWorkingDirectory(File workingDirectory) {
+            overrideWorkingDirectory = Optional.ofNullable(workingDirectory);
+            return this;
+        }
+
         public Builder setPort(int port) {
             builderPort = port;
             return this;
@@ -577,23 +578,53 @@ public class EmbeddedPostgres implements Closeable
             if (builderDataDirectory == null) {
                 builderDataDirectory = Files.createTempDirectory("epg").toFile();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config, localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector, pgStartupWait);
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,
+                    localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector,
+                    pgStartupWait, overrideWorkingDirectory);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Builder builder = (Builder) o;
+            return builderCleanDataDirectory == builder.builderCleanDataDirectory &&
+                    builderPort == builder.builderPort &&
+                    Objects.equals(parentDirectory, builder.parentDirectory) &&
+                    Objects.equals(builderDataDirectory, builder.builderDataDirectory) &&
+                    Objects.equals(config, builder.config) &&
+                    Objects.equals(localeConfig, builder.localeConfig) &&
+                    Objects.equals(connectConfig, builder.connectConfig) &&
+                    Objects.equals(pgBinaryResolver, builder.pgBinaryResolver) &&
+                    Objects.equals(pgStartupWait, builder.pgStartupWait) &&
+                    Objects.equals(errRedirector, builder.errRedirector) &&
+                    Objects.equals(outRedirector, builder.outRedirector);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(parentDirectory, builderDataDirectory, config, localeConfig, builderCleanDataDirectory, builderPort, connectConfig, pgBinaryResolver, pgStartupWait, errRedirector, outRedirector);
         }
     }
 
-    private static List<String> system(String... command)
+    private void system(String... command)
     {
         try {
             final ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectError(ProcessBuilder.Redirect.PIPE);
-            builder.redirectOutput(ProcessBuilder.Redirect.PIPE);
             builder.redirectErrorStream(true);
+            builder.redirectError(errorRedirector);
+            builder.redirectOutput(outputRedirector);
             final Process process = builder.start();
+
+            if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
+                ProcessOutputLogger.logOutput(LOG, process);
+            }
             if (0 != process.waitFor()) {
                 throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream())));
-            }
-            try (InputStream stream = process.getInputStream()) {
-                return IOUtils.readLines(stream);
             }
         } catch (final RuntimeException e) { // NOPMD
             throw e;
@@ -609,8 +640,8 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private static final AtomicReference<File> BINARY_DIR = new AtomicReference<>();
     private static final Lock PREPARE_BINARIES_LOCK = new ReentrantLock();
+    private static final Map<PgBinaryResolver, File> PREPARE_BINARIES = new HashMap<>();
 
     /**
      * Get current operating system string. The string is used in the appropriate postgres binary name.
@@ -656,7 +687,7 @@ public class EmbeddedPostgres implements Closeable
             final Phaser phaser = new Phaser(1);
             TarArchiveEntry entry;
 
-            while ((entry = tarIn.getNextTarEntry()) != null) {
+            while ((entry = tarIn.getNextTarEntry()) != null) { //NOPMD
                 final String individualFile = entry.getName();
                 final File fsObject = new File(targetDir + "/" + individualFile);
 
@@ -714,12 +745,12 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    private static File prepareBinaries(PgBinaryResolver pgBinaryResolver)
+    private static File prepareBinaries(PgBinaryResolver pgBinaryResolver, Optional<File> overrideWorkingDirectory)
     {
         PREPARE_BINARIES_LOCK.lock();
         try {
-            if(BINARY_DIR.get() != null) {
-                return BINARY_DIR.get();
+            if (PREPARE_BINARIES.containsKey(pgBinaryResolver)) {
+                return PREPARE_BINARIES.get(pgBinaryResolver);
             }
 
             final String system = getOS();
@@ -744,7 +775,8 @@ public class EmbeddedPostgres implements Closeable
                 pgArchiveData.close();
 
                 String pgDigest = Hex.encodeHexString(pgArchiveData.getMessageDigest().digest());
-                pgDir = new File(getWorkingDirectory(), String.format("PG-%s", pgDigest));
+                File workingDirectory = overrideWorkingDirectory.isPresent() ? overrideWorkingDirectory.get() : getWorkingDirectory();
+                pgDir = new File(workingDirectory, String.format("PG-%s", pgDigest));
 
                 mkdirs(pgDir);
                 final File unpackLockFile = new File(pgDir, LOCK_FILE_NAME);
@@ -771,7 +803,7 @@ public class EmbeddedPostgres implements Closeable
                         } else {
                             // the other guy is unpacking for us.
                             int maxAttempts = 60;
-                            while (!pgDirExists.exists() && --maxAttempts > 0) {
+                            while (!pgDirExists.exists() && --maxAttempts > 0) { //NOPMD
                                 Thread.sleep(1000L);
                             }
                             if (!pgDirExists.exists()) {
@@ -790,7 +822,7 @@ public class EmbeddedPostgres implements Closeable
                 Thread.currentThread().interrupt();
                 throw new ExceptionInInitializerError(ie);
             }
-            BINARY_DIR.set(pgDir);
+            PREPARE_BINARIES.put(pgBinaryResolver, pgDir);
             LOG.info("Postgres binaries at {}", pgDir);
             return pgDir;
         } finally {

@@ -1,3 +1,53 @@
+0.12.10
+-------
+* Add builder option to override working directory (otherwise uses java.io.tmpdir or the ot.epg.working-dir system properties)
+
+0.12.9
+------
+* PR #83 - Logging of initDB process
+
+0.12.8
+------
+* PR #85 - Fixed Caching of Prepared DBs
+
+0.12.7
+-----
+* PR 97 (Support for Liquibase) 
+
+0.12.6
+------
+* PR 95 (user in connection uri)
+* PR 94 (shorten thread name) applied and reverted, since it required java 9
+
+0.12.5
+------
+* PR #93 - Add separate Junit5 support directory
+
+0.12.4 
+------
+* Apache commons upgrade for CVE
+
+0.12.3
+------
+* Bug forced re-release
+
+0.12.2
+------
+* Update POM, fixing some build issues.
+* Cleanup resulting PMD, Spotbugs issues
+* PR #89 - Corrected locale parameter format and detected windows locale
+
+0.12.1
+------
+* Update README on Windows issue
+* PR #79 - add license to POM
+* PR #81 - restore lost 'this' reference
+
+0.12.0
+-------
+* PR #77 - better server customizers
+* Postgres 10.3
+
 0.11.4
 ------
 * Exposed getConnectionInfo in PreparedDBRule, PreparedDBProvider. The use case is if you need to access
