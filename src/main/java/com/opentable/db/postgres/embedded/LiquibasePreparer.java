@@ -30,13 +30,23 @@ import static liquibase.database.DatabaseFactory.getInstance;
 public final class LiquibasePreparer implements DatabasePreparer {
 
     private final String location;
+    private final Contexts contexts;
+    private final LabelExpression labels;
 
     public static LiquibasePreparer forClasspathLocation(String location) {
         return new LiquibasePreparer(location);
     }
 
+    private LiquibasePreparer(String location, Contexts contexts, LabelExpression labels) {
+        this.location = location;
+        this.contexts = contexts;
+        this.labels = labels;
+    }
+
     private LiquibasePreparer(String location) {
         this.location = location;
+        this.contexts = new Contexts();
+        this.labels = new LabelExpression();
     }
 
     @Override
@@ -44,9 +54,11 @@ public final class LiquibasePreparer implements DatabasePreparer {
         Connection connection = null;
         try {
             connection = ds.getConnection();
+            ResourceAccessor resourceAccessor = new CompositeResourceAccessor(
+                    new ClassLoaderResourceAccessor(), new FileSystemResourceAccessor());
             Database database = getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            Liquibase liquibase = new Liquibase(location, new ClassLoaderResourceAccessor(), database);
-            liquibase.update(new Contexts());
+            Liquibase liquibase = new Liquibase(location, resourceAccessor, database);
+            liquibase.update(contexts, labels);
         } catch (LiquibaseException e) {
             throw new SQLException(e);
         } finally {
@@ -56,14 +68,3 @@ public final class LiquibasePreparer implements DatabasePreparer {
             }
         }
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof LiquibasePreparer && Objects.equals(location, ((LiquibasePreparer) obj).location);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(location);
-    }
-}
