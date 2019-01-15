@@ -68,3 +68,14 @@ public final class LiquibasePreparer implements DatabasePreparer {
             }
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof LiquibasePreparer && Objects.equals(location, ((LiquibasePreparer) obj).location);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(location);
+    }
+}
