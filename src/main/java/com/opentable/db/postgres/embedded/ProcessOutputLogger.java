@@ -20,6 +20,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ final class ProcessOutputLogger implements Runnable {
         try {
             while (process.isAlive()) {
                 try {
-                    logger.info(reader.readLine());
+                    Optional.ofNullable(reader.readLine()).ifPresent(logger::info);
                 } catch (final IOException e) {
                     logger.error("while reading output", e);
                     return;
