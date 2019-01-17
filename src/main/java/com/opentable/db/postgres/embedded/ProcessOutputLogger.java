@@ -16,8 +16,12 @@ package com.opentable.db.postgres.embedded;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 
 /**
@@ -63,7 +67,20 @@ final class ProcessOutputLogger implements Runnable {
 
     static void logOutput(final Logger logger, final Process process) {
         final Thread t = new Thread(new ProcessOutputLogger(logger, process));
-        t.setName("output redirector for " + process);
+        t.setName("log:" + describe(process));
         t.start();
+    }
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION") // expected and ignored
+    private static String describe(Process process) {
+        try { // java 9+
+            return String.format("pid(%s)", MethodHandles.lookup().findVirtual(Process.class, "pid", MethodType.methodType(long.class)).invoke(process));
+        } catch (Throwable ignored) {} // NOPMD since MethodHandles.invoke throws Throwable
+        try { // openjdk / oraclejdk 8
+            final Field pid = process.getClass().getDeclaredField("pid");
+            pid.setAccessible(true);
+            return String.format("pid(%s)", pid.getInt(process));
+        } catch (Exception ignored) {}
+        return process.toString(); // anything goes wrong
     }
 }
