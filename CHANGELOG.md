@@ -1,3 +1,7 @@
+0.13.1
+------
+* PR #104 - improved logging names
+
 0.13.0
 ------
 * Postgres 10.6
