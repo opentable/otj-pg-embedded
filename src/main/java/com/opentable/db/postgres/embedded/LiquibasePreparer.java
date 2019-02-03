@@ -30,13 +30,18 @@ import static liquibase.database.DatabaseFactory.getInstance;
 public final class LiquibasePreparer implements DatabasePreparer {
 
     private final String location;
+    private final Contexts contexts;
 
     public static LiquibasePreparer forClasspathLocation(String location) {
-        return new LiquibasePreparer(location);
+        return new LiquibasePreparer(location, new Contexts());
+    }
+    public static LiquibasePreparer forClasspathLocation(String location, Contexts contexts) {
+        return new LiquibasePreparer(location, contexts);
     }
 
-    private LiquibasePreparer(String location) {
+    private LiquibasePreparer(String location, Contexts contexts) {
         this.location = location;
+        this.contexts = contexts;
     }
 
     @Override
@@ -46,7 +51,7 @@ public final class LiquibasePreparer implements DatabasePreparer {
             connection = ds.getConnection();
             Database database = getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
             Liquibase liquibase = new Liquibase(location, new ClassLoaderResourceAccessor(), database);
-            liquibase.update(new Contexts());
+            liquibase.update(contexts);
         } catch (LiquibaseException e) {
             throw new SQLException(e);
         } finally {
