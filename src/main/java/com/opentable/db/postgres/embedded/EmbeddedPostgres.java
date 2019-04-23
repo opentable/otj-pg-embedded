@@ -83,6 +83,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class EmbeddedPostgres implements Closeable
 {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
+    private static final String LOG_PREFIX = EmbeddedPostgres.class.getName() + ".";
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%s/%s?user=%s";
 
     private static final String PG_STOP_MODE = "fast";
@@ -266,6 +267,8 @@ public class EmbeddedPostgres implements Closeable
 
         if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
             ProcessOutputLogger.logOutput(LoggerFactory.getLogger("pg-" + instanceId), postmaster);
+        } else if(outputRedirector.type() == ProcessBuilder.Redirect.Type.APPEND) {
+            ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "pg-" + instanceId), postmaster);
         }
 
         LOG.info("{} postmaster started as {} on port {}.  Waiting up to {} for server startup to finish.", instanceId, postmaster.toString(), port, pgStartupWait);
@@ -621,6 +624,8 @@ public class EmbeddedPostgres implements Closeable
 
             if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
                 ProcessOutputLogger.logOutput(LoggerFactory.getLogger("init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
+            } else if(outputRedirector.type() == ProcessBuilder.Redirect.Type.APPEND) {
+                ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
             }
             if (0 != process.waitFor()) {
                 throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream())));
