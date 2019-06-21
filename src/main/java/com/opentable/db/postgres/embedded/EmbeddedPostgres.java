@@ -216,7 +216,13 @@ public class EmbeddedPostgres implements Closeable
     private static int detectPort() throws IOException
     {
         try (ServerSocket socket = new ServerSocket(0)) {
+            while(!socket.isBound()) {
+                Thread.sleep(50);
+            }
             return socket.getLocalPort();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Thread interrupted", e);
         }
     }
 
