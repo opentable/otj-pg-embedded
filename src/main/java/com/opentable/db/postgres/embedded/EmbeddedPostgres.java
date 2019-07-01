@@ -629,6 +629,10 @@ public class EmbeddedPostgres implements Closeable
             final List<String> commandToExecute;
             if (this.userSO.isPresent()) {
                 commandToExecute = new ArrayList<>();
+                commandToExecute.add("chmod");
+                commandToExecute.add("+x");
+                commandToExecute.add(command[0]);
+                commandToExecute.add("&&");
                 commandToExecute.add("su");
                 commandToExecute.add("-");
                 commandToExecute.add(this.userSO.get());
