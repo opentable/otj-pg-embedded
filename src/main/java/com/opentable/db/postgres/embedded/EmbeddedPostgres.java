@@ -112,19 +112,21 @@ public class EmbeddedPostgres implements Closeable
     private final ProcessBuilder.Redirect errorRedirector;
     private final ProcessBuilder.Redirect outputRedirector;
 
+    private final Optional<String> userSO;
+
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
         Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
         PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
         this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig,
-                pgBinaryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
+                pgBinaryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty(), Optional.empty());
     }
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
                      Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
                      PgBinaryResolver pgBinaryResolver, ProcessBuilder.Redirect errorRedirector,
                      ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
-                     Optional<File> overrideWorkingDirectory) throws IOException
+                     Optional<File> overrideWorkingDirectory, Optional<String> userSO) throws IOException
     {
         this.cleanDataDirectory = cleanDataDirectory;
         this.postgresConfig = new HashMap<>(postgresConfig);
@@ -134,6 +136,7 @@ public class EmbeddedPostgres implements Closeable
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
         this.pgStartupWait = pgStartupWait;
+        this.userSO = userSO;
         Objects.requireNonNull(this.pgStartupWait, "Wait time cannot be null");
 
         if (parentDirectory != null) {
@@ -498,6 +501,8 @@ public class EmbeddedPostgres implements Closeable
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
         private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
 
+        private Optional<String> userSO = Optional.empty();
+
         Builder() {
             config.put("timezone", "UTC");
             config.put("synchronous_commit", "off");
@@ -572,6 +577,11 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
+        public Builder setUserSO(String user) {
+            this.userSO = Optional.of(user);
+            return this;
+        }
+
         public EmbeddedPostgres start() throws IOException {
             if (builderPort == 0)
             {
@@ -582,7 +592,7 @@ public class EmbeddedPostgres implements Closeable
             }
             return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,
                     localeConfig, builderPort, connectConfig, pgBinaryResolver, errRedirector, outRedirector,
-                    pgStartupWait, overrideWorkingDirectory);
+                    pgStartupWait, overrideWorkingDirectory, userSO);
         }
 
         @Override
@@ -616,7 +626,21 @@ public class EmbeddedPostgres implements Closeable
     private void system(String... command)
     {
         try {
-            final ProcessBuilder builder = new ProcessBuilder(command);
+            final List<String> commandToExecute;
+            if (this.userSO.isPresent()) {
+                commandToExecute = new ArrayList<>();
+                commandToExecute.add("su");
+                commandToExecute.add("-");
+                commandToExecute.add(this.userSO.get());
+                commandToExecute.add("-c");
+                commandToExecute.add("\"");
+                commandToExecute.addAll(Arrays.asList(command));
+                commandToExecute.add("\"");
+            } else {
+                commandToExecute = Arrays.asList(command);
+            }
+
+            final ProcessBuilder builder = new ProcessBuilder(commandToExecute);
             builder.redirectErrorStream(true);
             builder.redirectError(errorRedirector);
             builder.redirectOutput(outputRedirector);
@@ -628,7 +652,7 @@ public class EmbeddedPostgres implements Closeable
                 ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
             }
             if (0 != process.waitFor()) {
-                throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream())));
+                throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(commandToExecute), IOUtils.toString(process.getErrorStream())));
             }
         } catch (final RuntimeException e) { // NOPMD
             throw e;
