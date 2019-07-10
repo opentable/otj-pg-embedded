@@ -74,7 +74,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tukaani.xz.XZInputStream;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -706,7 +706,7 @@ public class EmbeddedPostgres implements Closeable
                     }
                     mkdirs(fsObject.getParentFile());
 
-                    final AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(fsObject.toPath(), CREATE_NEW, WRITE);
+                    final AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(fsObject.toPath(), CREATE, WRITE);
                     final ByteBuffer buffer = ByteBuffer.wrap(content);
 
                     phaser.register();
