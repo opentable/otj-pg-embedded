@@ -119,9 +119,6 @@ public class EmbeddedPostgres implements Closeable
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
         this.pgStartupWait = Objects.requireNonNull(pgStartupWait, "Wait time cannot be null");
-        ;
-
-
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
             cleanOldDataDirectories(parentDirectory);
@@ -610,7 +607,6 @@ public class EmbeddedPostgres implements Closeable
         }
     }
 
-    
     @Override
     public String toString() {
         return "EmbeddedPG-" + instanceId;
