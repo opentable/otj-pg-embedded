@@ -44,7 +44,7 @@ final class EmbeddedUtil {
     static final String PG_SUPERUSER = "postgres";
     static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
     static final String LOCK_FILE_NAME = "epg-lock";
-    
+
     private EmbeddedUtil() {}
 
     static File getWorkingDirectory() {
