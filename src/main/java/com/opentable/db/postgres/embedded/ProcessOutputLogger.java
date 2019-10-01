@@ -69,6 +69,7 @@ final class ProcessOutputLogger implements Runnable {
     static void logOutput(final Logger logger, final Process process) {
         final Thread t = new Thread(new ProcessOutputLogger(logger, process));
         t.setName("log:" + describe(process));
+        t.setDaemon(true);
         t.start();
     }
 
