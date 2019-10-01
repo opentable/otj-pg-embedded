@@ -712,7 +712,7 @@ public class EmbeddedPostgres implements Closeable
                     }
                     mkdirs(fsObject.getParentFile());
 
-                    final AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(fsObject.toPath(), CREATE, WRITE);
+                    final AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(fsObject.toPath(), CREATE, WRITE); //NOPMD
                     final ByteBuffer buffer = ByteBuffer.wrap(content); //NOPMD
 
                     phaser.register();
