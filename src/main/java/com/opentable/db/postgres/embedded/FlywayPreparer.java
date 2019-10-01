@@ -28,24 +28,23 @@ import org.flywaydb.core.Flyway;
 
 public final class FlywayPreparer implements DatabasePreparer {
 
-    private final Flyway flyway;
     private final List<String> locations;
 
     public static FlywayPreparer forClasspathLocation(String... locations) {
-        Flyway f = new Flyway();
-        f.setLocations(locations);
-        return new FlywayPreparer(f, Arrays.asList(locations));
+        return new FlywayPreparer(Arrays.asList(locations));
     }
 
-    private FlywayPreparer(Flyway flyway, List<String> locations) {
-        this.flyway = flyway;
+    private FlywayPreparer(List<String> locations) {
         this.locations = locations;
     }
 
     @Override
     public void prepare(DataSource ds) throws SQLException {
-        flyway.setDataSource(ds);
-        flyway.migrate();
+        Flyway.configure()
+                .locations(locations.toArray(new String[0]))
+                .dataSource(ds)
+                .load()
+                .migrate();
     }
 
     @Override

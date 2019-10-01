@@ -6,6 +6,8 @@
 * Issue #116 Server startup fails with "port out of range:-1" error (#117)
 * Overwrite existing extracted files if they exist. (#120)
 * ProcessOutputLogger: don't prevent jvm shutdown (#123)
+* Update POM
+* Upgrade to Flyway 6 API (#126)
 
 0.13.1
 ------

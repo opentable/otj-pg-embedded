@@ -713,7 +713,7 @@ public class EmbeddedPostgres implements Closeable
                     mkdirs(fsObject.getParentFile());
 
                     final AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(fsObject.toPath(), CREATE, WRITE);
-                    final ByteBuffer buffer = ByteBuffer.wrap(content);
+                    final ByteBuffer buffer = ByteBuffer.wrap(content); //NOPMD
 
                     phaser.register();
                     fileChannel.write(buffer, 0, fileChannel, new CompletionHandler<Integer, Channel>() {
@@ -768,7 +768,7 @@ public class EmbeddedPostgres implements Closeable
 
             LOG.info("Detected a {} {} system", system, machineHardware);
             File pgDir;
-            final InputStream pgBinary;
+            final InputStream pgBinary; //NOPMD
             try {
                 pgBinary = pgBinaryResolver.getPgBinary(system, machineHardware);
             } catch (final IOException e) {

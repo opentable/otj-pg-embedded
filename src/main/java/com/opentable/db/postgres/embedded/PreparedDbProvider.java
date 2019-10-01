@@ -79,7 +79,7 @@ public class PreparedDbProvider
 
         final Builder builder = EmbeddedPostgres.builder();
         customizers.forEach(c -> c.accept(builder));
-        final EmbeddedPostgres pg = builder.start();
+        final EmbeddedPostgres pg = builder.start(); //NOPMD
         preparer.prepare(pg.getTemplateDatabase());
 
         result = new PrepPipeline(pg).start();
@@ -160,7 +160,7 @@ public class PreparedDbProvider
     private static class PrepPipeline implements Runnable
     {
         private final EmbeddedPostgres pg;
-        private final SynchronousQueue<DbInfo> nextDatabase = new SynchronousQueue<DbInfo>();
+        private final SynchronousQueue<DbInfo> nextDatabase = new SynchronousQueue<>();
 
         PrepPipeline(EmbeddedPostgres pg)
         {
