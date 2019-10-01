@@ -1,3 +1,12 @@
+0.13.2
+------
+* Expose contexts for LiquibasePreparer (#106)
+* Add OpenJDK 11 to the Travis test matrix and cache dependencies (#118)
+* adds optional prefix to logger (#113)
+* Issue #116 Server startup fails with "port out of range:-1" error (#117)
+* Overwrite existing extracted files if they exist. (#120)
+* ProcessOutputLogger: don't prevent jvm shutdown (#123)
+
 0.13.1
 ------
 * PR #104 - improved logging names
