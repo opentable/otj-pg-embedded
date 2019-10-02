@@ -67,7 +67,7 @@ public class UncompressBundleDirectoryResolver implements PgDirectoryResolver {
     public File getDirectory(Optional<File> overrideWorkingDirectory) {
         prepareBinariesLock.lock();
         try {
-            if (prepareBinaries.containsKey(pgBinaryResolver)) {
+            if (prepareBinaries.containsKey(pgBinaryResolver) && prepareBinaries.get(pgBinaryResolver).exists()) {
                 return prepareBinaries.get(pgBinaryResolver);
             }
 
