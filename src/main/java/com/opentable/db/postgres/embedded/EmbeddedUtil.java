@@ -77,7 +77,6 @@ final class EmbeddedUtil {
         }
         throw new UnsupportedOperationException("Unknown OS " + SystemUtils.OS_NAME);
     }
-    
 
     /**
      * Get the machine architecture string. The string is used in the appropriate
@@ -161,6 +160,4 @@ final class EmbeddedUtil {
             phaser.arriveAndAwaitAdvance();
         }
     }
-
-
 }
