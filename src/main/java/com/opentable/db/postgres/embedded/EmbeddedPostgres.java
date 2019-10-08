@@ -133,7 +133,7 @@ public class EmbeddedPostgres implements Closeable
         if (this.dataDirectory == null) {
             throw new IllegalArgumentException("no data directory");
         }
-        LOG.info("{} postgres: data directory is {}, postgres directory is {}", instanceId, this.dataDirectory, this.pgDir);
+        LOG.debug("{} postgres: data directory is {}, postgres directory is {}", instanceId, this.dataDirectory, this.pgDir);
         mkdirs(this.dataDirectory);
 
         lockFile = new File(this.dataDirectory, LOCK_FILE_NAME);
@@ -548,6 +548,7 @@ public class EmbeddedPostgres implements Closeable
                 builderDataDirectory = Files.createTempDirectory("epg").toFile();
             }
             if (pgDirectoryResolver == null) {
+                LOG.trace("pgDirectoryResolver not overriden, using default (UncompressBundleDirectoryResolver)");
                 pgDirectoryResolver = UncompressBundleDirectoryResolver.getDefault();
             }
             return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,

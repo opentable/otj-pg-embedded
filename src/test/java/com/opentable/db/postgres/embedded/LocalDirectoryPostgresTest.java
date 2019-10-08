@@ -22,16 +22,19 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import org.junit.Ignore;
+import org.junit.Assume;
 import org.junit.Test;
 
-@Ignore("Only works with /usr/local postgres")
 public class LocalDirectoryPostgresTest {
-    
+
+    private static final File USR_LOCAL = new File("/usr/local");
+    private static final File USR_LOCAL_BIN_POSTGRES = new File("/usr/local/bin/postgres");
+
     @Test
     public void testEmbeddedPg() throws Exception {
-        try (EmbeddedPostgres pg = EmbeddedPostgres.builder().setPostgresBinaryDirectory(new File("/usr/local"))
-                .start(); Connection c = pg.getPostgresDatabase().getConnection()) {
+        Assume.assumeTrue("PostgreSQL binary must exist", USR_LOCAL_BIN_POSTGRES.exists());
+        try (EmbeddedPostgres pg = EmbeddedPostgres.builder().setPostgresBinaryDirectory(USR_LOCAL).start();
+                Connection c = pg.getPostgresDatabase().getConnection()) {
             Statement s = c.createStatement();
             ResultSet rs = s.executeQuery("SELECT 1");
             assertTrue(rs.next());
