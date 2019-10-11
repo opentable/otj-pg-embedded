@@ -40,7 +40,6 @@
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
     <basepom.check.fail-javadoc>false</basepom.check.fail-javadoc>
-    <dep.plugin.expose-versions-maven-plugin.version>1.6</dep.plugin.expose-versions-maven-plugin.version>
   </properties>
 
   <licenses>
