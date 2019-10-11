@@ -16,11 +16,11 @@ package com.opentable.db.postgres.embedded;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
@@ -37,25 +37,20 @@ import org.slf4j.Logger;
 final class ProcessOutputLogger implements Runnable {
     @SuppressWarnings("PMD.LoggerIsNotStaticFinal")
     private final Logger logger;
-    private final Process process;
     private final BufferedReader reader;
 
     private ProcessOutputLogger(final Logger logger, final Process process) {
         this.logger = logger;
-        this.process = process;
-        reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+        this.reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
     }
 
     @Override
     public void run() {
         try {
-            while (process.isAlive()) {
-                try {
-                    Optional.ofNullable(reader.readLine()).ifPresent(logger::info);
-                } catch (final IOException e) {
-                    logger.error("while reading output", e);
-                    return;
-                }
+            try {
+                reader.lines().forEach(logger::info);
+            } catch (final UncheckedIOException e) {
+                logger.error("while reading output", e);
             }
         } finally {
             try {
