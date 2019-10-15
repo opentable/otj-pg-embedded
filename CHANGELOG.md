@@ -1,3 +1,14 @@
+0.13.3
+------
+* POM 220, which includes OSS expose-versions maven plugin, solving issues for OSS users
+* #124: Separate the handling of the embedded dir in a directory provider interface (PgDirectoryResolver), 
+and moves all logic to handle existing bundles from the main class to a separate one 
+(UncompressBundleDirectoryResolver ) which implements the PgDirectoryResolver interface.
+  
+  Eg:
+  
+  `EmbeddedPostgres pg = EmbeddedPostgres.builder().setPostgresBinaryDirectory(new File("/usr/local")).start();`
+
 0.13.2
 ------
 * Expose contexts for LiquibasePreparer (#106)
