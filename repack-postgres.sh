@@ -42,6 +42,7 @@ tar cJf $RSRC_DIR/postgresql-Darwin-x86_64.txz \
   lib/libssl.1.0.0.dylib \
   lib/libcrypto.1.0.0.dylib \
   lib/libuuid.1.1.dylib \
+  lib/libpq.5.dylib \
   lib/postgresql/*.so \
   bin/initdb \
   bin/pg_ctl \
