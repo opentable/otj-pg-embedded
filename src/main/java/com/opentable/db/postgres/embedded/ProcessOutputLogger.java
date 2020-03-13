@@ -20,10 +20,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
+import org.slf4j.MDC;
 
 /**
  * Read standard output of process and write lines to given {@link Logger} as INFO;
@@ -37,17 +41,20 @@ import org.slf4j.Logger;
 final class ProcessOutputLogger implements Runnable {
     @SuppressWarnings("PMD.LoggerIsNotStaticFinal")
     private final Logger logger;
+    private final Map<String, String> contextMap;
     private final Process process;
     private final BufferedReader reader;
 
-    private ProcessOutputLogger(final Logger logger, final Process process) {
+    private ProcessOutputLogger(final Logger logger, final Process process, final Map<String,String> contextMap) {
         this.logger = logger;
         this.process = process;
+        this.contextMap = contextMap;
         reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
     }
 
     @Override
     public void run() {
+        MDC.setContextMap(contextMap);
         try {
             while (process.isAlive()) {
                 try {
@@ -66,9 +73,12 @@ final class ProcessOutputLogger implements Runnable {
         }
     }
 
-    static void logOutput(final Logger logger, final Process process) {
-        final Thread t = new Thread(new ProcessOutputLogger(logger, process));
-        t.setName("log:" + describe(process));
+    static void logOutput(final Logger logger, final Process process, final Map<String, String> contextMap) {
+        Map<String, String> customContextMap = new HashMap<>(contextMap == null ? Collections.emptyMap() : contextMap);
+        final String description = describe(process);
+        customContextMap.put("process", description);
+        final Thread t = new Thread(new ProcessOutputLogger(logger, process, customContextMap));
+        t.setName("log:" + description);
         t.setDaemon(true);
         t.start();
     }
