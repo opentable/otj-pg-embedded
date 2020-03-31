@@ -92,19 +92,20 @@ public class EmbeddedPostgres implements Closeable
     private volatile FileOutputStream lockStream;
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
+    private final String authMethod;
 
     private final ProcessBuilder.Redirect errorRedirector;
     private final ProcessBuilder.Redirect outputRedirector;
 
-    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
+    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, String authMethod,
         Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
         PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
-        this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig,
+        this(parentDirectory, dataDirectory, cleanDataDirectory, authMethod, postgresConfig, localeConfig, port, connectConfig,
                 pgDirectoryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
     }
 
-    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
+    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory, String authMethod,
                      Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
                      PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector,
                      ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
@@ -112,6 +113,7 @@ public class EmbeddedPostgres implements Closeable
     {
 
         this.cleanDataDirectory = cleanDataDirectory;
+        this.authMethod = authMethod;
         this.postgresConfig = new HashMap<>(postgresConfig);
         this.localeConfig = new HashMap<>(localeConfig);
         this.port = port;
@@ -215,7 +217,7 @@ public class EmbeddedPostgres implements Closeable
         watch.start();
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(
-                pgBin("initdb"), "-A", "trust", "-U", PG_SUPERUSER,
+                pgBin("initdb"), "-A", authMethod, "-U", PG_SUPERUSER,
                 "-D", dataDirectory.getPath(), "-E", "UTF-8"));
         command.addAll(createLocaleOptions());
         system(command.toArray(new String[command.size()]));
@@ -449,6 +451,7 @@ public class EmbeddedPostgres implements Closeable
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
         private boolean builderCleanDataDirectory = true;
+        private String builderAuthMethod = "trust";
         private int builderPort = 0;
         private final Map<String, String> connectConfig = new HashMap<>();
         private PgDirectoryResolver pgDirectoryResolver;
@@ -475,6 +478,11 @@ public class EmbeddedPostgres implements Closeable
 
         public Builder setCleanDataDirectory(boolean cleanDataDirectory) {
             builderCleanDataDirectory = cleanDataDirectory;
+            return this;
+        }
+
+        public Builder setAuthMethod(String authMethod) {
+            builderAuthMethod = authMethod;
             return this;
         }
 
@@ -551,7 +559,7 @@ public class EmbeddedPostgres implements Closeable
                 LOG.trace("pgDirectoryResolver not overriden, using default (UncompressBundleDirectoryResolver)");
                 pgDirectoryResolver = UncompressBundleDirectoryResolver.getDefault();
             }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,
+            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, builderAuthMethod, config,
                     localeConfig, builderPort, connectConfig, pgDirectoryResolver, errRedirector, outRedirector,
                     pgStartupWait, overrideWorkingDirectory);
         }
