@@ -10,7 +10,7 @@ and set up a database cluster.
 
 ## Basic Usage
 
-In your JUnit test just add:
+In your JUnit test just add (for JUnit 5 example see **Using JUnit5** below):
 
 ```java
 @Rule
@@ -73,6 +73,62 @@ you've installed the appropriate MFC redistributables.
 
 * [Microsoft Site](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads])
 * [Github issue discussing this](https://github.com/opentable/otj-pg-embedded/issues/65)
+
+## Using JUnit5
+
+JUnit5 does not have `@Rule`. So below is an example for how to create tests using JUnit5 and embedded postgress, it creates a Spring context and uses JDBI:
+
+```java
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = DaoTestUsingJunit5.MockDBConfiguration.class)
+class DaoTestUsingJunit5 {
+    interface MyDao {}
+
+    @Inject
+    MyDao myDao;
+
+    @Test
+    void someTest() {
+        // ....
+    }
+
+    @Import(DaoTestUsingJunit5.GlobalMockDBConfiguration.class)
+    @Configuration
+    static class MockDBConfiguration {
+        @Bean
+        public MyDao dao(Jdbi jdbi) {
+            return jdbi.onDemand(MyDao.class);
+        }
+    }
+
+    /**
+     * This class is here as inner class for brevity
+     * but it's better to have only one for all tests.
+     */
+    @Configuration
+    public static class GlobalMockDBConfiguration {
+        @Bean("jdbiUser")
+        @Primary
+        Jdbi jdbi() throws SQLException {
+            DatabasePreparer db = FlywayPreparer.forClasspathLocation("db/migration");
+
+            Jdbi jdbi = Jdbi.create(PreparedDbProvider.forPreparer(db).createDataSource())
+                    .installPlugin(new PostgresPlugin())
+                    .installPlugin(new SqlObjectPlugin())
+                    .setTransactionHandler(new SerializableTransactionRunner());
+
+            return configureJdbi(jdbi);
+        }
+
+        static Jdbi configureJdbi(Jdbi jdbi) {
+            // possible actions:
+            // - register immutables
+            // - set up mappers, etc
+            return jdbi;
+        }
+    }
+}
+```
 
 ----
 Copyright (C) 2017 OpenTable, Inc
