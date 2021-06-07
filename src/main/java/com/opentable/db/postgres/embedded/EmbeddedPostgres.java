@@ -27,7 +27,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -53,7 +52,6 @@ import javax.sql.DataSource;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -234,6 +232,7 @@ public class EmbeddedPostgres implements Closeable
                 pgBin("pg_ctl"),
                 "-D", dataDirectory.getPath(),
                 "-o", createInitOptions().stream().collect(Collectors.joining(" ")),
+                "-w",
                 "start"
         ));
 
@@ -599,7 +598,7 @@ public class EmbeddedPostgres implements Closeable
                 ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
             }
             if (0 != process.waitFor()) {
-                throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8)));
+                throw new IllegalStateException(String.format("Process %s failed", Arrays.asList(command)));
             }
         } catch (final RuntimeException e) { // NOPMD
             throw e;
