@@ -59,6 +59,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -95,20 +96,21 @@ public class EmbeddedPostgres implements Closeable
 
     private final ProcessBuilder.Redirect errorRedirector;
     private final ProcessBuilder.Redirect outputRedirector;
+    private final ProcessOutputLoggerNamer loggerNamer;
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
         Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
         PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
         this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig,
-                pgDirectoryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
+                pgDirectoryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty(), ProcessOutputLoggerNamer.DEFAULT);
     }
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
                      Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
                      PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector,
                      ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
-                     Optional<File> overrideWorkingDirectory) throws IOException
+                     Optional<File> overrideWorkingDirectory, ProcessOutputLoggerNamer loggerNamer) throws IOException
     {
 
         this.cleanDataDirectory = cleanDataDirectory;
@@ -118,6 +120,7 @@ public class EmbeddedPostgres implements Closeable
         this.pgDir = pgDirectoryResolver.getDirectory(overrideWorkingDirectory);
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
+        this.loggerNamer = loggerNamer;
         this.pgStartupWait = Objects.requireNonNull(pgStartupWait, "Wait time cannot be null");
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
@@ -237,24 +240,48 @@ public class EmbeddedPostgres implements Closeable
                 "start"
         ));
 
-        final ProcessBuilder builder = new ProcessBuilder(args);
+        try (
+                MDC.MDCCloseable ignore1 = MDC.putCloseable("instanceId", instanceId.toString());
+                MDC.MDCCloseable ignore2 = MDC.putCloseable("command", FilenameUtils.getName(args.get(0)));
+        ) {
+            final ProcessBuilder builder = new ProcessBuilder(args);
 
-        builder.redirectErrorStream(true);
-        builder.redirectError(errorRedirector);
-        builder.redirectOutput(outputRedirector);
-        final Process postmaster = builder.start();
+            builder.redirectErrorStream(true);
+            builder.redirectError(errorRedirector);
+            builder.redirectOutput(outputRedirector);
+            final Process postmaster = builder.start();
 
-        if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
-            ProcessOutputLogger.logOutput(LoggerFactory.getLogger("pg-" + instanceId), postmaster);
-        } else if(outputRedirector.type() == ProcessBuilder.Redirect.Type.APPEND) {
-            ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "pg-" + instanceId), postmaster);
+            if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
+                ProcessOutputLogger.logOutput(
+                        LoggerFactory.getLogger(
+                        loggerNamer.name(
+                                Optional.empty(),
+                                "pg",
+                                instanceId,
+                                Optional.empty()
+                        )),
+                        postmaster,
+                        MDC.getCopyOfContextMap());
+            } else if (outputRedirector.type() == ProcessBuilder.Redirect.Type.APPEND) {
+                ProcessOutputLogger.logOutput(
+                        LoggerFactory.getLogger(
+                                loggerNamer.name(
+                                        Optional.of(LOG_PREFIX),
+                                        "pg",
+                                        instanceId,
+                                        Optional.empty()
+                                )),
+                        postmaster,
+                        MDC.getCopyOfContextMap());
+            }
+
+            LOG.info("{} postmaster started as {} on port {}.  Waiting up to {} for server startup to finish.",
+                    instanceId, postmaster.toString(), port, pgStartupWait);
+
+            Runtime.getRuntime().addShutdownHook(newCloserThread());
+
+            waitForServerStartup(watch, connectConfig);
         }
-
-        LOG.info("{} postmaster started as {} on port {}.  Waiting up to {} for server startup to finish.", instanceId, postmaster.toString(), port, pgStartupWait);
-
-        Runtime.getRuntime().addShutdownHook(newCloserThread());
-
-        waitForServerStartup(watch, connectConfig);
     }
 
     private List<String> createInitOptions() {
@@ -456,6 +483,7 @@ public class EmbeddedPostgres implements Closeable
 
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
         private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
+        private ProcessOutputLoggerNamer loggerNamer = ProcessOutputLoggerNamer.DEFAULT;
 
         Builder() {
             config.put("timezone", "UTC");
@@ -526,6 +554,11 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
+        public Builder setLoggerNamer(ProcessOutputLoggerNamer loggerNamer) {
+            this.loggerNamer = loggerNamer == null ? ProcessOutputLoggerNamer.DEFAULT : loggerNamer;
+            return this;
+        }
+
         @Deprecated
         public Builder setPgBinaryResolver(PgBinaryResolver pgBinaryResolver) {
             return setPgDirectoryResolver(new UncompressBundleDirectoryResolver(pgBinaryResolver));
@@ -553,7 +586,7 @@ public class EmbeddedPostgres implements Closeable
             }
             return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,
                     localeConfig, builderPort, connectConfig, pgDirectoryResolver, errRedirector, outRedirector,
-                    pgStartupWait, overrideWorkingDirectory);
+                    pgStartupWait, overrideWorkingDirectory, loggerNamer);
         }
 
         @Override
@@ -586,7 +619,10 @@ public class EmbeddedPostgres implements Closeable
 
     private void system(String... command)
     {
-        try {
+        try (
+                MDC.MDCCloseable ignore1 = MDC.putCloseable("instanceId", instanceId.toString());
+                MDC.MDCCloseable ignore2 = MDC.putCloseable("command", FilenameUtils.getName(command[0]));
+        ) {
             final ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
             builder.redirectError(errorRedirector);
@@ -594,9 +630,26 @@ public class EmbeddedPostgres implements Closeable
             final Process process = builder.start();
 
             if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
-                ProcessOutputLogger.logOutput(LoggerFactory.getLogger("init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
-            } else if(outputRedirector.type() == ProcessBuilder.Redirect.Type.APPEND) {
-                ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
+                ProcessOutputLogger.logOutput(LoggerFactory.getLogger(
+                        loggerNamer.name(
+                                Optional.empty(),
+                                "init",
+                                instanceId,
+                                Optional.of(FilenameUtils.getName(command[0])))
+                        ),
+                        process, MDC.getCopyOfContextMap()
+                );
+            } else if (outputRedirector.type() == ProcessBuilder.Redirect.Type.APPEND) {
+                ProcessOutputLogger.logOutput(LoggerFactory.getLogger(
+                        loggerNamer.name(
+                                Optional.of(LOG_PREFIX),
+                                "init",
+                                instanceId,
+                                Optional.of(FilenameUtils.getName(command[0])))
+                        ),
+                        process,
+                        MDC.getCopyOfContextMap()
+                );
             }
             if (0 != process.waitFor()) {
                 throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8)));
