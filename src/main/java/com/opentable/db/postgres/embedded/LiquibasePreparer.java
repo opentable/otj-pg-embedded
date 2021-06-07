@@ -50,7 +50,7 @@ public final class LiquibasePreparer implements DatabasePreparer {
         try {
             connection = ds.getConnection();
             Database database = getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            Liquibase liquibase = new Liquibase(location, new ClassLoaderResourceAccessor(), database);
+            Liquibase liquibase = new Liquibase(location, new ClassLoaderResourceAccessor(), database); //NOPMD
             liquibase.update(contexts);
         } catch (LiquibaseException e) {
             throw new SQLException(e);
