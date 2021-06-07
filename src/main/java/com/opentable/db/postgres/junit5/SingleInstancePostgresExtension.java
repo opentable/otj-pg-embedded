@@ -14,8 +14,8 @@
 package com.opentable.db.postgres.junit5;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
-import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-public class SingleInstancePostgresExtension implements AfterTestExecutionCallback, BeforeTestExecutionCallback {
+public class SingleInstancePostgresExtension implements AfterAllCallback, BeforeAllCallback {
 
     private volatile EmbeddedPostgres epg;
     private volatile Connection postgresConnection;
@@ -34,7 +34,7 @@ public class SingleInstancePostgresExtension implements AfterTestExecutionCallba
     SingleInstancePostgresExtension() { }
 
     @Override
-    public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
+    public void beforeAll(ExtensionContext context) throws Exception {
         epg = pg();
         postgresConnection = epg.getPostgresDatabase().getConnection();
     }
@@ -63,7 +63,7 @@ public class SingleInstancePostgresExtension implements AfterTestExecutionCallba
     }
 
     @Override
-    public void afterTestExecution(ExtensionContext extensionContext) {
+    public void afterAll(ExtensionContext context) {
         try {
             postgresConnection.close();
         } catch (SQLException e) {
