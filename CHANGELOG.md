@@ -1,3 +1,7 @@
+0.13.4
+------
+* POM 287, Flyway 7
+
 0.13.3
 ------
 * POM 220, which includes OSS expose-versions maven plugin, solving issues for OSS users
