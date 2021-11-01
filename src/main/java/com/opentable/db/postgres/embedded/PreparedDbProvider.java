@@ -38,7 +38,7 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider
 {
-    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s";
+    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s&password=%s";
 
     /**
      * Each database cluster's <code>template1</code> database has a unique set of schema
@@ -111,7 +111,7 @@ public class PreparedDbProvider
     public ConnectionInfo createNewDatabase() throws SQLException
     {
         final DbInfo dbInfo = createNewDB();
-        return dbInfo == null || !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getDbName(), dbInfo.getPort(), dbInfo.getUser());
+        return dbInfo == null || !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getDbName(), dbInfo.getPort(), dbInfo.getUser(), dbInfo.getPassword());
     }
 
     /**
@@ -124,6 +124,7 @@ public class PreparedDbProvider
         ds.setPortNumber(connectionInfo.getPort());
         ds.setDatabaseName(connectionInfo.getDbName());
         ds.setUser(connectionInfo.getUser());
+        ds.setPassword(connectionInfo.getPassword());
         return ds;
     }
 
@@ -138,7 +139,7 @@ public class PreparedDbProvider
 
     String getJdbcUri(DbInfo db)
     {
-        return String.format(JDBC_FORMAT, db.port, db.dbName, db.user);
+        return String.format(JDBC_FORMAT, db.port, db.dbName, db.user, db.password);
     }
 
     /**
@@ -150,6 +151,7 @@ public class PreparedDbProvider
         final Map<String, String> result = new HashMap<>();
         result.put("ot.db." + dbModuleName + ".uri", getJdbcUri(db));
         result.put("ot.db." + dbModuleName + ".ds.user", db.user);
+        result.put("ot.db." + dbModuleName + ".ds.password", db.password);
         return result;
     }
 
@@ -201,13 +203,13 @@ public class PreparedDbProvider
                 final String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
                 SQLException failure = null;
                 try {
-                    create(pg.getPostgresDatabase(), newDbName, "postgres");
+                    create(pg.getPostgresDatabase(), newDbName, pg.getUserName());
                 } catch (SQLException e) {
                     failure = e;
                 }
                 try {
                     if (failure == null) {
-                        nextDatabase.put(DbInfo.ok(newDbName, pg.getPort(), "postgres"));
+                        nextDatabase.put(DbInfo.ok(newDbName, pg.getPort(), pg.getUserName(), pg.getPassword()));
                     } else {
                         nextDatabase.put(DbInfo.error(failure));
                     }
@@ -267,23 +269,25 @@ public class PreparedDbProvider
 
     public static class DbInfo
     {
-        public static DbInfo ok(final String dbName, final int port, final String user) {
-            return new DbInfo(dbName, port, user, null);
+        public static DbInfo ok(final String dbName, final int port, final String user, final String password) {
+            return new DbInfo(dbName, port, user, password, null);
         }
 
         public static DbInfo error(SQLException e) {
-            return new DbInfo(null, -1, null, e);
+            return new DbInfo(null, -1, null, null, e);
         }
 
         private final String dbName;
         private final int port;
         private final String user;
+        private final String password;
         private final SQLException ex;
 
-        private DbInfo(final String dbName, final int port, final String user, final SQLException e) {
+        private DbInfo(final String dbName, final int port, final String user, final String password, final SQLException e) {
             this.dbName = dbName;
             this.port = port;
             this.user = user;
+            this.password = password;
             this.ex = null;
         }
 
@@ -305,6 +309,10 @@ public class PreparedDbProvider
 
         public boolean isSuccess() {
             return ex == null;
+        }
+
+        public String getPassword() {
+            return password;
         }
     }
 }

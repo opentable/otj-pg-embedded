@@ -46,19 +46,13 @@ public final class LiquibasePreparer implements DatabasePreparer {
 
     @Override
     public void prepare(DataSource ds) throws SQLException {
-        Connection connection = null;
-        try {
-            connection = ds.getConnection();
+        try (Connection connection = ds.getConnection();){
+
             Database database = getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
             Liquibase liquibase = new Liquibase(location, new ClassLoaderResourceAccessor(), database); //NOPMD
             liquibase.update(contexts);
         } catch (LiquibaseException e) {
             throw new SQLException(e);
-        } finally {
-            if (connection != null) {
-                connection.rollback();
-                connection.close();
-            }
         }
     }
 

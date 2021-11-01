@@ -17,11 +17,13 @@ public class ConnectionInfo {
     private final String dbName;
     private final int port;
     private final String user;
+    private final String password;
 
-    public ConnectionInfo(final String dbName, final int port, final String user) {
+    public ConnectionInfo(final String dbName, final int port, final String user, final String password) {
         this.dbName = dbName;
         this.port = port;
         this.user = user;
+        this.password = password;
     }
 
     public String getUser() {
@@ -34,5 +36,9 @@ public class ConnectionInfo {
 
     public int getPort() {
         return port;
+    }
+
+    public String getPassword() {
+        return password;
     }
 }
