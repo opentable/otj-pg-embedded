@@ -92,6 +92,7 @@ public class EmbeddedPostgres implements Closeable
     private volatile FileOutputStream lockStream;
     private volatile FileLock lock;
     private final boolean cleanDataDirectory;
+    private final Map<String, String> environmentArgs;
 
     private final ProcessBuilder.Redirect errorRedirector;
     private final ProcessBuilder.Redirect outputRedirector;
@@ -101,14 +102,15 @@ public class EmbeddedPostgres implements Closeable
         PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
     {
         this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, port, connectConfig,
-                pgDirectoryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
+                pgDirectoryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty(), Collections.emptyMap());
     }
 
     EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
                      Map<String, String> postgresConfig, Map<String, String> localeConfig, int port, Map<String, String> connectConfig,
                      PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector,
                      ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
-                     Optional<File> overrideWorkingDirectory) throws IOException
+                     Optional<File> overrideWorkingDirectory,
+                     Map<String, String> environmentArgs) throws IOException
     {
 
         this.cleanDataDirectory = cleanDataDirectory;
@@ -119,6 +121,7 @@ public class EmbeddedPostgres implements Closeable
         this.errorRedirector = errorRedirector;
         this.outputRedirector = outputRedirector;
         this.pgStartupWait = Objects.requireNonNull(pgStartupWait, "Wait time cannot be null");
+        this.environmentArgs = environmentArgs;
         if (parentDirectory != null) {
             mkdirs(parentDirectory);
             cleanOldDataDirectories(parentDirectory);
@@ -242,6 +245,9 @@ public class EmbeddedPostgres implements Closeable
         builder.redirectErrorStream(true);
         builder.redirectError(errorRedirector);
         builder.redirectOutput(outputRedirector);
+        if (!environmentArgs.isEmpty()) {
+            builder.environment().putAll(environmentArgs);
+        }
         final Process postmaster = builder.start();
 
         if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
@@ -451,6 +457,7 @@ public class EmbeddedPostgres implements Closeable
         private boolean builderCleanDataDirectory = true;
         private int builderPort = 0;
         private final Map<String, String> connectConfig = new HashMap<>();
+        private final Map<String, String> environmentArgs = new HashMap<>();
         private PgDirectoryResolver pgDirectoryResolver;
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
@@ -498,6 +505,11 @@ public class EmbeddedPostgres implements Closeable
 
         public Builder setLocaleConfig(String key, String value) {
             localeConfig.put(key, value);
+            return this;
+        }
+
+        public Builder withEnvironmentArg(String key, String value) {
+            environmentArgs.put(key, value);
             return this;
         }
 
@@ -553,7 +565,7 @@ public class EmbeddedPostgres implements Closeable
             }
             return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,
                     localeConfig, builderPort, connectConfig, pgDirectoryResolver, errRedirector, outRedirector,
-                    pgStartupWait, overrideWorkingDirectory);
+                    pgStartupWait, overrideWorkingDirectory, environmentArgs);
         }
 
         @Override
@@ -591,6 +603,10 @@ public class EmbeddedPostgres implements Closeable
             builder.redirectErrorStream(true);
             builder.redirectError(errorRedirector);
             builder.redirectOutput(outputRedirector);
+            if (!environmentArgs.isEmpty()) {
+               builder.environment().putAll(environmentArgs);
+            }
+
             final Process process = builder.start();
 
             if (outputRedirector.type() == ProcessBuilder.Redirect.Type.PIPE) {
