@@ -599,7 +599,7 @@ public class EmbeddedPostgres implements Closeable
                 ProcessOutputLogger.logOutput(LoggerFactory.getLogger(LOG_PREFIX + "init-" + instanceId + ":" + FilenameUtils.getName(command[0])), process);
             }
             if (0 != process.waitFor()) {
-                throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8)));
+                throw new IllegalStateException(String.format("Process [%s] failed%n%s", String.join(" ", command), IOUtils.toString(process.getErrorStream(), StandardCharsets.UTF_8)));
             }
         } catch (final RuntimeException e) { // NOPMD
             throw e;
