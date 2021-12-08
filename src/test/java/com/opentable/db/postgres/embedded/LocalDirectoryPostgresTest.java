@@ -27,13 +27,12 @@ import org.junit.Test;
 
 public class LocalDirectoryPostgresTest {
 
-    private static final File USR_LOCAL = new File("/usr/local");
     private static final File USR_LOCAL_BIN_POSTGRES = new File("/usr/local/bin/postgres");
 
     @Test
     public void testEmbeddedPg() throws Exception {
         Assume.assumeTrue("PostgreSQL binary must exist", USR_LOCAL_BIN_POSTGRES.exists());
-        try (EmbeddedPostgres pg = EmbeddedPostgres.builder().setPostgresBinaryDirectory(USR_LOCAL).start();
+        try (EmbeddedPostgres pg = EmbeddedPostgres.builder().start();
                 Connection c = pg.getPostgresDatabase().getConnection()) {
             Statement s = c.createStatement();
             ResultSet rs = s.executeQuery("SELECT 1");

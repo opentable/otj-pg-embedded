@@ -14,14 +14,11 @@
 package com.opentable.db.postgres.embedded;
 
 
-import static com.opentable.db.postgres.embedded.EmbeddedUtil.getWorkingDirectory;
-import static com.opentable.db.postgres.embedded.EmbeddedUtil.mkdirs;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -43,9 +40,9 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
-@SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"}) // java 11 triggers: https://github.com/spotbugs/spotbugs/issues/756
-public class EmbeddedPostgres implements Closeable
-{
+@SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"})
+// java 11 triggers: https://github.com/spotbugs/spotbugs/issues/756
+public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
@@ -53,40 +50,21 @@ public class EmbeddedPostgres implements Closeable
     private final PostgreSQLContainer<?> postgreDBContainer;
 
 
-    private final File dataDirectory;
     private final UUID instanceId = UUID.randomUUID();
 
 
-    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
-        Map<String, String> postgresConfig, Map<String, String> localeConfig,  Map<String, String> connectConfig,
-        PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException
-    {
-        this(parentDirectory, dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, connectConfig,
-                pgDirectoryResolver, errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
+    EmbeddedPostgres(File dataDirectory, boolean cleanDataDirectory,
+                     Map<String, String> postgresConfig, Map<String, String> localeConfig, Map<String, String> connectConfig,
+                     ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException {
+        this(dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, connectConfig,
+                errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
     }
 
-    EmbeddedPostgres(File parentDirectory, File dataDirectory, boolean cleanDataDirectory,
+    EmbeddedPostgres(File dataDirectory, boolean cleanDataDirectory,
                      Map<String, String> postgresConfig, Map<String, String> localeConfig, Map<String, String> connectConfig,
-                     PgDirectoryResolver pgDirectoryResolver, ProcessBuilder.Redirect errorRedirector,
+                     ProcessBuilder.Redirect errorRedirector,
                      ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
-                     Optional<File> overrideWorkingDirectory) throws IOException
-    {
-
-        if (parentDirectory != null) {
-            mkdirs(parentDirectory);
-            if (dataDirectory != null) {
-                this.dataDirectory = dataDirectory;
-            } else {
-                this.dataDirectory = new File(parentDirectory, instanceId.toString());
-            }
-        } else {
-            this.dataDirectory = dataDirectory;
-        }
-        if (this.dataDirectory == null) {
-            throw new IllegalArgumentException("no data directory");
-        }
-        mkdirs(this.dataDirectory);
-
+                     Optional<File> overrideWorkingDirectory) throws IOException {
         this.postgreDBContainer = new PostgreSQLContainer<>("postgres:10.6")
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
@@ -164,14 +142,12 @@ public class EmbeddedPostgres implements Closeable
     }
 
     public static class Builder {
-        private final File parentDirectory = getWorkingDirectory();
         private Optional<File> overrideWorkingDirectory = Optional.empty(); // use tmpdir
         private File builderDataDirectory;
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
         private boolean builderCleanDataDirectory = true;
         private final Map<String, String> connectConfig = new HashMap<>();
-        private PgDirectoryResolver pgDirectoryResolver;
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
@@ -241,30 +217,10 @@ public class EmbeddedPostgres implements Closeable
             return this;
         }
 
-        @Deprecated
-        public Builder setPgBinaryResolver(PgBinaryResolver pgBinaryResolver) {
-            return setPgDirectoryResolver(new UncompressBundleDirectoryResolver(pgBinaryResolver));
-        }
-
-        public Builder setPgDirectoryResolver(PgDirectoryResolver pgDirectoryResolver) {
-            this.pgDirectoryResolver = pgDirectoryResolver;
-            return this;
-        }
-
-        public Builder setPostgresBinaryDirectory(File directory) {
-            return setPgDirectoryResolver((x) -> directory);
-        }
 
         public EmbeddedPostgres start() throws IOException {
-            if (builderDataDirectory == null) {
-                builderDataDirectory = Files.createTempDirectory("epg").toFile();
-            }
-            if (pgDirectoryResolver == null) {
-                LOG.trace("pgDirectoryResolver not overriden, using default (UncompressBundleDirectoryResolver)");
-                pgDirectoryResolver = UncompressBundleDirectoryResolver.getDefault();
-            }
-            return new EmbeddedPostgres(parentDirectory, builderDataDirectory, builderCleanDataDirectory, config,
-                    localeConfig, connectConfig, pgDirectoryResolver, errRedirector, outRedirector,
+            return new EmbeddedPostgres(builderDataDirectory, builderCleanDataDirectory, config,
+                    localeConfig, connectConfig, errRedirector, outRedirector,
                     pgStartupWait, overrideWorkingDirectory);
         }
 
@@ -278,12 +234,10 @@ public class EmbeddedPostgres implements Closeable
             }
             Builder builder = (Builder) o;
             return builderCleanDataDirectory == builder.builderCleanDataDirectory &&
-                    Objects.equals(parentDirectory, builder.parentDirectory) &&
                     Objects.equals(builderDataDirectory, builder.builderDataDirectory) &&
                     Objects.equals(config, builder.config) &&
                     Objects.equals(localeConfig, builder.localeConfig) &&
                     Objects.equals(connectConfig, builder.connectConfig) &&
-                    Objects.equals(pgDirectoryResolver, builder.pgDirectoryResolver) &&
                     Objects.equals(pgStartupWait, builder.pgStartupWait) &&
                     Objects.equals(errRedirector, builder.errRedirector) &&
                     Objects.equals(outRedirector, builder.outRedirector);
@@ -291,7 +245,7 @@ public class EmbeddedPostgres implements Closeable
 
         @Override
         public int hashCode() {
-            return Objects.hash(parentDirectory, builderDataDirectory, config, localeConfig, builderCleanDataDirectory, connectConfig, pgDirectoryResolver, pgStartupWait, errRedirector, outRedirector);
+            return Objects.hash(builderDataDirectory, config, localeConfig, builderCleanDataDirectory, connectConfig, pgStartupWait, errRedirector, outRedirector);
         }
     }
 
