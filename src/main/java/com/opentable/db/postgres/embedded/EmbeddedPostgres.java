@@ -56,19 +56,13 @@ public class EmbeddedPostgres implements Closeable {
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     Map<String, String> connectConfig,
-                     ProcessBuilder.Redirect errorRedirector,
-                     ProcessBuilder.Redirect outputRedirector,
                      String tag
     ) throws IOException {
-        this(postgresConfig, localeConfig, connectConfig, errorRedirector, outputRedirector, tag, DEFAULT_PG_STARTUP_WAIT);
+        this(postgresConfig, localeConfig, tag, DEFAULT_PG_STARTUP_WAIT);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     Map<String, String> connectConfig,
-                     ProcessBuilder.Redirect errorRedirector,
-                     ProcessBuilder.Redirect outputRedirector,
                      String tag,
                      Duration pgStartupWait
     ) throws IOException {
@@ -173,11 +167,8 @@ public class EmbeddedPostgres implements Closeable {
     public static class Builder {
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
-        private final Map<String, String> connectConfig = new HashMap<>();
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
-        private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
-        private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
         private String tag = "10.6";
 
         Builder() {
@@ -209,28 +200,13 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
-        public Builder setConnectConfig(String key, String value) {
-            connectConfig.put(key, value);
-            return this;
-        }
-
-        public Builder setErrorRedirector(ProcessBuilder.Redirect errRedirector) {
-            this.errRedirector = errRedirector;
-            return this;
-        }
-
-        public Builder setOutputRedirector(ProcessBuilder.Redirect outRedirector) {
-            this.outRedirector = outRedirector;
-            return this;
-        }
-
         public Builder setTag(String tag) {
             this.tag = tag;
             return this;
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig, connectConfig, errRedirector, outRedirector, tag, pgStartupWait);
+            return new EmbeddedPostgres(config, localeConfig,  tag, pgStartupWait);
         }
 
         @Override
@@ -244,16 +220,13 @@ public class EmbeddedPostgres implements Closeable {
             Builder builder = (Builder) o;
             return  Objects.equals(config, builder.config) &&
                     Objects.equals(localeConfig, builder.localeConfig) &&
-                    Objects.equals(connectConfig, builder.connectConfig) &&
                     Objects.equals(pgStartupWait, builder.pgStartupWait) &&
-                    Objects.equals(errRedirector, builder.errRedirector) &&
-                    Objects.equals(tag, builder.tag) &&
-                    Objects.equals(outRedirector, builder.outRedirector);
+                    Objects.equals(tag, builder.tag);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(config, localeConfig, connectConfig, pgStartupWait, errRedirector, outRedirector, tag);
+            return Objects.hash(config, localeConfig, pgStartupWait, tag);
         }
     }
 

@@ -131,6 +131,8 @@ public class PreparedDbProvider {
     /**
      * Create a new database, and return it as a DataSource.
      * No two invocations will return the same database.
+     *
+     * @return Datasource
      */
     public DataSource createDataSource() throws SQLException {
         return createDataSourceFromConnectionInfo(createNewDatabase());
@@ -140,8 +142,13 @@ public class PreparedDbProvider {
         return String.format(JDBC_FORMAT, db.port, db.dbName, db.user, db.password);
     }
 
+
     /**
      * Return configuration tweaks in a format appropriate for otj-jdbc DatabaseModule.
+     *
+     * @param dbModuleName Name of the module
+     * @return Configuration properties
+     * @throws SQLException
      */
     public Map<String, String> getConfigurationTweak(String dbModuleName) throws SQLException {
         final DbInfo db = dbPreparer.getNextDb();
