@@ -37,13 +37,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-@SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
-// java 11 triggers: https://github.com/spotbugs/spotbugs/issues/756
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
-    public static final DockerImageName POSTGRES = DockerImageName.parse("postgres");
+    private static final String POSTGRES = "postgres";
+    private static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
+    private static final String DOCKER_DEFAULT_TAG = "10.6";
 
     private final PostgreSQLContainer<?> postgreDBContainer;
 
@@ -63,13 +63,13 @@ public class EmbeddedPostgres implements Closeable {
                      Duration pgStartupWait
     ) throws IOException {
         this.postgreDBContainer = new PostgreSQLContainer<>(image)
-                .withDatabaseName("postgres")
-                .withUsername("postgres")
+                .withDatabaseName(POSTGRES)
+                .withUsername(POSTGRES)
                 .withPassword(null)
                 .withStartupTimeout(pgStartupWait)
                 .withLogConsumer(new Slf4jLogConsumer(LOG))
                 .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createInitOptions(localeConfig)));
-        final List<String> cmd = new ArrayList<>(Collections.singletonList("postgres"));
+        final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
         cmd.addAll(createConfigOptions(postgresConfig));
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
         postgreDBContainer.start();
@@ -165,7 +165,7 @@ public class EmbeddedPostgres implements Closeable {
         private final Map<String, String> localeConfig = new HashMap<>();
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
-        private DockerImageName image = POSTGRES.withTag("10.6");
+        private DockerImageName image = DOCKER_DEFAULT_IMAGE_NAME.withTag(DOCKER_DEFAULT_TAG);
 
         Builder() {
             config.put("timezone", "UTC");
