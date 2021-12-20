@@ -20,8 +20,10 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -43,6 +46,7 @@ public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
+    public static final DockerImageName POSTGRES = DockerImageName.parse("postgres");
 
     private final PostgreSQLContainer<?> postgreDBContainer;
 
@@ -50,10 +54,14 @@ public class EmbeddedPostgres implements Closeable {
     private final UUID instanceId = UUID.randomUUID();
 
 
-    EmbeddedPostgres(Map<String, String> postgresConfig, Map<String, String> localeConfig, Map<String, String> connectConfig,
-                     ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException {
-        this(postgresConfig, localeConfig, connectConfig,
-                errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT);
+    EmbeddedPostgres(Map<String, String> postgresConfig,
+                     Map<String, String> localeConfig,
+                     Map<String, String> connectConfig,
+                     ProcessBuilder.Redirect errorRedirector,
+                     ProcessBuilder.Redirect outputRedirector,
+                     String tag
+    ) throws IOException {
+        this(postgresConfig, localeConfig, connectConfig, errorRedirector, outputRedirector, tag, DEFAULT_PG_STARTUP_WAIT);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
@@ -61,16 +69,38 @@ public class EmbeddedPostgres implements Closeable {
                      Map<String, String> connectConfig,
                      ProcessBuilder.Redirect errorRedirector,
                      ProcessBuilder.Redirect outputRedirector,
-                     Duration pgStartupWait) throws IOException {
-        this.postgreDBContainer = new PostgreSQLContainer<>("postgres:10.6")
+                     String tag,
+                     Duration pgStartupWait
+    ) throws IOException {
+        this.postgreDBContainer = new PostgreSQLContainer<>(POSTGRES.withTag(tag))
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword(null)
                 .withStartupTimeout(pgStartupWait)
-                .
-                //.with
-                .withLogConsumer(new Slf4jLogConsumer(LOG));
+                .withLogConsumer(new Slf4jLogConsumer(LOG))
+                .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createLocaleOptions(localeConfig)));
+        final List<String> cmd = new ArrayList<>(Collections.singletonList("postgres"));
+        cmd.addAll(createInitOptions(postgresConfig));
+        postgreDBContainer.setCommand(cmd.toArray(new String[0]));
         postgreDBContainer.start();
+    }
+
+    private List<String> createInitOptions(final Map<String, String> postgresConfig) {
+        final List<String> initOptions = new ArrayList<>();
+        for (final Map.Entry<String, String> config : postgresConfig.entrySet()) {
+            initOptions.add("-c");
+            initOptions.add(config.getKey() + "=" + config.getValue());
+        }
+        return initOptions;
+    }
+
+    private List<String> createLocaleOptions(final Map<String, String> localeConfig) {
+        final List<String> localeOptions = new ArrayList<>();
+        for (final Map.Entry<String, String> config : localeConfig.entrySet()) {
+            localeOptions.add("--" + config.getKey());
+            localeOptions.add(config.getValue());
+        }
+        return localeOptions;
     }
 
     public DataSource getTemplateDatabase() {
@@ -148,11 +178,13 @@ public class EmbeddedPostgres implements Closeable {
 
         private ProcessBuilder.Redirect errRedirector = ProcessBuilder.Redirect.PIPE;
         private ProcessBuilder.Redirect outRedirector = ProcessBuilder.Redirect.PIPE;
+        private String tag = "10.6";
 
         Builder() {
             config.put("timezone", "UTC");
             config.put("synchronous_commit", "off");
             config.put("max_connections", "300");
+            config.put("fsync", "off");
         }
 
         public Builder setPGStartupWait(Duration pgStartupWait) {
@@ -192,11 +224,13 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
+        public Builder setTag(String tag) {
+            this.tag = tag;
+            return this;
+        }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config,
-                    localeConfig, connectConfig, errRedirector, outRedirector,
-                    pgStartupWait);
+            return new EmbeddedPostgres(config, localeConfig, connectConfig, errRedirector, outRedirector, tag, pgStartupWait);
         }
 
         @Override
@@ -213,12 +247,13 @@ public class EmbeddedPostgres implements Closeable {
                     Objects.equals(connectConfig, builder.connectConfig) &&
                     Objects.equals(pgStartupWait, builder.pgStartupWait) &&
                     Objects.equals(errRedirector, builder.errRedirector) &&
+                    Objects.equals(tag, builder.tag) &&
                     Objects.equals(outRedirector, builder.outRedirector);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(config, localeConfig, connectConfig, pgStartupWait, errRedirector, outRedirector);
+            return Objects.hash(config, localeConfig, connectConfig, pgStartupWait, errRedirector, outRedirector, tag);
         }
     }
 
