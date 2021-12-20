@@ -43,7 +43,7 @@ public class EmbeddedPostgres implements Closeable {
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
     private static final String POSTGRES = "postgres";
     private static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
-    private static final String DOCKER_DEFAULT_TAG = "10.6";
+    private static final String DOCKER_DEFAULT_TAG = "12-alpine";
 
     private final PostgreSQLContainer<?> postgreDBContainer;
 
@@ -65,10 +65,11 @@ public class EmbeddedPostgres implements Closeable {
         this.postgreDBContainer = new PostgreSQLContainer<>(image)
                 .withDatabaseName(POSTGRES)
                 .withUsername(POSTGRES)
-                .withPassword(null)
+                .withPassword(POSTGRES)
                 .withStartupTimeout(pgStartupWait)
                 .withLogConsumer(new Slf4jLogConsumer(LOG))
-                .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createInitOptions(localeConfig)));
+                .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createInitOptions(localeConfig)))
+                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust");
         final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
         cmd.addAll(createConfigOptions(postgresConfig));
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
