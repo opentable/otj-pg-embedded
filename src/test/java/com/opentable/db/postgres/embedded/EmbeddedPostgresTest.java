@@ -46,15 +46,6 @@ public class EmbeddedPostgresTest
         }
     }
 
-    @Test
-    public void testEmbeddedPgCreationWithNestedDataDirectory() throws Exception
-    {
-        try (EmbeddedPostgres pg = EmbeddedPostgres.builder()
-                .setDataDirectory(tf.newFolder("data-dir-parent") + "/data-dir")
-                .start()) {
-            // nothing to do
-        }
-    }
 
     @Test
     public void testValidLocaleSettingsPassthrough() throws IOException {

@@ -17,16 +17,13 @@ package com.opentable.db.postgres.embedded;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -53,23 +50,25 @@ public class EmbeddedPostgres implements Closeable {
     private final UUID instanceId = UUID.randomUUID();
 
 
-    EmbeddedPostgres(File dataDirectory, boolean cleanDataDirectory,
-                     Map<String, String> postgresConfig, Map<String, String> localeConfig, Map<String, String> connectConfig,
+    EmbeddedPostgres(Map<String, String> postgresConfig, Map<String, String> localeConfig, Map<String, String> connectConfig,
                      ProcessBuilder.Redirect errorRedirector, ProcessBuilder.Redirect outputRedirector) throws IOException {
-        this(dataDirectory, cleanDataDirectory, postgresConfig, localeConfig, connectConfig,
-                errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT, Optional.empty());
+        this(postgresConfig, localeConfig, connectConfig,
+                errorRedirector, outputRedirector, DEFAULT_PG_STARTUP_WAIT);
     }
 
-    EmbeddedPostgres(File dataDirectory, boolean cleanDataDirectory,
-                     Map<String, String> postgresConfig, Map<String, String> localeConfig, Map<String, String> connectConfig,
+    EmbeddedPostgres(Map<String, String> postgresConfig,
+                     Map<String, String> localeConfig,
+                     Map<String, String> connectConfig,
                      ProcessBuilder.Redirect errorRedirector,
-                     ProcessBuilder.Redirect outputRedirector, Duration pgStartupWait,
-                     Optional<File> overrideWorkingDirectory) throws IOException {
+                     ProcessBuilder.Redirect outputRedirector,
+                     Duration pgStartupWait) throws IOException {
         this.postgreDBContainer = new PostgreSQLContainer<>("postgres:10.6")
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword(null)
                 .withStartupTimeout(pgStartupWait)
+                .
+                //.with
                 .withLogConsumer(new Slf4jLogConsumer(LOG));
         postgreDBContainer.start();
     }
@@ -142,11 +141,8 @@ public class EmbeddedPostgres implements Closeable {
     }
 
     public static class Builder {
-        private Optional<File> overrideWorkingDirectory = Optional.empty(); // use tmpdir
-        private File builderDataDirectory;
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
-        private boolean builderCleanDataDirectory = true;
         private final Map<String, String> connectConfig = new HashMap<>();
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
@@ -169,23 +165,7 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
-        public Builder setCleanDataDirectory(boolean cleanDataDirectory) {
-            builderCleanDataDirectory = cleanDataDirectory;
-            return this;
-        }
 
-        public Builder setDataDirectory(Path path) {
-            return setDataDirectory(path.toFile());
-        }
-
-        public Builder setDataDirectory(File directory) {
-            builderDataDirectory = directory;
-            return this;
-        }
-
-        public Builder setDataDirectory(String path) {
-            return setDataDirectory(new File(path));
-        }
 
         public Builder setServerConfig(String key, String value) {
             config.put(key, value);
@@ -202,11 +182,6 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
-        public Builder setOverrideWorkingDirectory(File workingDirectory) {
-            overrideWorkingDirectory = Optional.ofNullable(workingDirectory);
-            return this;
-        }
-
         public Builder setErrorRedirector(ProcessBuilder.Redirect errRedirector) {
             this.errRedirector = errRedirector;
             return this;
@@ -219,9 +194,9 @@ public class EmbeddedPostgres implements Closeable {
 
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(builderDataDirectory, builderCleanDataDirectory, config,
+            return new EmbeddedPostgres(config,
                     localeConfig, connectConfig, errRedirector, outRedirector,
-                    pgStartupWait, overrideWorkingDirectory);
+                    pgStartupWait);
         }
 
         @Override
@@ -233,9 +208,7 @@ public class EmbeddedPostgres implements Closeable {
                 return false;
             }
             Builder builder = (Builder) o;
-            return builderCleanDataDirectory == builder.builderCleanDataDirectory &&
-                    Objects.equals(builderDataDirectory, builder.builderDataDirectory) &&
-                    Objects.equals(config, builder.config) &&
+            return  Objects.equals(config, builder.config) &&
                     Objects.equals(localeConfig, builder.localeConfig) &&
                     Objects.equals(connectConfig, builder.connectConfig) &&
                     Objects.equals(pgStartupWait, builder.pgStartupWait) &&
@@ -245,7 +218,7 @@ public class EmbeddedPostgres implements Closeable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(builderDataDirectory, config, localeConfig, builderCleanDataDirectory, connectConfig, pgStartupWait, errRedirector, outRedirector);
+            return Objects.hash(config, localeConfig, connectConfig, pgStartupWait, errRedirector, outRedirector);
         }
     }
 
