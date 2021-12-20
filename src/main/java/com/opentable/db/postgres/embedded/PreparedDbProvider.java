@@ -32,8 +32,6 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.postgresql.ds.PGSimpleDataSource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider {
@@ -220,7 +218,6 @@ public class PreparedDbProvider {
         }
     }
 
-    @SuppressFBWarnings({"OBL_UNSATISFIED_OBLIGATION", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"})
     private static void create(final DataSource connectDb, final String dbName, final String userName) throws SQLException {
         if (dbName == null) {
             throw new IllegalStateException("the database name must not be null!");

@@ -37,10 +37,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 @SuppressWarnings("PMD.AvoidDuplicateLiterals") // "postgres"
-@SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"})
 // java 11 triggers: https://github.com/spotbugs/spotbugs/issues/756
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
