@@ -47,36 +47,35 @@ public class EmbeddedPostgres implements Closeable {
 
     private final PostgreSQLContainer<?> postgreDBContainer;
 
-
     private final UUID instanceId = UUID.randomUUID();
 
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     String tag
+                     DockerImageName image
     ) throws IOException {
-        this(postgresConfig, localeConfig, tag, DEFAULT_PG_STARTUP_WAIT);
+        this(postgresConfig, localeConfig, image,  DEFAULT_PG_STARTUP_WAIT);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     String tag,
+                     DockerImageName image,
                      Duration pgStartupWait
     ) throws IOException {
-        this.postgreDBContainer = new PostgreSQLContainer<>(POSTGRES.withTag(tag))
+        this.postgreDBContainer = new PostgreSQLContainer<>(image)
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword(null)
                 .withStartupTimeout(pgStartupWait)
                 .withLogConsumer(new Slf4jLogConsumer(LOG))
-                .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createLocaleOptions(localeConfig)));
+                .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createInitOptions(localeConfig)));
         final List<String> cmd = new ArrayList<>(Collections.singletonList("postgres"));
-        cmd.addAll(createInitOptions(postgresConfig));
+        cmd.addAll(createConfigOptions(postgresConfig));
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
         postgreDBContainer.start();
     }
 
-    private List<String> createInitOptions(final Map<String, String> postgresConfig) {
+    private List<String> createConfigOptions(final Map<String, String> postgresConfig) {
         final List<String> initOptions = new ArrayList<>();
         for (final Map.Entry<String, String> config : postgresConfig.entrySet()) {
             initOptions.add("-c");
@@ -85,7 +84,7 @@ public class EmbeddedPostgres implements Closeable {
         return initOptions;
     }
 
-    private List<String> createLocaleOptions(final Map<String, String> localeConfig) {
+    private List<String> createInitOptions(final Map<String, String> localeConfig) {
         final List<String> localeOptions = new ArrayList<>();
         for (final Map.Entry<String, String> config : localeConfig.entrySet()) {
             localeOptions.add("--" + config.getKey());
@@ -166,7 +165,7 @@ public class EmbeddedPostgres implements Closeable {
         private final Map<String, String> localeConfig = new HashMap<>();
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
-        private String tag = "10.6";
+        private DockerImageName image = POSTGRES.withTag("10.6");
 
         Builder() {
             config.put("timezone", "UTC");
@@ -185,8 +184,6 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
-
-
         public Builder setServerConfig(String key, String value) {
             config.put(key, value);
             return this;
@@ -197,13 +194,18 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
+        public Builder setImage(DockerImageName image) {
+            this.image = image;
+            return this;
+        }
+
         public Builder setTag(String tag) {
-            this.tag = tag;
+            this.image = this.image.withTag(tag);
             return this;
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig,  tag, pgStartupWait);
+            return new EmbeddedPostgres(config, localeConfig,  image, pgStartupWait);
         }
 
         @Override
@@ -218,12 +220,12 @@ public class EmbeddedPostgres implements Closeable {
             return  Objects.equals(config, builder.config) &&
                     Objects.equals(localeConfig, builder.localeConfig) &&
                     Objects.equals(pgStartupWait, builder.pgStartupWait) &&
-                    Objects.equals(tag, builder.tag);
+                    Objects.equals(image, builder.image);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(config, localeConfig, pgStartupWait, tag);
+            return Objects.hash(config, localeConfig, pgStartupWait, image);
         }
     }
 
