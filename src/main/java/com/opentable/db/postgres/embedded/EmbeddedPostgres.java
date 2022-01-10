@@ -43,7 +43,7 @@ public class EmbeddedPostgres implements Closeable {
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
     private static final String POSTGRES = "postgres";
     private static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
-    private static final String DOCKER_DEFAULT_TAG = "12-alpine";
+    private static final String DOCKER_DEFAULT_TAG = "13-alpine";
 
     private final PostgreSQLContainer<?> postgreDBContainer;
 

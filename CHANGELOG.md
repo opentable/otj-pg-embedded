@@ -1,3 +1,22 @@
+
+1.0.0
+-----
+* A completely rewritten version of `otj-pg-embedded`. Uses "testcontainers" for docker, while preserving API compatibility.
+
+Advantages
+* multi arch (m1 etc) support
+* Works the same way on every OS - Mac, Windows, Linux. Please note the maintainers only test on Mac Linux
+* Easy to switch docker image tag to upgrade versions
+* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs)
+
+A few Disadvantages
+
+* Slower than running a tarball
+* A few compatibility drops and options have probably disappeared. Feel free to submit PRs
+
+No further PRs or tickets will be accepted for the pre 1.0.0 release. In addition, before filing tickets, please
+test your docker environment etc. 
+
 0.13.4
 ------
 * POM 287, Flyway 7
