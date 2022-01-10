@@ -1,6 +1,12 @@
 OpenTable Embedded PostgreSQL Component
 =======================================
 
+**This is the legacy branch, which uses an embedded tarball**
+
+In master we've moved to a docker based approach.
+Any further updates to the legacy branch should be community driven.
+
+
 Allows embedding PostgreSQL into Java application code with
 no external dependencies.  Excellent for allowing you to unit
 test with a "real" Postgres without requiring end users to install
