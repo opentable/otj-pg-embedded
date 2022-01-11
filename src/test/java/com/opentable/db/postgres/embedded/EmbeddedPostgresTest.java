@@ -27,6 +27,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.testcontainers.utility.DockerImageName;
 
 public class EmbeddedPostgresTest
 {
@@ -71,5 +72,30 @@ public class EmbeddedPostgresTest
             e.printStackTrace();
             fail("Failed to set locale settings: " + e.getLocalizedMessage());
         }
+    }
+
+    @Test
+    public void testImageOptions() {
+        System.clearProperty(EmbeddedPostgres.ENV_DOCKER_PREFIX);
+        System.clearProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE);
+
+        DockerImageName defaultImage = EmbeddedPostgres.builder().getDefaultImage();
+        assertEquals(EmbeddedPostgres.DOCKER_DEFAULT_IMAGE_NAME.withTag(EmbeddedPostgres.DOCKER_DEFAULT_TAG).toString(), defaultImage.toString());
+
+        System.setProperty(EmbeddedPostgres.ENV_DOCKER_PREFIX, "dockerhub.otenv.com/");
+        defaultImage = EmbeddedPostgres.builder().getDefaultImage();
+        assertEquals("dockerhub.otenv.com/" + EmbeddedPostgres.DOCKER_DEFAULT_IMAGE_NAME.getUnversionedPart() + ":" + EmbeddedPostgres.DOCKER_DEFAULT_TAG, defaultImage.toString());
+
+        System.clearProperty(EmbeddedPostgres.ENV_DOCKER_PREFIX);
+        System.setProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE, "dockerhub.otenv.com/ot-pg:14-latest");
+
+        EmbeddedPostgres.Builder b = EmbeddedPostgres.builder();
+        defaultImage = b.getDefaultImage();
+        assertEquals("dockerhub.otenv.com/ot-pg:14-latest", defaultImage.toString());
+        assertEquals("dockerhub.otenv.com/ot-pg:14-latest", b.getImage().toString());
+        b.setImage(DockerImageName.parse("foo").withTag("15-latest"));
+        assertEquals("foo:15-latest", b.getImage().toString());
+
+        System.clearProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE);
     }
 }

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -42,8 +43,17 @@ public class EmbeddedPostgres implements Closeable {
 
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
     private static final String POSTGRES = "postgres";
-    private static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
-    private static final String DOCKER_DEFAULT_TAG = "13-alpine";
+
+    // There are 3 defaults.
+    // 1) If this is defined, then it's assumed this contains the full image and tag...
+    static final String ENV_DOCKER_IMAGE="PG_FULL_IMAGE";
+    // 2)Otherwise if this is defined, we'll use this as the prefix, and combine with the DOCKER_DEFAULT_TAG below
+    // This is already used in TestContainers as a env var, so it's useful to reuse for consistency.
+    static final String ENV_DOCKER_PREFIX = "TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX";
+    // 3) Otherwise we'll just pull from docker hub with the DOCKER_DEFAULT_TAG
+    static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
+    static final String DOCKER_DEFAULT_TAG = "13-alpine";
+    // Note you can override any of these defaults explicitly in the builder.
 
     private final PostgreSQLContainer<?> postgreDBContainer;
 
@@ -62,12 +72,15 @@ public class EmbeddedPostgres implements Closeable {
                      DockerImageName image,
                      Duration pgStartupWait
     ) throws IOException {
+        LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, pgStartupWait {}", image,
+                postgresConfig, localeConfig, pgStartupWait);
         this.postgreDBContainer = new PostgreSQLContainer<>(image)
                 .withDatabaseName(POSTGRES)
                 .withUsername(POSTGRES)
                 .withPassword(POSTGRES)
                 .withStartupTimeout(pgStartupWait)
                 .withLogConsumer(new Slf4jLogConsumer(LOG))
+                // https://github.com/docker-library/docs/blob/master/postgres/README.md#postgres_initdb_args
                 .withEnv("POSTGRES_INITDB_ARGS", String.join(" ", createInitOptions(localeConfig)))
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust");
         final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
@@ -77,12 +90,12 @@ public class EmbeddedPostgres implements Closeable {
     }
 
     private List<String> createConfigOptions(final Map<String, String> postgresConfig) {
-        final List<String> initOptions = new ArrayList<>();
+        final List<String> configOptions = new ArrayList<>();
         for (final Map.Entry<String, String> config : postgresConfig.entrySet()) {
-            initOptions.add("-c");
-            initOptions.add(config.getKey() + "=" + config.getValue());
+            configOptions.add("-c");
+            configOptions.add(config.getKey() + "=" + config.getValue());
         }
-        return initOptions;
+        return configOptions;
     }
 
     private List<String> createInitOptions(final Map<String, String> localeConfig) {
@@ -166,7 +179,29 @@ public class EmbeddedPostgres implements Closeable {
         private final Map<String, String> localeConfig = new HashMap<>();
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
-        private DockerImageName image = DOCKER_DEFAULT_IMAGE_NAME.withTag(DOCKER_DEFAULT_TAG);
+        private DockerImageName image = getDefaultImage();
+
+        // See comments at top for the logic.
+        DockerImageName getDefaultImage() {
+            if (getEnvOrProperty(ENV_DOCKER_IMAGE) != null) {
+                return DockerImageName.parse(getEnvOrProperty(ENV_DOCKER_IMAGE));
+            }
+            if (getEnvOrProperty(ENV_DOCKER_PREFIX) != null) {
+                return DockerImageName.parse(insertSlashIfNeeded(getEnvOrProperty(ENV_DOCKER_PREFIX),POSTGRES)).withTag(DOCKER_DEFAULT_TAG);
+            }
+            return DOCKER_DEFAULT_IMAGE_NAME.withTag(DOCKER_DEFAULT_TAG);
+        }
+
+        String getEnvOrProperty(String key) {
+            return Optional.ofNullable(System.getenv(key)).orElse(System.getProperty(key));
+        }
+
+        String insertSlashIfNeeded(String prefix, String repo) {
+            if ((prefix.endsWith("/")) || (repo.startsWith("/"))) {
+                return prefix + repo;
+            }
+            return prefix + "/" + repo;
+        }
 
         Builder() {
             config.put("timezone", "UTC");
@@ -203,6 +238,10 @@ public class EmbeddedPostgres implements Closeable {
         public Builder setTag(String tag) {
             this.image = this.image.withTag(tag);
             return this;
+        }
+
+        DockerImageName getImage() {
+            return image;
         }
 
         public EmbeddedPostgres start() throws IOException {

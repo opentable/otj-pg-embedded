@@ -1,12 +1,35 @@
 OpenTable Embedded PostgreSQL Component
 =======================================
 
-Allows embedding PostgreSQL into Java application code with
-no external dependencies.  Excellent for allowing you to unit
-test with a "real" Postgres without requiring end users to install
-and set up a database cluster.
+Allows embedding PostgreSQL into Java application code, using Docker containers.
+Excellent for allowing you to unit
+test with a "real" Postgres without requiring end users to install  and set up a database cluster.
 
-[![Build Status](https://travis-ci.org/opentable/otj-pg-embedded.svg)](https://travis-ci.org/opentable/otj-pg-embedded)
+
+Earlier pre 1.x versions used an embedded tarball. This was very very fast, but we switched to a docker based version
+for these reasons
+
+Advantages
+
+* multi arch (m1 etc) support
+* Works the same way on every OS - Mac, Windows, Linux. Please note the maintainers only test on Mac Linux
+* You need a tarball for every linux distribution as PG 10+ no longer ship a  "universal binary" for linux.
+* Easy to switch docker image tag to upgrade versions.
+* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs)
+
+Admittedly, a few disadvantages
+
+* Slower than running a tarball
+* A few compatibility drops and options have probably disappeared. Feel free to submit PRs
+* Docker in Docker can be dodgy to get running.
+
+Before filing tickets, please
+test your docker environment etc. If using podman or lima instead of "true docker", state so, and realize that the
+docker socket api provided by these apps is not 100% compatible, as we've found to our sadness. We'll be revisiting
+testing these in the future.
+
+No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.
+We recommend those who prefer the embedded tarball.
 
 ## Basic Usage
 
@@ -48,7 +71,19 @@ independent databases gives you.
 
 ## Postgres version
 
-It is possible to change postgres version:
+The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently this is "13-latest".
+
+You may change this either by environmental variables or by explicit builder usage
+
+### Environmental Variables
+
+1. If `PG_FULL_IMAGE` is set, then this will be used and is assumed to include the full docker image name. So for example this might be set to `docker.otenv.com/postgres:mytag`
+2. Otherwise, if `TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX` is set, this is prefixed to "postgres" (adding a slash if it doesn't exist). So for example this might be set to "docker.otenv.com/"
+3. Otherwise, the default is used as defined above.
+
+### Explicit builder
+
+It is possible to change postgres image and tag in the builder:
 
 ```java
     EmbeddedPostgres.builder()
@@ -63,7 +98,6 @@ or use custom image:
         .setImage(DockerImageName.parse("docker.otenv.com/super-postgres"))
         .start();
 ```
-
 
 ## Using JUnit5
 
@@ -122,4 +156,4 @@ class DaoTestUsingJunit5 {
 ```
 
 ----
-Copyright (C) 2017 OpenTable, Inc
+Copyright (C) 2017-2022 OpenTable, Inc
