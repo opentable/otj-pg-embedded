@@ -29,7 +29,8 @@ docker socket api provided by these apps is not 100% compatible, as we've found 
 testing these in the future.
 
 No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.
-We recommend those who prefer the embedded tarball.
+We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
+years ago from the embedded branch and is kept reasonably up to date.
 
 ## Basic Usage
 
