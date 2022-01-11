@@ -74,6 +74,7 @@ public class EmbeddedPostgres implements Closeable {
     ) throws IOException {
         LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, pgStartupWait {}", image,
                 postgresConfig, localeConfig, pgStartupWait);
+        image = image.asCompatibleSubstituteFor(POSTGRES);
         this.postgreDBContainer = new PostgreSQLContainer<>(image)
                 .withDatabaseName(POSTGRES)
                 .withUsername(POSTGRES)
