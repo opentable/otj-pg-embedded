@@ -77,6 +77,7 @@ public class EmbeddedPostgresTest
 
     @Test
     public void testImageOptions() {
+        // Ugly hack, since OT already has this defined as an ENV VAR, which can't really be cleared
         Assume.assumeTrue(System.getenv(EmbeddedPostgres.ENV_DOCKER_PREFIX) ==  null);
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_PREFIX);
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE);
