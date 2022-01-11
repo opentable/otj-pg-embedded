@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -76,6 +77,7 @@ public class EmbeddedPostgresTest
 
     @Test
     public void testImageOptions() {
+        Assume.assumeTrue(System.getenv(EmbeddedPostgres.ENV_DOCKER_PREFIX) ==  null);
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_PREFIX);
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE);
 
