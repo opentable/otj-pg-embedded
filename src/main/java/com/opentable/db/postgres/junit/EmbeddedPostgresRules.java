@@ -23,6 +23,7 @@ public final class EmbeddedPostgresRules {
 
     /**
      * Create a vanilla Postgres cluster -- just initialized, no customizations applied.
+     * @return SingleInstancePostgresRule
      */
     public static SingleInstancePostgresRule singleInstance() {
         return new SingleInstancePostgresRule();
@@ -31,6 +32,8 @@ public final class EmbeddedPostgresRules {
     /**
      * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
      * The rule contributes Config switches to configure each test case to get its own database.
+     * @param preparer DatabasePreparer
+     * @return SingleInstancePostgresRule
      */
     public static PreparedDbRule preparedDatabase(DatabasePreparer preparer)
     {

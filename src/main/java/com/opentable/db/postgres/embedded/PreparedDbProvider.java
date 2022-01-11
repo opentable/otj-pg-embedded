@@ -88,7 +88,7 @@ public class PreparedDbProvider {
      * NB: No two invocations will return the same database.
      *
      * @return JDBC connection string.
-     * @throws SQLException
+     * @throws SQLException SQLException if any
      */
     public String createDatabase() throws SQLException {
         return getJdbcUri(createNewDB());
@@ -130,7 +130,8 @@ public class PreparedDbProvider {
      * Create a new database, and return it as a DataSource.
      * No two invocations will return the same database.
      *
-     * @return Datasource
+     * @return Datasource the datasource
+     * @throws SQLException SQLException if any
      */
     public DataSource createDataSource() throws SQLException {
         return createDataSourceFromConnectionInfo(createNewDatabase());
@@ -146,7 +147,7 @@ public class PreparedDbProvider {
      *
      * @param dbModuleName Name of the module
      * @return Configuration properties
-     * @throws SQLException
+     * @throws SQLException SQLException if any
      */
     public Map<String, String> getConfigurationTweak(String dbModuleName) throws SQLException {
         final DbInfo db = dbPreparer.getNextDb();

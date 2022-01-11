@@ -22,6 +22,7 @@ public final class EmbeddedPostgresExtension {
 
     /**
      * Create a vanilla Postgres cluster -- just initialized, no customizations applied.
+     * @return SingleInstancePostgresExtension
      */
     public static SingleInstancePostgresExtension singleInstance() {
         return new SingleInstancePostgresExtension();
@@ -30,6 +31,8 @@ public final class EmbeddedPostgresExtension {
     /**
      * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
      * The rule contributes Config switches to configure each test case to get its own database.
+     * @return PreparedDBExtension
+     * @param preparer DatabasePreparer
      */
     public static PreparedDbExtension preparedDatabase(DatabasePreparer preparer)
     {
