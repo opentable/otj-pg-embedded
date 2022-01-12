@@ -23,6 +23,18 @@ Additionally you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db
 
 Default username/password is: postgres/postgres and the default database is 'postgres'
 
+### Use permanent data directory
+To use a permanent data directory, make sure to set "CleanDataDirectory" flag to false when building [`EmbeddedPostgres`](src/main/java/com/opentable/db/postgres/embedded/EmbeddedPostgres.java). Example:
+```java
+@Bean
+public DataSource dataSource() throws IOException {
+    return EmbeddedPostgres.builder()
+                .setDataDirectory("./data/postgresql")
+                .setCleanDataDirectory(false)
+                .start()
+                .getPostgresDatabase();
+}
+```
 ## Migrators (Flyway or Liquibase)
 
 You can easily integrate Flyway or Liquibase database schema migration:
