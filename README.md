@@ -47,6 +47,19 @@ Additionally you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db
 
 Default username/password is: postgres/postgres and the default database is 'postgres'
 
+## Sample of Embedded Postgres direct Usage
+
+```
+public void testDatabaseName() throws IOException,SQLException{
+        EmbeddedPostgres db=EmbeddedPostgres.builder().start();
+        Datasource dataSource = db.getPostgresDatabase();
+        .... use the datasource then ...
+        db.close();
+        }
+```
+
+The builder includes options to set the image, the tag, the database name, and various configuration options.
+
 ## Migrators (Flyway or Liquibase)
 
 You can easily integrate Flyway or Liquibase database schema migration:
