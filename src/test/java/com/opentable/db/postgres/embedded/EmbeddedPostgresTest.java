@@ -123,10 +123,20 @@ public class EmbeddedPostgresTest
 
     }
 
-    private void testSpecificDatabaseName(EmbeddedPostgres db, String expectedName) throws IOException, SQLException {
+    @Test
+    public void testTemplateDatabase() throws IOException, SQLException {
+        EmbeddedPostgres db = EmbeddedPostgres.builder().start();
+        try {
+            testSpecificDatabaseName(db.getTemplateDatabase(), db, "template1");
+        } finally {
+            db.close();
+        }
+    }
 
-
-        DataSource dataSource = db.getPostgresDatabase();
+    private void testSpecificDatabaseName(EmbeddedPostgres db, String expectedName) throws SQLException, IOException {
+        testSpecificDatabaseName(db.getPostgresDatabase(), db,expectedName);
+    }
+    private void testSpecificDatabaseName(DataSource dataSource, EmbeddedPostgres db, String expectedName) throws IOException, SQLException {
         try (Connection c = dataSource.getConnection()) {
             try (Statement statement = c.createStatement();
                  ResultSet resultSet = statement.executeQuery("SELECT current_database()")) {
