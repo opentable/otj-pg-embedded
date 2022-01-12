@@ -23,14 +23,16 @@ Admittedly, a few disadvantages
 * A few compatibility drops and options have probably disappeared. Feel free to submit PRs
 * Docker in Docker can be dodgy to get running.
 
-Before filing tickets, please
-test your docker environment etc. If using podman or lima instead of "true docker", state so, and realize that the
+## BEfore filing tickets.
+
+1. Before filing tickets, please test your docker environment etc. If using podman or lima instead of "true docker", state so, and realize that the
 docker socket api provided by these apps is not 100% compatible, as we've found to our sadness. We'll be revisiting
 testing these in the future.
-
-No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.
+2. No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.
 We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
 years ago from the embedded branch and is kept reasonably up to date.
+3. We primarily use Macs and Ubuntu Linux at OpenTable. We'll be happy to try to help out otherwise, but other platforms, such
+as Windows depend primarily on community support.
 
 ## Basic Usage
 
