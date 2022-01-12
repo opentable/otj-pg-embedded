@@ -20,8 +20,12 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+
+import javax.sql.DataSource;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assume;
@@ -100,5 +104,35 @@ public class EmbeddedPostgresTest
         assertEquals("foo:15-latest", b.getImage().toString());
 
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE);
+    }
+
+    @Test
+    public void testDatabaseName() throws IOException, SQLException {
+        EmbeddedPostgres db = EmbeddedPostgres.builder().start();
+        try {
+            testSpecificDatabaseName(db, EmbeddedPostgres.POSTGRES);
+        } finally {
+            db.close();
+        }
+        db = EmbeddedPostgres.builder().setDatabaseName("mike").start();
+        try {
+            testSpecificDatabaseName(db, "mike");
+        } finally {
+            db.close();
+        }
+
+    }
+
+    private void testSpecificDatabaseName(EmbeddedPostgres db, String expectedName) throws IOException, SQLException {
+
+
+        DataSource dataSource = db.getPostgresDatabase();
+        try (Connection c = dataSource.getConnection()) {
+            try (Statement statement = c.createStatement();
+                 ResultSet resultSet = statement.executeQuery("SELECT current_database()")) {
+                resultSet.next();
+                assertEquals(expectedName, resultSet.getString(1));
+            }
+        }
     }
 }

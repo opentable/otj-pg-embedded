@@ -42,7 +42,7 @@ public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
     private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
-    private static final String POSTGRES = "postgres";
+    static final String POSTGRES = "postgres";
 
     // There are 3 defaults.
     // 1) If this is defined, then it's assumed this contains the full image and tag...
@@ -62,21 +62,23 @@ public class EmbeddedPostgres implements Closeable {
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     DockerImageName image
+                     DockerImageName image,
+                     String databaseName
     ) throws IOException {
-        this(postgresConfig, localeConfig, image,  DEFAULT_PG_STARTUP_WAIT);
+        this(postgresConfig, localeConfig, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
                      DockerImageName image,
-                     Duration pgStartupWait
+                     Duration pgStartupWait,
+                     String databaseName
     ) throws IOException {
-        LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, pgStartupWait {}", image,
-                postgresConfig, localeConfig, pgStartupWait);
+        LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, pgStartupWait {}, dbName {}", image,
+                postgresConfig, localeConfig, pgStartupWait, databaseName);
         image = image.asCompatibleSubstituteFor(POSTGRES);
         this.postgreDBContainer = new PostgreSQLContainer<>(image)
-                .withDatabaseName(POSTGRES)
+                .withDatabaseName(databaseName)
                 .withUsername(POSTGRES)
                 .withPassword(POSTGRES)
                 .withStartupTimeout(pgStartupWait)
@@ -181,6 +183,7 @@ public class EmbeddedPostgres implements Closeable {
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
         private DockerImageName image = getDefaultImage();
+        private String databaseName = POSTGRES;
 
         // See comments at top for the logic.
         DockerImageName getDefaultImage() {
@@ -226,6 +229,10 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
+        public Builder setDatabaseName(String databaseName) {
+            this.databaseName = databaseName;
+            return this;
+        }
         public Builder setLocaleConfig(String key, String value) {
             localeConfig.put(key, value);
             return this;
@@ -246,7 +253,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig,  image, pgStartupWait);
+            return new EmbeddedPostgres(config, localeConfig,  image, pgStartupWait, databaseName);
         }
 
         @Override
