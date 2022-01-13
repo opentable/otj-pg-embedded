@@ -87,6 +87,12 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.github.docker-java</groupId>
+      <artifactId>docker-java-transport-zerodep</artifactId>
+      <version>3.2.12</version>
+    </dependency>
+
 
     <dependency>
       <groupId>junit</groupId>

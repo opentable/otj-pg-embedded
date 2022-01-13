@@ -18,6 +18,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,6 +31,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import javax.sql.DataSource;
+
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.net.URIBuilder;
 
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
@@ -148,9 +151,16 @@ public class EmbeddedPostgres implements Closeable {
         return ds;
     }
 
-    public String getJdbcUrl(String userName, String dbName) {
-        return postgreDBContainer.getJdbcUrl();
-    }
+    public String getJdbcUrl(String dbName) {
+        try {
+            return "jdbc:" + new URIBuilder(postgreDBContainer.getJdbcUrl().substring(5))
+                    .setPath("/" + dbName)
+                    .build()
+                    .toASCIIString();
+        } catch (URISyntaxException e) {
+            return null;
+        }
+     }
 
     public int getPort() {
         return postgreDBContainer.getMappedPort(POSTGRESQL_PORT);

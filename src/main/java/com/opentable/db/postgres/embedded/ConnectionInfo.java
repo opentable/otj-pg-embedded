@@ -13,15 +13,15 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import java.net.URI;
+
 public class ConnectionInfo {
-    private final String dbName;
-    private final int port;
+    private final String url;
     private final String user;
     private final String password;
 
-    public ConnectionInfo(final String dbName, final int port, final String user, final String password) {
-        this.dbName = dbName;
-        this.port = port;
+    public ConnectionInfo(final String url, final String user, final String password) {
+        this.url = url;
         this.user = user;
         this.password = password;
     }
@@ -30,15 +30,16 @@ public class ConnectionInfo {
         return user;
     }
 
-    public String getDbName() {
-        return dbName;
-    }
 
-    public int getPort() {
-        return port;
+    public String getUrl() {
+        return url;
     }
 
     public String getPassword() {
         return password;
+    }
+
+    int getPort() {
+        return URI.create(url.substring(5)).getPort();
     }
 }

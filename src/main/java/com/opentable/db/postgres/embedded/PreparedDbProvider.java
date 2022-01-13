@@ -14,6 +14,7 @@
 package com.opentable.db.postgres.embedded;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -29,6 +30,8 @@ import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
+import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.net.URIBuilder;
+
 import org.apache.commons.lang3.RandomStringUtils;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
@@ -38,7 +41,7 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider {
     private static final Logger LOG = LoggerFactory.getLogger(PreparedDbProvider.class);
-    private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s&password=%s";
+    //private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s&password=%s";
 
     /**
      * Each database cluster's <code>template1</code> database has a unique set of schema
@@ -94,7 +97,19 @@ public class PreparedDbProvider {
      * @throws SQLException SQLException if any
      */
     public String createDatabase() throws SQLException {
-        return getJdbcUri(createNewDB());
+        final DbInfo info = createNewDB();
+        if (!info.isSuccess()) {
+            return null;
+        }
+        try {
+            return "jdbc:" + new URIBuilder(info.getUrl().substring(5))
+                    .addParameter("user", info.getUser())
+                    .addParameter("password", info.getPassword())
+                    .build()
+                    .toASCIIString();
+        } catch (URISyntaxException e) {
+            throw new SQLException(e);
+        }
     }
 
     /**
@@ -110,7 +125,7 @@ public class PreparedDbProvider {
 
     public ConnectionInfo createNewDatabase() throws SQLException {
         final DbInfo dbInfo = createNewDB();
-        return dbInfo == null || !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getDbName(), dbInfo.getPort(), dbInfo.getUser(), dbInfo.getPassword());
+        return !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getUrl(), dbInfo.getUser(), dbInfo.getPassword());
     }
 
     /**
@@ -122,8 +137,7 @@ public class PreparedDbProvider {
      */
     public DataSource createDataSourceFromConnectionInfo(final ConnectionInfo connectionInfo) {
         final PGSimpleDataSource ds = new PGSimpleDataSource();
-        ds.setPortNumbers(new int[]{connectionInfo.getPort()});
-        ds.setDatabaseName(connectionInfo.getDbName());
+        ds.setUrl(connectionInfo.getUrl());
         ds.setUser(connectionInfo.getUser());
         ds.setPassword(connectionInfo.getPassword());
         return ds;
@@ -140,9 +154,6 @@ public class PreparedDbProvider {
         return createDataSourceFromConnectionInfo(createNewDatabase());
     }
 
-    String getJdbcUri(DbInfo db) {
-        return String.format(JDBC_FORMAT, db.port, db.dbName, db.user, db.password);
-    }
 
 
     /**
@@ -155,7 +166,7 @@ public class PreparedDbProvider {
     public Map<String, String> getConfigurationTweak(String dbModuleName) throws SQLException {
         final DbInfo db = dbPreparer.getNextDb();
         final Map<String, String> result = new HashMap<>();
-        result.put("ot.db." + dbModuleName + ".uri", getJdbcUri(db));
+        result.put("ot.db." + dbModuleName + ".uri", db.getUrl());
         result.put("ot.db." + dbModuleName + ".ds.user", db.user);
         result.put("ot.db." + dbModuleName + ".ds.password", db.password);
         return result;
@@ -210,7 +221,7 @@ public class PreparedDbProvider {
                 }
                 try {
                     if (failure == null) {
-                        nextDatabase.put(DbInfo.ok(newDbName, pg.getPort(), pg.getUserName(), pg.getPassword()));
+                        nextDatabase.put(DbInfo.ok(pg.getJdbcUrl(newDbName), pg.getUserName(), pg.getPassword()));
                     } else {
                         nextDatabase.put(DbInfo.error(failure));
                     }
@@ -268,34 +279,28 @@ public class PreparedDbProvider {
     }
 
     public static class DbInfo {
-        public static DbInfo ok(final String dbName, final int port, final String user, final String password) {
-            return new DbInfo(dbName, port, user, password, null);
+        public static DbInfo ok(final String url, final String user, final String password) {
+            return new DbInfo(url, user, password, null);
         }
 
         public static DbInfo error(SQLException e) {
-            return new DbInfo(null, -1, null, null, e);
+            return new DbInfo(null, null, null, e);
         }
 
-        private final String dbName;
-        private final int port;
+        private final String url;
         private final String user;
         private final String password;
         private final SQLException ex;
 
-        private DbInfo(final String dbName, final int port, final String user, final String password, final SQLException e) {
-            this.dbName = dbName;
-            this.port = port;
+        private DbInfo(final String url, final String user, final String password, final SQLException e) {
+            this.url = url;
             this.user = user;
             this.password = password;
             this.ex = e;
         }
 
-        public int getPort() {
-            return port;
-        }
-
-        public String getDbName() {
-            return dbName;
+        public String getUrl() {
+            return url;
         }
 
         public String getUser() {
