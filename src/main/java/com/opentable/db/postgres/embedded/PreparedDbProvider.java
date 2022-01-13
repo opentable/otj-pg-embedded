@@ -31,10 +31,13 @@ import javax.sql.DataSource;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.postgresql.ds.PGSimpleDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider {
+    private static final Logger LOG = LoggerFactory.getLogger(PreparedDbProvider.class);
     private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s&password=%s";
 
     /**
@@ -186,7 +189,7 @@ public class PreparedDbProvider {
             try {
                 final DbInfo next = nextDatabase.take();
                 if (next.ex != null) {
-                    throw next.ex;
+                    throw new SQLException(next.ex);
                 }
                 return next;
             } catch (final InterruptedException e) {
@@ -198,7 +201,7 @@ public class PreparedDbProvider {
         @Override
         public void run() {
             while (true) {
-                final String newDbName = RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
+                final String newDbName = "pge_" + RandomStringUtils.randomAlphabetic(12).toLowerCase(Locale.ENGLISH);
                 SQLException failure = null;
                 try {
                     create(pg.getPostgresDatabase(), newDbName, pg.getUserName());
@@ -228,7 +231,8 @@ public class PreparedDbProvider {
         }
 
         try (Connection c = connectDb.getConnection();
-             PreparedStatement stmt = c.prepareStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName))) {
+            PreparedStatement stmt = c.prepareStatement(String.format("CREATE DATABASE %s OWNER %s ENCODING = 'utf8'", dbName, userName))) {
+            LOG.debug("Statement: {}", stmt);
             stmt.execute();
         }
     }
@@ -283,7 +287,7 @@ public class PreparedDbProvider {
             this.port = port;
             this.user = user;
             this.password = password;
-            this.ex = null;
+            this.ex = e;
         }
 
         public int getPort() {
