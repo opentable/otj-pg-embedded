@@ -25,7 +25,8 @@ import org.flywaydb.core.Flyway;
 // TODO: Detect missing migration files.
 // cf. https://github.com/flyway/flyway/issues/1496
 // There is also a related @Ignored test in otj-sql.
-
+// MJB: This is finally fixed in Flyway 8.41  onwards
+// failOnMissingLocations = true, not willing to force that update yet.
 public final class FlywayPreparer implements DatabasePreparer {
 
     private final List<String> locations;
