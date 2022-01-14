@@ -13,6 +13,8 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import static com.opentable.db.postgres.embedded.EmbeddedPostgres.JDBC_URL_PREFIX;
+
 import java.net.URI;
 
 public class ConnectionInfo {
@@ -39,6 +41,6 @@ public class ConnectionInfo {
     }
 
     int getPort() {
-        return URI.create(url.substring(5)).getPort();
+        return URI.create(url.substring(JDBC_URL_PREFIX.length())).getPort();
     }
 }

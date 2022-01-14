@@ -47,7 +47,6 @@ import com.opentable.db.postgres.embedded.EmbeddedPostgres.Builder;
 
 public class PreparedDbProvider {
     private static final Logger LOG = LoggerFactory.getLogger(PreparedDbProvider.class);
-    //private static final String JDBC_FORMAT = "jdbc:postgresql://localhost:%d/%s?user=%s&password=%s";
 
     /**
      * Each database cluster's <code>template1</code> database has a unique set of schema
