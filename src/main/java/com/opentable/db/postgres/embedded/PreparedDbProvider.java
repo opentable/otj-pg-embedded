@@ -13,28 +13,20 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static com.opentable.db.postgres.embedded.EmbeddedPostgres.JDBC_URL_PREFIX;
-
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -107,23 +99,7 @@ public class PreparedDbProvider {
             return null;
         }
         try {
-            final URI uri = URI.create(info.getUrl().substring(JDBC_URL_PREFIX.length()));
-            final Map<String, String> params = new HashMap<>(
-                    Optional.ofNullable(uri.getQuery())
-                    .stream()
-                    .flatMap(i -> Arrays.stream(i.split("&")))
-                    .map(i -> i.split("="))
-                    .filter(i -> i.length > 1)
-                    .collect(Collectors.toMap(i -> i[0], i -> i[1])));
-            params.put("user", URLEncoder.encode(info.getUser(), StandardCharsets.UTF_8));
-            params.put("password", URLEncoder.encode(info.getPassword(), StandardCharsets.UTF_8));
-            return JDBC_URL_PREFIX + new URI(uri.getScheme(),
-                    uri.getUserInfo(),
-                    uri.getHost(),
-                    uri.getPort(),
-                    uri.getPath(),
-                    params.entrySet().stream().map(i -> i.getKey() + "=" + i.getValue()).collect(Collectors.joining("&")),
-                    uri.getFragment());
+            return JdbcUrlUtils.addUsernamePassword(info.getUrl(), info.getUser(), info.getPassword());
         } catch (URISyntaxException e) {
             throw new SQLException(e);
         }

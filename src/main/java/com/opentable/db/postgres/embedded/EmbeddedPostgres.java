@@ -18,7 +18,6 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -55,7 +54,6 @@ public class EmbeddedPostgres implements Closeable {
     // 3) Otherwise we'll just pull from docker hub with the DOCKER_DEFAULT_TAG
     static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
     static final String DOCKER_DEFAULT_TAG = "13-alpine";
-    static final String JDBC_URL_PREFIX = "jdbc:";
     // Note you can override any of these defaults explicitly in the builder.
 
     private final PostgreSQLContainer<?> postgreDBContainer;
@@ -158,14 +156,7 @@ public class EmbeddedPostgres implements Closeable {
      */
     public String getJdbcUrl(String dbName) {
         try {
-            final URI uri = URI.create(postgreDBContainer.getJdbcUrl().substring(JDBC_URL_PREFIX.length()));
-            return JDBC_URL_PREFIX + new URI(uri.getScheme(),
-                    uri.getUserInfo(),
-                    uri.getHost(),
-                    uri.getPort(),
-                    "/" + dbName,
-                    uri.getQuery(),
-                    uri.getFragment());
+            return JdbcUrlUtils.replaceDatabase(postgreDBContainer.getJdbcUrl(), dbName);
         } catch (URISyntaxException e) {
             return null;
         }

@@ -13,16 +13,17 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.PreparedDbRule;
-import org.junit.Rule;
-import org.junit.Test;
-
-import java.time.Duration;
-
 import static com.opentable.db.postgres.embedded.EmbeddedPostgres.DEFAULT_PG_STARTUP_WAIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+
+import java.time.Duration;
+
+import org.junit.Rule;
+import org.junit.Test;
+
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
+import com.opentable.db.postgres.junit.PreparedDbRule;
 
 public class PreparedDbCustomizerTest {
 
@@ -41,15 +42,15 @@ public class PreparedDbCustomizerTest {
 
     @Test
     public void testCustomizers() {
-        int dbA1Port = dbA1.getConnectionInfo().getPort();
-        int dbA2Port = dbA2.getConnectionInfo().getPort();
-        int dbA3Port = dbA3.getConnectionInfo().getPort();
+        int dbA1Port = JdbcUrlUtils.getPort(dbA1.getConnectionInfo().getUrl());
+        int dbA2Port = JdbcUrlUtils.getPort(dbA2.getConnectionInfo().getUrl());
+        int dbA3Port = JdbcUrlUtils.getPort(dbA3.getConnectionInfo().getUrl());
 
         assertEquals(dbA1Port, dbA2Port);
         assertEquals(dbA1Port, dbA3Port);
 
-        int dbB1Port = dbB1.getConnectionInfo().getPort();
-        int dbB2Port = dbB2.getConnectionInfo().getPort();
+        int dbB1Port = JdbcUrlUtils.getPort(dbB1.getConnectionInfo().getUrl());
+        int dbB2Port = JdbcUrlUtils.getPort(dbB2.getConnectionInfo().getUrl());
 
         assertEquals(dbB1Port, dbB2Port);
 
