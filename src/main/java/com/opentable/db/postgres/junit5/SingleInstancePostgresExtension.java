@@ -26,6 +26,27 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 
+/*
+    Implementing AfterTestExecutionCallback and BeforeTestExecutionCallback does not work if you want to use the EmbeddedPostgres in a @BeforeEach
+    or @BeforeAll method because it isn't instantiated then.
+
+    The order in which the methods are called with  BeforeTestExecutionCallback is:
+        @BeforeAll method of the test class
+        @BeforeEach method of the test class
+        beforeTestExecution(ExtensionContext) method of
+        SingleInstancePostgresExtension
+        Actual test method of the test class
+
+    And using BeforeAllCallback instead it will be:
+        beforeAll(ExtensionContext) method of  SingleInstancePostgresExtension
+        @BeforeAll method of the test class
+        @BeforeEach method of the test class
+        Actual test method of the test class
+
+  See:     https://github.com/opentable/otj-pg-embedded/pull/138.
+  Credits: https://github.com/qutax
+
+ */
 public class SingleInstancePostgresExtension implements AfterAllCallback, BeforeAllCallback {
 
     private volatile EmbeddedPostgres epg;
