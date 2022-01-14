@@ -18,6 +18,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -32,8 +33,6 @@ import java.util.UUID;
 
 import javax.sql.DataSource;
 
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.net.URIBuilder;
-
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ import org.testcontainers.utility.DockerImageName;
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
-    private static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(10);
+    static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(30);
     static final String POSTGRES = "postgres";
 
     // There are 3 defaults.
@@ -56,6 +55,7 @@ public class EmbeddedPostgres implements Closeable {
     // 3) Otherwise we'll just pull from docker hub with the DOCKER_DEFAULT_TAG
     static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
     static final String DOCKER_DEFAULT_TAG = "13-alpine";
+    static final String JDBC_URL_PREFIX = "jdbc:";
     // Note you can override any of these defaults explicitly in the builder.
 
     private final PostgreSQLContainer<?> postgreDBContainer;
@@ -151,12 +151,21 @@ public class EmbeddedPostgres implements Closeable {
         return ds;
     }
 
+    /**
+     * Returns JDBC connection string for specified database
+     * @param dbName Database name
+     * @return URL
+     */
     public String getJdbcUrl(String dbName) {
         try {
-            return "jdbc:" + new URIBuilder(postgreDBContainer.getJdbcUrl().substring(5))
-                    .setPath("/" + dbName)
-                    .build()
-                    .toASCIIString();
+            final URI uri = URI.create(postgreDBContainer.getJdbcUrl().substring(JDBC_URL_PREFIX.length()));
+            return JDBC_URL_PREFIX + new URI(uri.getScheme(),
+                    uri.getUserInfo(),
+                    uri.getHost(),
+                    uri.getPort(),
+                    "/" + dbName,
+                    uri.getQuery(),
+                    uri.getFragment());
         } catch (URISyntaxException e) {
             return null;
         }

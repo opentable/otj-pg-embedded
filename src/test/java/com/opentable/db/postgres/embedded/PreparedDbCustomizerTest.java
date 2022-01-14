@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 
+import static com.opentable.db.postgres.embedded.EmbeddedPostgres.DEFAULT_PG_STARTUP_WAIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -32,11 +33,11 @@ public class PreparedDbCustomizerTest {
     @Rule
     public PreparedDbRule dbA2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> {});
     @Rule
-    public PreparedDbRule dbA3 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(10)));
+    public PreparedDbRule dbA3 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(DEFAULT_PG_STARTUP_WAIT));
     @Rule
-    public PreparedDbRule dbB1 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(11)));
+    public PreparedDbRule dbB1 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
     @Rule
-    public PreparedDbRule dbB2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(11)));
+    public PreparedDbRule dbB2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
 
     @Test
     public void testCustomizers() {

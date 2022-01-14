@@ -35,7 +35,7 @@
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
-    <project.build.targetJdk>1.8</project.build.targetJdk>
+    <project.build.targetJdk>11</project.build.targetJdk>
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
@@ -87,12 +87,6 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.github.docker-java</groupId>
-      <artifactId>docker-java-transport-zerodep</artifactId>
-      <version>3.2.12</version>
-    </dependency>
-
 
     <dependency>
       <groupId>junit</groupId>

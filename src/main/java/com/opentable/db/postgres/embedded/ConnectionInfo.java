@@ -30,7 +30,6 @@ public class ConnectionInfo {
         return user;
     }
 
-
     public String getUrl() {
         return url;
     }
