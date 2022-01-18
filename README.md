@@ -173,5 +173,17 @@ class DaoTestUsingJunit5 {
 }
 ```
 
+## Docker in Docker, authentication notes
+
+We've been able to get this working in our CICD pipeline with the following
+
+`TESTCONTAINERS_HOST_OVERRIDE=localhost`
+`TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX=dockerhub.otenv.com/`
+
+The first parameter corrects for testcontainers getting confused whether to address the hosting container or the "container inside the container".
+The second parameter (which outside OpenTable would point to your private Docker Registry) avoids much of the Docker Rate Limiting issues.
+
+By the way, TestContainers does support ~/.docker/config.json for setting authenticated access to Docker, but we've not tested it.
+
 ----
 Copyright (C) 2017-2022 OpenTable, Inc
