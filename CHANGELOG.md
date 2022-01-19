@@ -1,5 +1,10 @@
 
-1.0.0
+1.0.0RC2
+-------
+* Restore Java 8 compatibility
+* Update to testcontainers 1.16.3
+
+1.0.0RC1
 -----
 * A completely rewritten version of `otj-pg-embedded`. Uses "testcontainers" for docker, while preserving API compatibility.
 

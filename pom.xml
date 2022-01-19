@@ -36,6 +36,9 @@
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
+    <!-- Remove once parent POM updated -->
+    <dep.testcontainers.version>1.16.3</dep.testcontainers.version>
+    <!-- end remove -->
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
@@ -135,18 +138,5 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>${project.build.targetJdk}</source>
-          <target>${project.build.targetJdk}</target>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 
 </project>
