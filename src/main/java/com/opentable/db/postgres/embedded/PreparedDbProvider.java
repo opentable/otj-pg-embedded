@@ -14,6 +14,7 @@
 package com.opentable.db.postgres.embedded;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -100,7 +101,7 @@ public class PreparedDbProvider {
         }
         try {
             return JdbcUrlUtils.addUsernamePassword(info.getUrl(), info.getUser(), info.getPassword());
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | UnsupportedEncodingException e) {
             throw new SQLException(e);
         }
     }

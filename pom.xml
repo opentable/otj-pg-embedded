@@ -32,11 +32,10 @@
 
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-pg-embedded</artifactId>
-  <version>1.0.1.RC1-SNAPSHOT</version>
+  <version>1.0.0.RC2-SNAPSHOT</version>
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
-    <project.build.targetJdk>11</project.build.targetJdk>
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>

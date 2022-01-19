@@ -13,15 +13,16 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class JdbcUrlUtils {
 
@@ -50,17 +51,17 @@ final class JdbcUrlUtils {
      * @return Modified Url
      * @throws URISyntaxException If Url violates RFC&nbsp;2396
      */
-    static String addUsernamePassword(final String url, final String userName, final String password) throws URISyntaxException {
+    static String addUsernamePassword(final String url, final String userName, final String password) throws URISyntaxException, UnsupportedEncodingException {
         final URI uri = URI.create(url.substring(JDBC_URL_PREFIX.length()));
         final Map<String, String> params = new HashMap<>(
                 Optional.ofNullable(uri.getQuery())
-                        .stream()
+                        .map(Stream::of).orElse(Stream.empty())// Hack around the fact Optional.Stream requires Java 9+.
                         .flatMap(par -> Arrays.stream(par.split("&")))
                         .map(part -> part.split("="))
                         .filter(part -> part.length > 1)
                         .collect(Collectors.toMap(part -> part[0], part -> part[1])));
-        params.put("user", URLEncoder.encode(userName, StandardCharsets.UTF_8));
-        params.put("password", URLEncoder.encode(password, StandardCharsets.UTF_8));
+        params.put("user", URLEncoder.encode(userName, "UTF-8")); // Use the old form for Java 8 compatibility.
+        params.put("password", URLEncoder.encode(password, "UTF-8"));
         return JDBC_URL_PREFIX + new URI(uri.getScheme(),
                 uri.getUserInfo(),
                 uri.getHost(),
