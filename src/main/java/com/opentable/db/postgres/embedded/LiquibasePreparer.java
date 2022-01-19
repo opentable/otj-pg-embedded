@@ -27,6 +27,11 @@ import java.util.Objects;
 
 import static liquibase.database.DatabaseFactory.getInstance;
 
+/**
+ * Support for integrating Liquibase and performing a DB migration as part of the setup process.
+ *
+ * NB: OpenTable doesn't use Liquibase, so this is currently community supported code.
+ */
 public final class LiquibasePreparer implements DatabasePreparer {
 
     private final String location;

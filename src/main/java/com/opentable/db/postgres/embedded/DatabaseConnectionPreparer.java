@@ -18,6 +18,10 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+/**
+ * Provides a default implementation of the DatabasePreparer, and adds an additional
+ * method
+ */
 public interface DatabaseConnectionPreparer extends DatabasePreparer {
 
     @Override

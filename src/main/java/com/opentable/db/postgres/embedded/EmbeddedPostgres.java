@@ -39,6 +39,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * Core class of the library, providing a builder (with reasonable defaults) to wrap
+ * testcontainers and launch postgres container.
+ */
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 

@@ -13,6 +13,9 @@
  */
 package com.opentable.db.postgres.embedded;
 
+/**
+ * Basic data holding class to hold the connection information - the url, user, and password
+ */
 public class ConnectionInfo {
     private final String url;
     private final String user;
