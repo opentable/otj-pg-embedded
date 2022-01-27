@@ -17,6 +17,7 @@ package com.opentable.db.postgres.embedded;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -35,9 +36,12 @@ import javax.sql.DataSource;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
+
 
 /**
  * Core class of the library, providing a builder (with reasonable defaults) to wrap
@@ -67,20 +71,24 @@ public class EmbeddedPostgres implements Closeable {
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
+                     Map<String, String> bindMounts,
+                     Optional<Network> network,
                      DockerImageName image,
                      String databaseName
     ) throws IOException {
-        this(postgresConfig, localeConfig, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
+        this(postgresConfig, localeConfig, bindMounts, network, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
+                     Map<String, String> bindMounts,
+                     Optional<Network> network,
                      DockerImageName image,
                      Duration pgStartupWait,
                      String databaseName
     ) throws IOException {
-        LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, pgStartupWait {}, dbName {}", image,
-                postgresConfig, localeConfig, pgStartupWait, databaseName);
+        LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, bindMounts {}, pgStartupWait {}, dbName {} ", image,
+                postgresConfig, localeConfig, bindMounts, pgStartupWait, databaseName);
         image = image.asCompatibleSubstituteFor(POSTGRES);
         this.postgreDBContainer = new PostgreSQLContainer<>(image)
                 .withDatabaseName(databaseName)
@@ -94,7 +102,16 @@ public class EmbeddedPostgres implements Closeable {
         final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
         cmd.addAll(createConfigOptions(postgresConfig));
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
+        processBindMounts(postgreDBContainer, bindMounts);
+        network.ifPresent(postgreDBContainer::withNetwork);
         postgreDBContainer.start();
+    }
+
+    private void processBindMounts(PostgreSQLContainer<?> postgreDBContainer, Map<String, String> bindMounts) {
+        bindMounts.entrySet().stream()
+                .filter(f -> new File(f.getKey()).exists())
+                .distinct()
+                .forEach(f -> postgreDBContainer.addFileSystemBind(f.getKey(), f.getValue(), BindMode.READ_ONLY));
     }
 
     private List<String> createConfigOptions(final Map<String, String> postgresConfig) {
@@ -197,6 +214,9 @@ public class EmbeddedPostgres implements Closeable {
     public static class Builder {
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
+        private final Map<String, String> bindMounts = new HashMap<>();
+        private Optional<Network> network = Optional.empty();
+
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
 
         private DockerImageName image = getDefaultImage();
@@ -246,6 +266,16 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
+        public Builder setBindMount(String localFile, String remoteFile) {
+            bindMounts.put(localFile, remoteFile);
+            return this;
+        }
+
+        public Builder setNetwork(Network network) {
+            this.network = Optional.ofNullable(network);
+            return this;
+        }
+
         public Builder setDatabaseName(String databaseName) {
             this.databaseName = databaseName;
             return this;
@@ -270,7 +300,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig,  image, pgStartupWait, databaseName);
+            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, image, pgStartupWait, databaseName);
         }
 
         @Override
