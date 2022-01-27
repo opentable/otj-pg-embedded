@@ -7,40 +7,47 @@ Allows embedding PostgreSQL into Java application code, using Docker containers.
 Excellent for allowing you to unit
 test with a "real" Postgres without requiring end users to install  and set up a database cluster.
 
-
-Earlier pre 1.x versions used an embedded tarball. This was very very fast, but we switched to a docker based version
-for these reasons
+The release of 1.0 brings major changes to the innards of this library.
+Previous pre 1.x versions used an embedded tarball. This was extemely fast (a major plus(, but we switched to a docker based version
+for these reasons:
 
 Advantages
+---
 
-* multi arch (m1 etc) support
-* Works the same way on every OS - Mac, Windows, Linux. Please note the maintainers only test on Mac Linux
+* multi architecture support. This has become a huge issue for us with the introduction of the Mac M1 (and Windows ARM, Linux ARM)/
+* The same container works the same way on every OS - Mac, Windows, Linux. 
 * You need a tarball for every linux distribution as PG 10+ no longer ship a  "universal binary" for linux.
-* Easy to switch docker image tag to upgrade versions.
-* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs)
+* Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
+* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
 
 Admittedly, a few disadvantages
+---
 
-* Slower than running a tarball
-* A few compatibility drops and options have probably disappeared. Feel free to submit PRs
-* Docker in Docker can be dodgy to get running.
+* Slower than running a tarball (2-5x slower).
+* A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
+* Docker in Docker can be dodgy to get running. (See below for one thing we discovered))
 
-## BEfore filing tickets.
+## Before filing tickets.
 
 1. Before filing tickets, please test your docker environment etc. If using podman or lima instead of "true docker", state so, and realize that the
 docker socket api provided by these apps is not 100% compatible, as we've found to our sadness. We'll be revisiting
-testing these in the future.
-2. No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.
-We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
+testing these in the future. We've managed to get PodMan working, albeit not 100% reliably.
+2. **No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.**
+ We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
 years ago from the embedded branch and is kept reasonably up to date.
 3. We primarily use Macs and Ubuntu Linux at OpenTable. We'll be happy to try to help out otherwise, but other platforms, such
-as Windows depend primarily on community support.
+as Windows depend primarily on community support. We simply don't have the time or hardware. Happy to merge PRs though
+
+## Why not just use Testcontainers directly?
+
+You can, and it should work well for you. The builders, the api compatibility, the wrapping around Flyway - that's the added value.
+But certainly there's no real reason you can't use TestContainers directly - they have their own Junit4 and Junit5 Rules/Extensions.
 
 ## Basic Usage
 
 In your JUnit test just add (for JUnit 5 example see **Using JUnit5** below):
 
-```java
+```
 @Rule
 public SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance();
 ```
@@ -68,7 +75,7 @@ The builder includes options to set the image, the tag, the database name, and v
 
 You can easily integrate Flyway or Liquibase database schema migration:
 ##### Flyway
-```java
+```
 @Rule 
 public PreparedDbRule db =
     EmbeddedPostgresRules.preparedDatabase(
@@ -76,7 +83,7 @@ public PreparedDbRule db =
 ```
 
 ##### Liquibase
-```java
+```
 @Rule
 public PreparedDbRule db = 
     EmbeddedPostgresRules.preparedDatabase(
@@ -89,7 +96,9 @@ independent databases gives you.
 
 ## Postgres version
 
-The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently this is "13-latest".
+The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently this is "13-latest",
+as this fits the needs of OpenTable, however you can change this easily. This is super useful, both to use a newer version
+of Postgres, or to build your own DockerFile with additional extensions.
 
 You may change this either by environmental variables or by explicit builder usage
 
@@ -103,7 +112,7 @@ You may change this either by environmental variables or by explicit builder usa
 
 It is possible to change postgres image and tag in the builder:
 
-```java
+```
     EmbeddedPostgres.builder()
         .setTag("10")
         .start();
@@ -111,11 +120,14 @@ It is possible to change postgres image and tag in the builder:
 
 or use custom image:
 
-```java
+```
     EmbeddedPostgres.builder()
         .setImage(DockerImageName.parse("docker.otenv.com/super-postgres"))
         .start();
 ```
+
+There are also options to set the initDB configuration parameters, or other functional params, the bind mounts, and
+the network.
 
 ## Using JUnit5
 
@@ -173,6 +185,28 @@ class DaoTestUsingJunit5 {
 }
 ```
 
+## Yes, Junit4 is a compile time dependency
+
+This is because TestContainers has a long outstanding bug to remove this -https://github.com/testcontainers/testcontainers-java/issues/970
+If you exclude Junit4, you get nasty NoClassDefFound errors.
+
+If you only use Junit5 in your classpath, and bringing in Junit4 bothers you (it does us, sigh), then
+you can do the following:
+
+* add maven exclusions to the testcontainers modules you declare dependencies on to strip out junit:junit. This by itself
+would still lead to NoClassDefFound errors.
+* add a dependency on io.quarkus:quarkus-junit4-mock , which imports empty interfaces of the required classes. This is
+a hack and a cheat, but what can you do?
+
+We initially excluded junit4 ourselves, which led to confusing breakages for junit5 users...
+
+## Some new options and some lost from Pre 1.0
+
+* You can't wire to a local postgres, since that concept doesn't make sense here. So that's gone.
+* You can add bind mounts and a Network (between two containers), since those are docker concepts, and can
+be very useful.
+* By the way, TestContainers does support ~/.docker/config.json for setting authenticated access to Docker, but we've not tested it.
+
 ## Docker in Docker, authentication notes
 
 We've been able to get this working in our CICD pipeline with the following
@@ -181,9 +215,7 @@ We've been able to get this working in our CICD pipeline with the following
 `TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX=dockerhub.otenv.com/`
 
 The first parameter corrects for testcontainers getting confused whether to address the hosting container or the "container inside the container".
-The second parameter (which outside OpenTable would point to your private Docker Registry) avoids much of the Docker Rate Limiting issues.
-
-By the way, TestContainers does support ~/.docker/config.json for setting authenticated access to Docker, but we've not tested it.
+The second parameter (which outside OpenTable would point to your private Docker Registry) avoids much of the Docker Rate Limiting issues. 
 
 ----
 Copyright (C) 2017-2022 OpenTable, Inc

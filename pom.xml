@@ -118,24 +118,12 @@
         <groupId>org.testcontainers</groupId>
         <artifactId>postgresql</artifactId>
         <version>${dep.testcontainers.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
+       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers</artifactId>
         <version>${dep.testcontainers.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
+       </dependency>
     </dependencies>
   </dependencyManagement>
 

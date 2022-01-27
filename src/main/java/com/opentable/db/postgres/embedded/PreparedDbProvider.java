@@ -119,7 +119,7 @@ public class PreparedDbProvider {
 
     public ConnectionInfo createNewDatabase() throws SQLException {
         final DbInfo dbInfo = createNewDB();
-        return !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getUrl(), dbInfo.getUser(), dbInfo.getPassword());
+        return !dbInfo.isSuccess() ? null : new ConnectionInfo(dbInfo.getUrl(), dbInfo.getUser(), dbInfo.getPassword(), dbInfo.getHost(), dbInfo.getPort());
     }
 
     /**
@@ -215,7 +215,7 @@ public class PreparedDbProvider {
                 }
                 try {
                     if (failure == null) {
-                        nextDatabase.put(DbInfo.ok(pg.getJdbcUrl(newDbName), pg.getUserName(), pg.getPassword()));
+                        nextDatabase.put(DbInfo.ok(pg.getJdbcUrl(newDbName), pg.getUserName(), pg.getPassword(), pg.getHost(), pg.getPort()));
                     } else {
                         nextDatabase.put(DbInfo.error(failure));
                     }
@@ -273,26 +273,37 @@ public class PreparedDbProvider {
     }
 
     public static class DbInfo {
-        public static DbInfo ok(final String url, final String user, final String password) {
-            return new DbInfo(url, user, password, null);
+        public static DbInfo ok(final String url, final String user, final String password, final String host, final int port) {
+            return new DbInfo(url, user, password, null, host, port);
         }
 
         public static DbInfo error(SQLException e) {
-            return new DbInfo(null, null, null, e);
+            return new DbInfo(null, null, null, e, null, -1);
         }
 
         private final String url;
         private final String user;
         private final String password;
         private final SQLException ex;
+        private final String host;
+        private final int port;
 
-        private DbInfo(final String url, final String user, final String password, final SQLException e) {
+        private DbInfo(final String url, final String user, final String password, final SQLException e, final String host, final int port) {
             this.url = url;
             this.user = user;
             this.password = password;
             this.ex = e;
+            this.host = host;
+            this.port = port;
         }
 
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
         public String getUrl() {
             return url;
         }
