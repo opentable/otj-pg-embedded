@@ -72,16 +72,18 @@ public class EmbeddedPostgres implements Closeable {
                      Map<String, String> localeConfig,
                      Map<String, BindMount> bindMounts,
                      Optional<Network> network,
+                     Optional<String> networkAlias,
                      DockerImageName image,
                      String databaseName
     ) throws IOException {
-        this(postgresConfig, localeConfig, bindMounts, network, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
+        this(postgresConfig, localeConfig, bindMounts, network, networkAlias, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
                      Map<String, BindMount> bindMounts,
                      Optional<Network> network,
+                     Optional<String> networkAlias,
                      DockerImageName image,
                      Duration pgStartupWait,
                      String databaseName
@@ -103,6 +105,7 @@ public class EmbeddedPostgres implements Closeable {
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
         processBindMounts(postgreDBContainer, bindMounts);
         network.ifPresent(postgreDBContainer::withNetwork);
+        networkAlias.ifPresent(postgreDBContainer::withNetworkAliases);
         postgreDBContainer.start();
     }
 
@@ -220,6 +223,7 @@ public class EmbeddedPostgres implements Closeable {
 
         private DockerImageName image = getDefaultImage();
         private String databaseName = POSTGRES;
+        private Optional<String> networkAlias = Optional.empty();
 
         // See comments at top for the logic.
         DockerImageName getDefaultImage() {
@@ -270,8 +274,9 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
-        public Builder setNetwork(Network network) {
+        public Builder setNetwork(Network network, String networkAlias) {
             this.network = Optional.ofNullable(network);
+            this.networkAlias = Optional.ofNullable(networkAlias);
             return this;
         }
 
@@ -299,7 +304,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, image, pgStartupWait, databaseName);
+            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, networkAlias, image, pgStartupWait, databaseName);
         }
 
         @Override

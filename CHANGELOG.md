@@ -1,6 +1,10 @@
 
 1.0.0
 -----
+* Add network alias option
+
+1.0.0RC3
+-----
 * Stop excluding junit4 from testcontainers - check the README for the sordid details.
 * Pass host and port to the ConnectionInfo bean. We strongly recommend you prefer getDatasource or getUrl, these will be more portable in usage. We ran into
 a few use cases where this was handy, however.
