@@ -95,8 +95,8 @@ public class EmbeddedPostgres implements Closeable {
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust");
         final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
         cmd.addAll(createConfigOptions(postgresConfig));
-        createConigFileBindings(postgresConfig);
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
+        createConigFileBindings(postgresConfig);
         postgreDBContainer.start();
     }
 
