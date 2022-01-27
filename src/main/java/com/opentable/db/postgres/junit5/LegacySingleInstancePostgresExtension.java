@@ -42,8 +42,6 @@ public class LegacySingleInstancePostgresExtension implements AfterTestExecution
     private volatile Connection postgresConnection;
     private final List<Consumer<EmbeddedPostgres.Builder>> builderCustomizers = new CopyOnWriteArrayList<>();
 
-    public LegacySingleInstancePostgresExtension() { }
-
     @Override
     public void beforeTestExecution(ExtensionContext context) throws Exception {
         epg = pg();
