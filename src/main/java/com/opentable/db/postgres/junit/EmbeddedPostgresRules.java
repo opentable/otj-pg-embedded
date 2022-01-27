@@ -13,8 +13,6 @@
  */
 package com.opentable.db.postgres.junit;
 
-import org.junit.rules.TestRule;
-
 import com.opentable.db.postgres.embedded.DatabasePreparer;
 
 public final class EmbeddedPostgresRules {
@@ -30,7 +28,7 @@ public final class EmbeddedPostgresRules {
     }
 
     /**
-     * Returns a {@link TestRule} to create a Postgres cluster, shared amongst all test cases in this JVM.
+     * Returns a {@link PreparedDbRule to create a Postgres cluster, shared amongst all test cases in this JVM.
      * The rule contributes Config switches to configure each test case to get its own database.
      * @param preparer DatabasePreparer
      * @return SingleInstancePostgresRule

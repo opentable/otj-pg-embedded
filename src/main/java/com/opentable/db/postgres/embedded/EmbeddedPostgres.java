@@ -17,6 +17,7 @@ package com.opentable.db.postgres.embedded;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -35,6 +36,7 @@ import javax.sql.DataSource;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
@@ -46,7 +48,7 @@ import org.testcontainers.utility.DockerImageName;
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
-    static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(30);
+    static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(60);
     static final String POSTGRES = "postgres";
 
     // There are 3 defaults.
@@ -93,8 +95,20 @@ public class EmbeddedPostgres implements Closeable {
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust");
         final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
         cmd.addAll(createConfigOptions(postgresConfig));
+        createConigFileBindings(postgresConfig);
         postgreDBContainer.setCommand(cmd.toArray(new String[0]));
         postgreDBContainer.start();
+    }
+
+    private void createConigFileBindings(final Map<String, String> postgresConfig) {
+        postgresConfig.entrySet().stream()
+                .filter(i -> i.getKey().endsWith("_file"))
+                .map(Map.Entry::getValue)
+                .filter(f -> new File(f).exists())
+                .distinct()
+                .forEach(f -> {
+                    postgreDBContainer.addFileSystemBind(f, f, BindMode.READ_ONLY);
+                });
     }
 
     private List<String> createConfigOptions(final Map<String, String> postgresConfig) {
