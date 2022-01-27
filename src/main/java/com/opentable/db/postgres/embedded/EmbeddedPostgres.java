@@ -36,7 +36,6 @@ import javax.sql.DataSource;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -71,7 +70,7 @@ public class EmbeddedPostgres implements Closeable {
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     Map<String, String> bindMounts,
+                     Map<String, BindMount> bindMounts,
                      Optional<Network> network,
                      DockerImageName image,
                      String databaseName
@@ -81,7 +80,7 @@ public class EmbeddedPostgres implements Closeable {
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
-                     Map<String, String> bindMounts,
+                     Map<String, BindMount> bindMounts,
                      Optional<Network> network,
                      DockerImageName image,
                      Duration pgStartupWait,
@@ -107,11 +106,11 @@ public class EmbeddedPostgres implements Closeable {
         postgreDBContainer.start();
     }
 
-    private void processBindMounts(PostgreSQLContainer<?> postgreDBContainer, Map<String, String> bindMounts) {
-        bindMounts.entrySet().stream()
-                .filter(f -> new File(f.getKey()).exists())
-                .distinct()
-                .forEach(f -> postgreDBContainer.addFileSystemBind(f.getKey(), f.getValue(), BindMode.READ_ONLY));
+    private void processBindMounts(PostgreSQLContainer<?> postgreDBContainer, Map<String, BindMount> bindMounts) {
+        bindMounts.values().stream()
+                .filter(f -> new File(f.getLocalFile()).exists())
+                .forEach(f -> postgreDBContainer.addFileSystemBind(f.getLocalFile(),
+                        f.getRemoteFile(), f.getBindMode()));
     }
 
     private List<String> createConfigOptions(final Map<String, String> postgresConfig) {
@@ -214,7 +213,7 @@ public class EmbeddedPostgres implements Closeable {
     public static class Builder {
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
-        private final Map<String, String> bindMounts = new HashMap<>();
+        private final Map<String, BindMount> bindMounts = new HashMap<>();
         private Optional<Network> network = Optional.empty();
 
         private Duration pgStartupWait = DEFAULT_PG_STARTUP_WAIT;
@@ -267,7 +266,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         public Builder setBindMount(String localFile, String remoteFile) {
-            bindMounts.put(localFile, remoteFile);
+            bindMounts.put(localFile, BindMount.of(localFile, remoteFile, null));
             return this;
         }
 
