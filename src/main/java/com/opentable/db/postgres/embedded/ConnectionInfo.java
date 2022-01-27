@@ -44,14 +44,18 @@ public class ConnectionInfo {
     }
 
     /**
+     * Use sparingly!
      * Prefer getUrl as a general rule over composition using getHost and getPort
+     * @return  the host. could be a hostname or an ip address
      */
     public String getHost() {
         return host;
     }
 
     /**
+     * Use sparingly!
      * Prefer getUrl as a general rule over composition using getHost and getPort
+     * @return the port
      */
     public int getPort() {
         return port;
