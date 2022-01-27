@@ -46,7 +46,7 @@ import org.testcontainers.utility.DockerImageName;
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
-    static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(30);
+    static final Duration DEFAULT_PG_STARTUP_WAIT = Duration.ofSeconds(60);
     static final String POSTGRES = "postgres";
 
     // There are 3 defaults.

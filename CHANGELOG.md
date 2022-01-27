@@ -5,6 +5,7 @@
 * Pass host and port to the ConnectionInfo bean. We strongly recommend you prefer getDatasource or getUrl, these will be more portable in usage. We ran into
 a few use cases where this was handy, however.
 * LegacySingleInstancePostgresExtension to do the old Junit5 lifecycle behavior.
+* 60 seconds default startup wait
 
 1.0.0RC2
 -------
