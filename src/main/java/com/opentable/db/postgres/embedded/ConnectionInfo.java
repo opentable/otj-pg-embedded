@@ -20,11 +20,15 @@ public class ConnectionInfo {
     private final String url;
     private final String user;
     private final String password;
+    private final String host;
+    private final int port;
 
-    public ConnectionInfo(final String url, final String user, final String password) {
+    public ConnectionInfo(final String url, final String user, final String password, final String host, final int port) {
         this.url = url;
         this.user = user;
         this.password = password;
+        this.host = host;
+        this.port = port;
     }
 
     public String getUser() {
@@ -39,9 +43,18 @@ public class ConnectionInfo {
         return password;
     }
 
-    @Deprecated
-    int getPort() {
-        return JdbcUrlUtils.getPort(url);
+    /**
+     * Prefer getUrl as a general rule over composition using getHost and getPort
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     * Prefer getUrl as a general rule over composition using getHost and getPort
+     */
+    public int getPort() {
+        return port;
     }
 
 }

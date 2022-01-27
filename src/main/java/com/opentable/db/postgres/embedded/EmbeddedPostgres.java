@@ -166,6 +166,9 @@ public class EmbeddedPostgres implements Closeable {
         }
      }
 
+     public String getHost() {
+        return postgreDBContainer.getContainerIpAddress();
+     }
     public int getPort() {
         return postgreDBContainer.getMappedPort(POSTGRESQL_PORT);
     }

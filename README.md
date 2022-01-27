@@ -25,7 +25,7 @@ Admittedly, a few disadvantages
 * A few compatibility drops and options have probably disappeared. Feel free to submit PRs
 * Docker in Docker can be dodgy to get running.
 
-## BEfore filing tickets.
+## Before filing tickets.
 
 1. Before filing tickets, please test your docker environment etc. If using podman or lima instead of "true docker", state so, and realize that the
 docker socket api provided by these apps is not 100% compatible, as we've found to our sadness. We'll be revisiting
@@ -172,6 +172,19 @@ class DaoTestUsingJunit5 {
     }
 }
 ```
+
+## Junit4 is a compile time dependency
+
+This is because TestContainers has a long outstanding bug to remove this - https://github.com/testcontainers/testcontainers-java/issues/970
+
+If you only use Junit5 in your classpath, and bringing in Junit4 bothers you (it does us, sigh), then
+you can do the following:
+
+* add maven exclusions to the testcontainers modules you declare dependencies on to strip out junit:junit . This by itself
+would lead to NoClassDefFound errors.
+* add a dependency on io.quarkus:quarkus-junit4-mock , which imports empty interfaces of the required classes.
+
+We initially excluded junit ourselves, but since you'd still have manually exclude yourself, and this broke junit4 users...
 
 ## Docker in Docker, authentication notes
 
