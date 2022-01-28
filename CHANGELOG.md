@@ -1,7 +1,12 @@
 
 1.0.0
 -----
+
+All the RC release features and fixes plus:
+
 * Add network alias option
+* Expose full bind mount function
+* fix equals/hashcode in builder.
 
 1.0.0RC3
 -----

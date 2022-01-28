@@ -36,6 +36,7 @@ import javax.sql.DataSource;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -254,6 +255,11 @@ public class EmbeddedPostgres implements Closeable {
             config.put("fsync", "off");
         }
 
+        /**
+         * Override the default startup wait for the container to start and be ready
+         * @param pgStartupWait time to wait
+         * @return builder
+         */
         public Builder setPGStartupWait(Duration pgStartupWait) {
             Objects.requireNonNull(pgStartupWait);
             if (pgStartupWait.isNegative()) {
@@ -264,36 +270,86 @@ public class EmbeddedPostgres implements Closeable {
             return this;
         }
 
+        /**
+         * Arguments passed to the postgres process itself
+         * @param key key
+         * @param value value
+         * @return builder
+         */
         public Builder setServerConfig(String key, String value) {
             config.put(key, value);
             return this;
         }
 
+        /**
+         * Set up a readonly bind mount.
+         * @param localFile local file system reference
+         * @param remoteFile remote file system reference
+         * @return builder
+         */
         public Builder setBindMount(String localFile, String remoteFile) {
-            bindMounts.put(localFile, BindMount.of(localFile, remoteFile, null));
+            return setBindMount(BindMount.of(localFile, remoteFile, BindMode.READ_ONLY));
+        }
+
+        /**
+         * Set up a bind mount between the local file system and the remote
+         * @param bindMount object representing this bind
+         * @return builder
+         */
+        public Builder setBindMount(BindMount bindMount) {
+            bindMounts.put(bindMount.getLocalFile(), bindMount);
             return this;
         }
 
+        /**
+         * Set up a shared network and the alias. This is useful if you have multiple containers
+         * and they need to communicate with each other.
+         * @param network The Network. Usually Network.Shared.
+         * @param networkAlias an alias by which other containers in the network can refer to this container
+         * @return builder
+         */
         public Builder setNetwork(Network network, String networkAlias) {
             this.network = Optional.ofNullable(network);
             this.networkAlias = Optional.ofNullable(networkAlias);
             return this;
         }
 
+        /**
+         * Override the default databaseName of postgres
+         * @param databaseName the name
+         * @return builder
+         */
         public Builder setDatabaseName(String databaseName) {
             this.databaseName = databaseName;
             return this;
         }
+
+        /**
+         * Set up arguments to initDB process
+         * @param key key
+         * @param value value
+         * @return builder
+         */
         public Builder setLocaleConfig(String key, String value) {
             localeConfig.put(key, value);
             return this;
         }
 
+        /**
+         * Set a default image. This may be with or without a tag
+         * @param image Docker image
+         * @return builder
+         */
         public Builder setImage(DockerImageName image) {
             this.image = image;
             return this;
         }
 
+        /**
+         * Add the tag to an existing image
+         * @param tag Tag
+         * @return builder
+         */
         public Builder setTag(String tag) {
             this.image = this.image.withTag(tag);
             return this;
@@ -309,22 +365,19 @@ public class EmbeddedPostgres implements Closeable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
+            if (this == o)  {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
             Builder builder = (Builder) o;
-            return  Objects.equals(config, builder.config) &&
-                    Objects.equals(localeConfig, builder.localeConfig) &&
-                    Objects.equals(pgStartupWait, builder.pgStartupWait) &&
-                    Objects.equals(image, builder.image);
+            return Objects.equals(config, builder.config) && Objects.equals(localeConfig, builder.localeConfig) && Objects.equals(bindMounts, builder.bindMounts) && Objects.equals(network, builder.network) && Objects.equals(pgStartupWait, builder.pgStartupWait) && Objects.equals(image, builder.image) && Objects.equals(databaseName, builder.databaseName) && Objects.equals(networkAlias, builder.networkAlias);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(config, localeConfig, pgStartupWait, image);
+            return Objects.hash(config, localeConfig, bindMounts, network, pgStartupWait, image, databaseName, networkAlias);
         }
     }
 
