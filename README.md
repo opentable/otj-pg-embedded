@@ -7,8 +7,9 @@ Allows embedding PostgreSQL into Java application code, using Docker containers.
 Excellent for allowing you to unit
 test with a "real" Postgres without requiring end users to install  and set up a database cluster.
 
+
 The release of 1.0 brings major changes to the innards of this library.
-Previous pre 1.x versions used an embedded tarball. This was extemely fast (a major plus(, but we switched to a docker based version
+Previous pre 1.x versions used an embedded tarball. This was extemely fast (a major plus), but we switched to a docker based version
 for these reasons:
 
 Advantages
@@ -26,14 +27,15 @@ Admittedly, a few disadvantages
 
 * Slower than running a tarball (2-5x slower).
 * A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
-* Docker in Docker can be dodgy to get running. (See below for one thing we discovered))
+* Docker in Docker can be dodgy to get running. (See below for one thing we discovered)
 
 ## Before filing tickets.
 
 1. Before filing tickets, please test your docker environment etc. If using podman or lima instead of "true docker", state so, and realize that the
 docker socket api provided by these apps is not 100% compatible, as we've found to our sadness. We'll be revisiting
 testing these in the future. We've managed to get PodMan working, albeit not 100% reliably.
-2. **No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.**
+2. **No further PRs or tickets will be accepted for the pre 1.0.0 release, unless community support arises for the `legacy` branch.** Please
+base any PRs for pre 1.x against the `legacy` branch.
 3. We primarily use Macs and Ubuntu Linux at OpenTable. We'll be happy to try to help out otherwise, but other platforms, such
 as Windows depend primarily on community support. We simply don't have the time or hardware. Happy to merge PRs though
 
