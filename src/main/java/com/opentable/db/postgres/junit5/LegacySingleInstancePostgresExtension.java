@@ -20,43 +20,30 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 
 /*
-    Implementing AfterTestExecutionCallback and BeforeTestExecutionCallback does not work if you want to use the EmbeddedPostgres in a @BeforeEach
-    or @BeforeAll method because it isn't instantiated then.
+    This is a legacy version of this class that implements the old lifecycle behavior.
+    Late in our testing for 1.0, we ran into a test case where the new EmbeddedPostgresExtension
+    failed to work properly.
 
-    The order in which the methods are called with  BeforeTestExecutionCallback is:
-        @BeforeAll method of the test class
-        @BeforeEach method of the test class
-        beforeTestExecution(ExtensionContext) method of
-        SingleInstancePostgresExtension
-        Actual test method of the test class
-
-    And using BeforeAllCallback instead it will be:
-        beforeAll(ExtensionContext) method of  SingleInstancePostgresExtension
-        @BeforeAll method of the test class
-        @BeforeEach method of the test class
-        Actual test method of the test class
-
-  See:     https://github.com/opentable/otj-pg-embedded/pull/138.
-  Credits: https://github.com/qutax
+    This is DEPRECATED until we figure out what's going on ;) and can be removed
+    in a minor version. Until then this is a workaround should anyone else run into this.
 
  */
-public class SingleInstancePostgresExtension implements AfterAllCallback, BeforeAllCallback {
+@Deprecated
+public class LegacySingleInstancePostgresExtension implements AfterTestExecutionCallback, BeforeTestExecutionCallback {
 
     private volatile EmbeddedPostgres epg;
     private volatile Connection postgresConnection;
     private final List<Consumer<EmbeddedPostgres.Builder>> builderCustomizers = new CopyOnWriteArrayList<>();
 
-    SingleInstancePostgresExtension() { }
-
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeTestExecution(ExtensionContext context) throws Exception {
         epg = pg();
         postgresConnection = epg.getPostgresDatabase().getConnection();
     }
@@ -67,7 +54,7 @@ public class SingleInstancePostgresExtension implements AfterAllCallback, Before
         return builder.start();
     }
 
-    public SingleInstancePostgresExtension customize(Consumer<EmbeddedPostgres.Builder> customizer) {
+    public LegacySingleInstancePostgresExtension customize(Consumer<EmbeddedPostgres.Builder> customizer) {
         if (epg != null) {
             throw new AssertionError("already started");
         }
@@ -85,7 +72,7 @@ public class SingleInstancePostgresExtension implements AfterAllCallback, Before
     }
 
     @Override
-    public void afterAll(ExtensionContext context) {
+    public void afterTestExecution(ExtensionContext context) {
         try {
             postgresConnection.close();
         } catch (SQLException e) {

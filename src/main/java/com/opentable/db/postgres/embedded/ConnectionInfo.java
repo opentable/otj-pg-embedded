@@ -13,26 +13,52 @@
  */
 package com.opentable.db.postgres.embedded;
 
+/**
+ * Basic data holding class to hold the connection information - the url, user, and password
+ */
 public class ConnectionInfo {
-    private final String dbName;
-    private final int port;
+    private final String url;
     private final String user;
+    private final String password;
+    private final String host;
+    private final int port;
 
-    public ConnectionInfo(final String dbName, final int port, final String user) {
-        this.dbName = dbName;
-        this.port = port;
+    public ConnectionInfo(final String url, final String user, final String password, final String host, final int port) {
+        this.url = url;
         this.user = user;
+        this.password = password;
+        this.host = host;
+        this.port = port;
     }
 
     public String getUser() {
         return user;
     }
 
-    public String getDbName() {
-        return dbName;
+    public String getUrl() {
+        return url;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    /**
+     * Use sparingly!
+     * Prefer getUrl as a general rule over composition using getHost and getPort
+     * @return  the host. could be a hostname or an ip address
+     */
+    public String getHost() {
+        return host;
+    }
+
+    /**
+     * Use sparingly!
+     * Prefer getUrl as a general rule over composition using getHost and getPort
+     * @return the port
+     */
     public int getPort() {
         return port;
     }
+
 }

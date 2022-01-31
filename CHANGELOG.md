@@ -1,3 +1,48 @@
+
+1.0.0
+-----
+
+All the RC release features and fixes plus:
+
+* Add network alias option
+* Expose full bind mount function
+* fix equals/hashcode in builder.
+
+1.0.0RC3
+-----
+* Stop excluding junit4 from testcontainers - check the README for the sordid details.
+* Pass host and port to the ConnectionInfo bean. We strongly recommend you prefer getDatasource or getUrl, these will be more portable in usage. We ran into
+a few use cases where this was handy, however.
+* LegacySingleInstancePostgresExtension to do the old Junit5 lifecycle behavior.
+* 60 seconds default startup wait.
+* Expose bind mounts (optional, none by default) in builder, currently hard coded as Read only.
+* Expose network (optional, none by default) in builder.
+
+1.0.0RC2
+-------
+* Restore Java 8 compatibility
+* Update to testcontainers 1.16.3
+
+1.0.0RC1
+-----
+* A completely rewritten version of `otj-pg-embedded`. Uses "testcontainers" for docker, while preserving API compatibility.
+
+Advantages
+
+* multi arch (m1 etc) support
+* Works the same way on every OS - Mac, Windows, Linux. Please note the maintainers only test on Mac Linux
+* You need a tarball for every linux distribution as PG 10+ no longer ship a  "universal binary" for linux.
+* Easy to switch docker image tag to upgrade versions.
+* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs)
+
+Admittedly, a few disadvantages
+
+* Slower than running a tarball
+* A few compatibility drops and options have probably disappeared. Feel free to submit PRs
+* Docker in Docker can be dodgy to get running.
+
+=== legacy tarball versions ===
+
 0.13.4
 ------
 * POM 287, Flyway 7

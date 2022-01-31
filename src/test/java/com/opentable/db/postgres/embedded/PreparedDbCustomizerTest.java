@@ -13,15 +13,17 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.PreparedDbRule;
-import org.junit.Rule;
-import org.junit.Test;
+import static com.opentable.db.postgres.embedded.EmbeddedPostgres.DEFAULT_PG_STARTUP_WAIT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.time.Duration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import org.junit.Rule;
+import org.junit.Test;
+
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
+import com.opentable.db.postgres.junit.PreparedDbRule;
 
 public class PreparedDbCustomizerTest {
 
@@ -32,23 +34,23 @@ public class PreparedDbCustomizerTest {
     @Rule
     public PreparedDbRule dbA2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> {});
     @Rule
-    public PreparedDbRule dbA3 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(10)));
+    public PreparedDbRule dbA3 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(DEFAULT_PG_STARTUP_WAIT));
     @Rule
-    public PreparedDbRule dbB1 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(11)));
+    public PreparedDbRule dbB1 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
     @Rule
-    public PreparedDbRule dbB2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(11)));
+    public PreparedDbRule dbB2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
 
     @Test
     public void testCustomizers() {
-        int dbA1Port = dbA1.getConnectionInfo().getPort();
-        int dbA2Port = dbA2.getConnectionInfo().getPort();
-        int dbA3Port = dbA3.getConnectionInfo().getPort();
+        int dbA1Port = JdbcUrlUtils.getPort(dbA1.getConnectionInfo().getUrl());
+        int dbA2Port = JdbcUrlUtils.getPort(dbA2.getConnectionInfo().getUrl());
+        int dbA3Port = JdbcUrlUtils.getPort(dbA3.getConnectionInfo().getUrl());
 
         assertEquals(dbA1Port, dbA2Port);
         assertEquals(dbA1Port, dbA3Port);
 
-        int dbB1Port = dbB1.getConnectionInfo().getPort();
-        int dbB2Port = dbB2.getConnectionInfo().getPort();
+        int dbB1Port = JdbcUrlUtils.getPort(dbB1.getConnectionInfo().getUrl());
+        int dbB2Port = JdbcUrlUtils.getPort(dbB2.getConnectionInfo().getUrl());
 
         assertEquals(dbB1Port, dbB2Port);
 
