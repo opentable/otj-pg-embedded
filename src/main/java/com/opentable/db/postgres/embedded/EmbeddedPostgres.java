@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -47,6 +48,7 @@ import org.testcontainers.utility.DockerImageName;
  * Core class of the library, providing a builder (with reasonable defaults) to wrap
  * testcontainers and launch postgres container.
  */
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class EmbeddedPostgres implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddedPostgres.class);
 
@@ -74,10 +76,11 @@ public class EmbeddedPostgres implements Closeable {
                      Map<String, BindMount> bindMounts,
                      Optional<Network> network,
                      Optional<String> networkAlias,
+                     OptionalInt fixedPort,
                      DockerImageName image,
                      String databaseName
     ) throws IOException {
-        this(postgresConfig, localeConfig, bindMounts, network, networkAlias, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
+        this(postgresConfig, localeConfig, bindMounts, network, networkAlias, fixedPort, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
     }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
@@ -85,14 +88,23 @@ public class EmbeddedPostgres implements Closeable {
                      Map<String, BindMount> bindMounts,
                      Optional<Network> network,
                      Optional<String> networkAlias,
+                     OptionalInt fixedPort,
                      DockerImageName image,
                      Duration pgStartupWait,
                      String databaseName
-    ) throws IOException {
+    ) {
         LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, bindMounts {}, pgStartupWait {}, dbName {} ", image,
                 postgresConfig, localeConfig, bindMounts, pgStartupWait, databaseName);
         image = image.asCompatibleSubstituteFor(POSTGRES);
-        this.postgreDBContainer = new PostgreSQLContainer<>(image)
+        final FixedPostgresSQLContainer pgContainer = new FixedPostgresSQLContainer(image); //NOPMD
+        fixedPort.ifPresent(p ->  {
+            // This would be exposed via a builder method
+            LOG.warn("Exposing a fixed port {} which kind of sucks,", p);
+            pgContainer.addFixedExposedPort(p, POSTGRESQL_PORT);
+        });
+
+                //TODO: generics are still mucked up
+                this.postgreDBContainer = ((PostgreSQLContainer<?>) pgContainer)
                 .withDatabaseName(databaseName)
                 .withUsername(POSTGRES)
                 .withPassword(POSTGRES)
@@ -225,6 +237,7 @@ public class EmbeddedPostgres implements Closeable {
         private DockerImageName image = getDefaultImage();
         private String databaseName = POSTGRES;
         private Optional<String> networkAlias = Optional.empty();
+        private OptionalInt fixedPort = OptionalInt.empty();
 
         // See comments at top for the logic.
         DockerImageName getDefaultImage() {
@@ -346,6 +359,17 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         /**
+         * Force a fixed port on the local side of things. We strongly recommend
+         * against using this, using ephemeral ports, the default. We reserve the
+         * right to remove this support.
+         * @param fixedPort a integer port.
+         */
+        @Deprecated
+        public void setFixedPort(Integer fixedPort) {
+            this.fixedPort = OptionalInt.of(fixedPort);
+        }
+
+        /**
          * Add the tag to an existing image
          * @param tag Tag
          * @return builder
@@ -360,7 +384,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, networkAlias, image, pgStartupWait, databaseName);
+            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, networkAlias, fixedPort, image, pgStartupWait, databaseName);
         }
 
         @Override
