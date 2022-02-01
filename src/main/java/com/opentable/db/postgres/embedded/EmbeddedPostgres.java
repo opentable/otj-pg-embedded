@@ -59,7 +59,7 @@ public class EmbeddedPostgres implements Closeable {
     // 1) If this is defined, then it's assumed this contains the full image and tag...
     static final String ENV_DOCKER_IMAGE="PG_FULL_IMAGE";
     // 2)Otherwise if this is defined, we'll use this as the prefix, and combine with the DOCKER_DEFAULT_TAG below
-    // This is already used in TestContainers as a env var, so it's useful to reuse for consistency.
+    // This is already used in TestContainers as an env var, so it's useful to reuse for consistency.
     static final String ENV_DOCKER_PREFIX = "TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX";
     // 3) Otherwise we'll just pull from docker hub with the DOCKER_DEFAULT_TAG
     static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
@@ -69,19 +69,6 @@ public class EmbeddedPostgres implements Closeable {
     private final PostgreSQLContainer<?> postgreSQLContainer;
 
     private final UUID instanceId = UUID.randomUUID();
-
-
-    EmbeddedPostgres(Map<String, String> postgresConfig,
-                     Map<String, String> localeConfig,
-                     Map<String, BindMount> bindMounts,
-                     Optional<Network> network,
-                     Optional<String> networkAlias,
-                     OptionalInt fixedPort,
-                     DockerImageName image,
-                     String databaseName
-    ) {
-        this(postgresConfig, localeConfig, bindMounts, network, networkAlias, fixedPort, image,  DEFAULT_PG_STARTUP_WAIT, databaseName);
-    }
 
     EmbeddedPostgres(Map<String, String> postgresConfig,
                      Map<String, String> localeConfig,
@@ -226,6 +213,7 @@ public class EmbeddedPostgres implements Closeable {
         return postgreSQLContainer.getPassword();
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public static class Builder {
         private final Map<String, String> config = new HashMap<>();
         private final Map<String, String> localeConfig = new HashMap<>();
@@ -315,7 +303,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         /**
-         * Set up a shared network and the alias. This is useful if you have multiple containers
+         * Set up a shared network and the alias. This is useful if you have multiple containers,
          * and they need to communicate with each other.
          * @param network The Network. Usually Network.Shared.
          * @param networkAlias an alias by which other containers in the network can refer to this container
