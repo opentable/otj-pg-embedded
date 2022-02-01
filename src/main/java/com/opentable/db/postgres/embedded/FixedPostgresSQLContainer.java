@@ -16,7 +16,12 @@ package com.opentable.db.postgres.embedded;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class FixedPostgresSQLContainer extends PostgreSQLContainer {
+/**
+ * This class exists only to expose the addFixedExposedPort option.
+ * Otherwise we'd use PostgreSQLContainer directly.
+ * @param <SELF> boring generics for fluent api
+ */
+public class FixedPostgresSQLContainer<SELF extends PostgreSQLContainer<SELF>> extends PostgreSQLContainer<SELF> {
     public FixedPostgresSQLContainer(DockerImageName dockerImageName) {
         super(dockerImageName);
     }
