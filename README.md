@@ -216,6 +216,7 @@ We've been able to get this working in our CICD pipeline with the following
 The first parameter corrects for testcontainers getting confused whether to address the hosting container or the "container inside the container".
 The second parameter (which outside OpenTable would point to your private Docker Registry) avoids much of the Docker Rate Limiting issues. 
 
+See https://github.com/testcontainers/testcontainers-java/issues/4596 for more information
 
 ## Alternatives considered
 
