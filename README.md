@@ -9,7 +9,7 @@ test with a "real" Postgres without requiring end users to install  and set up a
 
 
 The release of 1.0 brings major changes to the innards of this library.
-Previous pre 1.x versions used an embedded tarball. This was extemely fast (a major plus), but we switched to a docker based version
+Previous pre 1.x versions used an embedded tarball. This was extremely fast (a major plus), but we switched to a docker based version
 for these reasons:
 
 Advantages
@@ -20,7 +20,7 @@ Advantages
 * You need a tarball for every linux distribution as PG 10+ no longer ship a "universal binary" for linux. This means a lot of support and maintenance work.
 * Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
 * More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
-* Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
+* Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc. - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
 
 Admittedly, a few disadvantages
 ---
@@ -53,7 +53,7 @@ public SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance();
 
 This simply has JUnit manage an instance of EmbeddedPostgres (start, stop). You can then use this to get a DataSource with: `pg.getEmbeddedPostgres().getPostgresDatabase();`  
 
-Additionally you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db/postgres/embedded/EmbeddedPostgres.java) class directly by manually starting and stopping the instance; see [`EmbeddedPostgresTest`](src/test/java/com/opentable/db/postgres/embedded/EmbeddedPostgresTest.java) for an example.
+Additionally, you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db/postgres/embedded/EmbeddedPostgres.java) class directly by manually starting and stopping the instance; see [`EmbeddedPostgresTest`](src/test/java/com/opentable/db/postgres/embedded/EmbeddedPostgresTest.java) for an example.
 
 Default username/password is: postgres/postgres and the default database is 'postgres'
 
@@ -97,7 +97,7 @@ independent databases gives you.
 
 ## Postgres version
 
-The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently this is "13-latest",
+The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently, this is "13-latest",
 as this fits the needs of OpenTable, however you can change this easily. This is super useful, both to use a newer version
 of Postgres, or to build your own DockerFile with additional extensions.
 
@@ -132,7 +132,7 @@ the network.
 
 ## Using JUnit5
 
-JUnit5 does not have `@Rule`. So below is an example for how to create tests using JUnit5 and embedded postgress, it creates a Spring context and uses JDBI:
+JUnit5 does not have `@Rule`. So below is an example for how to create tests using JUnit5 and embedded postgres, it creates a Spring context and uses JDBI:
 
 ```java
 @ExtendWith(SpringExtension.class)
@@ -158,7 +158,7 @@ class DaoTestUsingJunit5 {
     }
 
     /**
-     * This class is here as inner class for brevity
+     * This class is here as inner class for brevity,
      * but it's better to have only one for all tests.
      */
     @Configuration
@@ -232,14 +232,14 @@ But certainly there's no real reason you can't use TestContainers directly - the
 
 * Why not _use a maven plugin approach like fabric8-docker-maven?
 
-Honestly I suspect this is a better approach in that it doesn't try to maintain it's own version of the Docker API, and
-runs outside the tests, reducing issues like forking and threading conflicts. However it would have been too major an overhaul
+Honestly I suspect this is a better approach in that it doesn't try to maintain its own version of the Docker API, and
+runs outside the tests, reducing issues like forking and threading conflicts. However, it would have been too major an overhaul
 for our users.
 
 * "I really prefer the old embedded postgres approach. It's faster."
  * We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
-   years ago from the embedded branch and is kept reasonably up to date.
- * Another alternative is flapdoodle's embedded postgres.
+   of years ago from the embedded branch and is kept reasonably up to date.
+ * Another alternative is Flapdoodle's embedded postgres, but that is deprecated in favor of testcontainers too.
 
 Both libraries suffer from many of the cons that bedeviled upkeep of this library for years, but they are certainly viable options
 for many.
