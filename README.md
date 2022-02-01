@@ -57,6 +57,8 @@ Additionally you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db
 
 Default username/password is: postgres/postgres and the default database is 'postgres'
 
+**The port exposed on the host is random and ephemeral so always use the getDatasource, getUrl methods**
+
 ## Sample of Embedded Postgres direct Usage
 
 ```
