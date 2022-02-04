@@ -7,27 +7,23 @@ Allows embedding PostgreSQL into Java application code, using Docker containers.
 Excellent for allowing you to unit
 test with a "real" Postgres without requiring end users to install  and set up a database cluster.
 
+## Recent Changes
 
 The release of 1.0 brings major changes to the innards of this library.
 Previous pre 1.x versions used an embedded tarball. This was extremely fast (a major plus), but we switched to a docker based version
 for these reasons:
 
-Advantages
----
-
-* multi architecture support. This has become a huge issue for us with the introduction of the Mac M1 (and Windows ARM, Linux ARM)/
-* The same container works the same way on every OS - Mac, Windows, Linux. 
-* You need a tarball for every linux distribution as PG 10+ no longer ship a "universal binary" for linux. This means a lot of support and maintenance work.
-* Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
-* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
-* Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc. - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
-
-Admittedly, a few disadvantages
----
-
-* Slower than running a tarball (2-5x slower).
-* A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
-* Docker in Docker can be dodgy to get running. (See below for one thing we discovered)
+* **Advantages:** 
+  * multi architecture support. This has become a huge issue for us with the introduction of the Mac M1 (and Windows ARM, Linux ARM)/
+  * The same container works the same way on every OS - Mac, Windows, Linux. 
+  * You need a tarball for every linux distribution as PG 10+ no longer ship a "universal binary" for linux. This means a lot of support and maintenance work.
+  * Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
+  * More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
+  * Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc. - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
+* **Admittedly, a few disadvantages**
+  * Slower than running a tarball (2-5x slower).
+  * A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
+  * Docker in Docker can be dodgy to get running. (See below for one thing we discovered)
 
 ## Before filing tickets.
 
