@@ -226,19 +226,21 @@ test approach.
 You can, and it should work well for you. The builders, the api compatibility, the wrapping around Flyway - that's the added value.
 But certainly there's no real reason you can't use TestContainers directly - they have their own Junit4 and Junit5 Rules/Extensions.
 
-* Why not _use a maven plugin approach like fabric8-docker-maven?
+* Why not use a maven plugin approach like fabric8-docker-maven?
 
 Honestly I suspect this is a better approach in that it doesn't try to maintain its own version of the Docker API, and
 runs outside the tests, reducing issues like forking and threading conflicts. However, it would have been too major an overhaul
 for our users.
 
 * "I really prefer the old embedded postgres approach. It's faster."
- * We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
-   of years ago from the embedded branch and is kept reasonably up to date.
- * Another alternative is Flapdoodle's embedded postgres, but that is deprecated in favor of testcontainers too.
 
-Both libraries suffer from many of the cons that bedeviled upkeep of this library for years, but they are certainly viable options
-for many.
+   We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
+   of years ago from the embedded branch and is kept reasonably up to date.
+   
+   Another alternative is Flapdoodle's embedded postgres, but that is deprecated in favor of testcontainers too.
+
+   Both libraries suffer from many of the cons that bedeviled upkeep of this library for years, but they are certainly viable options
+   for many.
 
 ----
 Copyright (C) 2017-2022 OpenTable, Inc
