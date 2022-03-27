@@ -7,27 +7,23 @@ Allows embedding PostgreSQL into Java application code, using Docker containers.
 Excellent for allowing you to unit
 test with a "real" Postgres without requiring end users to install  and set up a database cluster.
 
+## Recent Changes
 
 The release of 1.0 brings major changes to the innards of this library.
 Previous pre 1.x versions used an embedded tarball. This was extremely fast (a major plus), but we switched to a docker based version
 for these reasons:
 
-Advantages
----
-
-* multi architecture support. This has become a huge issue for us with the introduction of the Mac M1 (and Windows ARM, Linux ARM)/
-* The same container works the same way on every OS - Mac, Windows, Linux. 
-* You need a tarball for every linux distribution as PG 10+ no longer ship a "universal binary" for linux. This means a lot of support and maintenance work.
-* Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
-* More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
-* Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc. - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
-
-Admittedly, a few disadvantages
----
-
-* Slower than running a tarball (2-5x slower).
-* A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
-* Docker in Docker can be dodgy to get running. (See below for one thing we discovered)
+* **Advantages:** 
+  * multi architecture support. This has become a huge issue for us with the introduction of the Mac M1 (and Windows ARM, Linux ARM)/
+  * The same container works the same way on every OS - Mac, Windows, Linux. 
+  * You need a tarball for every linux distribution as PG 10+ no longer ship a "universal binary" for linux. This means a lot of support and maintenance work.
+  * Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
+  * More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
+  * Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc. - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
+* **Admittedly, a few disadvantages**
+  * Slower than running a tarball (2-5x slower).
+  * A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
+  * Docker in Docker can be dodgy to get running. (See below for one thing we discovered)
 
 ## Before filing tickets.
 
@@ -230,19 +226,21 @@ test approach.
 You can, and it should work well for you. The builders, the api compatibility, the wrapping around Flyway - that's the added value.
 But certainly there's no real reason you can't use TestContainers directly - they have their own Junit4 and Junit5 Rules/Extensions.
 
-* Why not _use a maven plugin approach like fabric8-docker-maven?
+* Why not use a maven plugin approach like fabric8-docker-maven?
 
 Honestly I suspect this is a better approach in that it doesn't try to maintain its own version of the Docker API, and
 runs outside the tests, reducing issues like forking and threading conflicts. However, it would have been too major an overhaul
 for our users.
 
 * "I really prefer the old embedded postgres approach. It's faster."
- * We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
-   of years ago from the embedded branch and is kept reasonably up to date.
- * Another alternative is Flapdoodle's embedded postgres, but that is deprecated in favor of testcontainers too.
 
-Both libraries suffer from many of the cons that bedeviled upkeep of this library for years, but they are certainly viable options
-for many.
+   We recommend those who prefer the embedded tarball use https://github.com/zonkyio/embedded-postgres which was forked a couple
+   of years ago from the embedded branch and is kept reasonably up to date.
+   
+   Another alternative is Flapdoodle's embedded postgres, but that is deprecated in favor of testcontainers too.
+
+   Both libraries suffer from many of the cons that bedeviled upkeep of this library for years, but they are certainly viable options
+   for many.
 
 ----
 Copyright (C) 2017-2022 OpenTable, Inc
