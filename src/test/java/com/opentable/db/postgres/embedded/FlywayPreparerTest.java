@@ -14,10 +14,13 @@
 package com.opentable.db.postgres.embedded;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,9 +36,23 @@ public class FlywayPreparerTest {
     public void testTablesMade() throws Exception {
         try (Connection c = db.getTestDatabase().getConnection();
                 Statement s = c.createStatement()) {
-            ResultSet rs = s.executeQuery("SELECT * FROM foo");
-            rs.next();
-            assertEquals("bar", rs.getString(1));
+            try (ResultSet rs = s.executeQuery("SELECT * FROM foo")) {
+                rs.next();
+                assertEquals("bar", rs.getString(1));
+            }
+            try (ResultSet rs = s.executeQuery("SELECT table_name\n" +
+                    "  FROM information_schema.tables\n" +
+                    " WHERE table_schema='public'\n" +
+                    "   AND table_type='BASE TABLE'")) {
+                Set<String> tableNames = new HashSet<>();
+                while(rs.next()) {
+                    tableNames.add(rs.getString(1));
+                }
+                assertTrue(tableNames.contains("foo"));
+                assertTrue(tableNames.contains("flyway_schema_history"));
+            }
+
+
         }
     }
 }
