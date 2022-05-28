@@ -67,8 +67,8 @@ public class EmbeddedPostgresTest
                         .setLocaleConfig("lc-messages", "en_US");
             } else if (SystemUtils.IS_OS_LINUX){
                 builder = EmbeddedPostgres.builder()
-                        .setLocaleConfig("locale", "en_US.utf8")
-                        .setLocaleConfig("lc-messages", "en_US.utf8");
+                        .setLocaleConfig("locale", "C.UTF-8")  // our Jenkins agent doesn't have en_US
+                        .setLocaleConfig("lc-messages", "C.UTF-8");
             } else {
                 fail("System not detected!");
             }
