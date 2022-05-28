@@ -1,4 +1,4 @@
-OpenTable Embedded PostgreSQL Component
+OpenTable Embedded PostgreSQL Component 
 =======================================
 
 Note: This library requires Java 8+.
