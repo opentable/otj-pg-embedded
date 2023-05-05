@@ -179,7 +179,7 @@ public class PreparedDbProvider {
         }
 
         PrepPipeline start() {
-            final ExecutorService service = Executors.newSingleThreadExecutor(r -> {
+            final ExecutorService service = Executors.newSingleThreadExecutor(r -> { //NOPMD
                 final Thread t = new Thread(r);
                 t.setDaemon(true);
                 t.setName("cluster-" + pg + "-preparer");
