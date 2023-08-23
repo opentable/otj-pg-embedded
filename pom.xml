@@ -36,6 +36,7 @@
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
+    <dep.plugin.gpg.version>3.1.0</dep.plugin.gpg.version>
     <dep.plugin.license.version>4.2</dep.plugin.license.version>
     <basepom.check.phase-license>validate</basepom.check.phase-license> <!-- this is overriding basepom default -->
     <basepom.license.skip-existing>true</basepom.license.skip-existing>
