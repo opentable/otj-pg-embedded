@@ -27,12 +27,12 @@
     <connection>scm:git:git://github.com/opentable/otj-pg-embedded.git</connection>
     <developerConnection>scm:git:git@github.com:opentable/otj-pg-embedded.git</developerConnection>
     <url>http://github.com/opentable/otj-pg-embedded</url>
-    <tag>HEAD</tag>
+    <tag>otj-pg-embedded-another-test-3</tag>
   </scm>
 
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-pg-embedded</artifactId>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>another-test-3</version>
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
