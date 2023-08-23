@@ -269,6 +269,64 @@
         </plugins>
       </build>
     </profile>
+
+    <!-- Active during OSS release:perform -->
+    <profile>
+      <id>basepom.oss-release</id>
+      <properties>
+        <!-- tests run in the preparation step of the release -->
+        <skipTests>true</skipTests>
+      </properties>
+      <build>
+        <plugins>
+          <!-- oss requires a javadoc jar. Build one when releasing. -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- if necessary, build a scaladoc jar. Disabled by default. -->
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-scaladocs</id>
+                <phase>package</phase>
+                <configuration>
+                  <skip>${basepom.oss.skip-scala-doc}</skip>
+                </configuration>
+                <goals>
+                  <goal>doc-jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Sign artifacts using gpg for oss upload -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>basepom.sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>
