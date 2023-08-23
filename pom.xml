@@ -295,22 +295,22 @@
             </executions>
           </plugin>
           <!-- if necessary, build a scaladoc jar. Disabled by default. -->
-          <plugin>
-            <groupId>net.alchim31.maven</groupId>
-            <artifactId>scala-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>attach-scaladocs</id>
-                <phase>package</phase>
-                <configuration>
-                  <skip>${basepom.oss.skip-scala-doc}</skip>
-                </configuration>
-                <goals>
-                  <goal>doc-jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
+<!--          <plugin>-->
+<!--            <groupId>net.alchim31.maven</groupId>-->
+<!--            <artifactId>scala-maven-plugin</artifactId>-->
+<!--            <executions>-->
+<!--              <execution>-->
+<!--                <id>attach-scaladocs</id>-->
+<!--                <phase>package</phase>-->
+<!--                <configuration>-->
+<!--                  <skip>${basepom.oss.skip-scala-doc}</skip>-->
+<!--                </configuration>-->
+<!--                <goals>-->
+<!--                  <goal>doc-jar</goal>-->
+<!--                </goals>-->
+<!--              </execution>-->
+<!--            </executions>-->
+<!--          </plugin>-->
           <!-- Sign artifacts using gpg for oss upload -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
