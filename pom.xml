@@ -18,9 +18,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.opentable</groupId>
-    <artifactId>otj-parent-spring</artifactId>
-    <version>328</version>
+    <groupId>org.basepom</groupId>
+    <artifactId>basepom-minimal</artifactId>
+    <version>55</version>
   </parent>
 
   <scm>
@@ -36,9 +36,18 @@
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
-    <!-- Remove once parent POM updated -->
-    <dep.testcontainers.version>1.16.3</dep.testcontainers.version>
-    <!-- end remove -->
+    <basepom.check.skip-spotbugs>true</basepom.check.skip-spotbugs>
+    <project.build.targetJdk>11</project.build.targetJdk>
+    <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
+    <project.build.systemJdk>${project.build.targetJdk}</project.build.systemJdk>
+    <dep.testcontainers.version>1.18.3</dep.testcontainers.version>
+    <dep.postgres-jdbc.version>42.5.1</dep.postgres-jdbc.version>
+    <dep.liquibase.version>4.23.1</dep.liquibase.version>
+    <dep.slf4j.version>1.7.36</dep.slf4j.version>
+    <dep.flyway.version>8.5.13</dep.flyway.version>
+    <dep.commons-lang.version>3.12.0</dep.commons-lang.version>
+    <dep.junit.version>4.13.2</dep.junit.version>
+    <dep.junit5.version>5.8.2</dep.junit5.version>
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
@@ -58,28 +67,33 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <version>${dep.slf4j.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
+      <version>${dep.commons-lang.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
       <optional>true</optional>
+      <version>${dep.flyway.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.liquibase</groupId>
       <artifactId>liquibase-core</artifactId>
+      <version>${dep.liquibase.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
+      <version>${dep.postgres-jdbc.version}</version>
     </dependency>
 
     <dependency>
@@ -94,6 +108,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>${dep.junit.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -101,6 +116,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
+      <version>${dep.junit5.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -108,6 +124,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
+      <version>${dep.slf4j.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
