@@ -1,3 +1,8 @@
+1.0.3 (unreleased) 
+----
+* commons compress 1.24.0 (used by testcontainers) updated for a CVE.
+* testcontainers 1.19.0
+
 1.0.2
 -----
 * Internally split off from otj-parent to allow compatibility between different otj stacks and not pull as much otj-ness.
