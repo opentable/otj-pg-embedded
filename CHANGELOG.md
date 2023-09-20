@@ -1,3 +1,7 @@
+1.0.2
+-----
+* Internally split off from otj-parent to allow compatibility between different otj stacks and not pull as much otj-ness.
+
 1.0.1
 -----
 * Parent POM-328 [changes see here]( https://github.com/opentable/otj-parent/blob/master/CHANGELOG.md#328)
