@@ -1,7 +1,7 @@
 OpenTable Embedded PostgreSQL Component
 =======================================
 
-Note: This library requires Java 8+.
+Note: This library requires Java 11+.
 
 Allows embedding PostgreSQL into Java application code, using Docker containers.
 Excellent for allowing you to unit
