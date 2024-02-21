@@ -54,7 +54,7 @@
     <dep.slf4j.version>1.7.36</dep.slf4j.version>
     <dep.flyway.version>8.5.13</dep.flyway.version>
     <dep.commons-lang.version>3.12.0</dep.commons-lang.version>
-    <dep.commons-compress.version>1.24.0</dep.commons-compress.version>
+    <dep.commons-compress.version>1.26.0</dep.commons-compress.version>
     <dep.junit.version>4.13.2</dep.junit.version>
     <dep.junit5.version>5.8.2</dep.junit5.version>
     <basepom.test.timeout>1800</basepom.test.timeout>
