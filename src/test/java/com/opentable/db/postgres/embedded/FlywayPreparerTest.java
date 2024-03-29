@@ -19,8 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.Rule;
@@ -30,13 +31,13 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
 
 public class FlywayPreparerTest {
-    private static final Properties flywayConfiguration = new Properties();
+    private static final Map<String, String> flywayConfiguration = new HashMap<>();
     static {
-        flywayConfiguration.setProperty("flyway.postgresql.transactional.lock", "false");
+        flywayConfiguration.put("flyway.postgresql.transactional.lock", "false");
     }
     @Rule
     public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(
-            FlywayPreparer.forClasspathLocation( flywayConfiguration, "db/testing")
+            FlywayPreparer.forClasspathLocation(flywayConfiguration, "db/testing")
     );
 
     @Test

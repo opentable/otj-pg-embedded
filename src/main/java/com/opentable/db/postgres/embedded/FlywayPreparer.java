@@ -13,15 +13,19 @@
  */
 package com.opentable.db.postgres.embedded;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 
 import javax.sql.DataSource;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.internal.configuration.ConfigUtils;
 
 // TODO: Detect missing migration files.
 // cf. https://github.com/flyway/flyway/issues/1496
@@ -34,25 +38,38 @@ import org.flywaydb.core.Flyway;
 public final class FlywayPreparer implements DatabasePreparer {
 
     private final List<String> locations;
-    private final Properties flywayConfiguration;
+    private final Map<String, String> flywayConfiguration;
 
     public static FlywayPreparer forClasspathLocation(String... locations) {
-        return new FlywayPreparer(Arrays.asList(locations), new Properties());
+        return new FlywayPreparer(Arrays.asList(locations), new HashMap<>());
     }
 
-    public static FlywayPreparer forClasspathLocation(Properties flywayConfiguration, String... locations) {
+    public static FlywayPreparer forClasspathLocation(Map<String, String> flywayConfiguration, String... locations) {
         return new FlywayPreparer(Arrays.asList(locations), flywayConfiguration);
     }
 
-    private FlywayPreparer(List<String> locations, Properties flywayConfiguration) {
+    private FlywayPreparer(List<String> locations, Map<String, String> flywayConfiguration) {
         this.locations = locations;
         this.flywayConfiguration = flywayConfiguration;
     }
 
     @Override
     public void prepare(DataSource ds) throws SQLException {
+        // Precedence:
+        // 1. Method set FlywayPreparer Map.
+        // 2. Env vars
+        // 3. Class path
+        Map<String, String> fromClassPath;
+        try (InputStream inputStream = FlywayPreparer.class.getResourceAsStream("/flyway.properties")) {
+             fromClassPath = ConfigUtils.loadConfigurationFromInputStream(inputStream);
+        } catch (IOException e) {
+            throw new SQLException(e);
+        }
+        flywayConfiguration.putAll(this.flywayConfiguration);
         Flyway.configure()
-                .configuration(flywayConfiguration)
+                .configuration(fromClassPath)
+                .envVars()
+                .configuration(this.flywayConfiguration)
                 .locations(locations.toArray(new String[0]))
                 .dataSource(ds)
                 .load()

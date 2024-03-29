@@ -1,9 +1,13 @@
 
 1.0.3 (unreleased) 
 ----
-* commons compress 1.24.0 (used by testcontainers) updated for a CVE.
+* commons compress 1.26.0 (used by testcontainers) updated for a CVE.
 * testcontainers 1.19.6
-* More flexible Flyway Preparer so you can inject properties.
+* Additional options for configuring Flyway Preparer. In order of precedence (first is highest)
+  1. FlywayPreparer.fromClassPath has an optional first argument to specify a Map of Flyway configurations.
+  2. Environmental Variables. These are upper cases and periods converted to underscores.
+  3. Class Path - a file named `flyway.properties` in the class path.
+* Using more recently Flyway in tests.
 
 1.0.2
 -----
