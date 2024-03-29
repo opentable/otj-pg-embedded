@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -33,34 +34,49 @@ import org.flywaydb.core.Flyway;
 public final class FlywayPreparer implements DatabasePreparer {
 
     private final List<String> locations;
+    private final Properties flywayConfiguration;
 
     public static FlywayPreparer forClasspathLocation(String... locations) {
-        return new FlywayPreparer(Arrays.asList(locations));
+        return new FlywayPreparer(Arrays.asList(locations), new Properties());
     }
 
-    private FlywayPreparer(List<String> locations) {
+    public static FlywayPreparer forClasspathLocation(Properties flywayConfiguration, String... locations) {
+        return new FlywayPreparer(Arrays.asList(locations), flywayConfiguration);
+    }
+
+    private FlywayPreparer(List<String> locations, Properties flywayConfiguration) {
         this.locations = locations;
+        this.flywayConfiguration = flywayConfiguration;
     }
 
     @Override
     public void prepare(DataSource ds) throws SQLException {
         Flyway.configure()
+                .configuration(flywayConfiguration)
                 .locations(locations.toArray(new String[0]))
                 .dataSource(ds)
                 .load()
                 .migrate();
     }
 
+    public List<String> getLocations() {
+        return locations;
+    }
+
     @Override
-    public boolean equals(Object obj) {
-        if (! (obj instanceof FlywayPreparer)) {
+    public boolean equals(Object o) {
+        if (this == o)  {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return Objects.equals(locations, ((FlywayPreparer) obj).locations);
+        FlywayPreparer that = (FlywayPreparer) o;
+        return Objects.equals(locations, that.locations) && Objects.equals(flywayConfiguration, that.flywayConfiguration);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(locations);
+        return Objects.hash(locations, flywayConfiguration);
     }
 }

@@ -1,7 +1,9 @@
+
 1.0.3 (unreleased) 
 ----
 * commons compress 1.24.0 (used by testcontainers) updated for a CVE.
-* testcontainers 1.19.0
+* testcontainers 1.19.6
+* More flexible Flyway Preparer so you can inject properties.
 
 1.0.2
 -----

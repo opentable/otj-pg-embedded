@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import org.junit.Rule;
@@ -29,8 +30,14 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
 import com.opentable.db.postgres.junit.PreparedDbRule;
 
 public class FlywayPreparerTest {
+    private static final Properties flywayConfiguration = new Properties();
+    static {
+        flywayConfiguration.setProperty("flyway.postgresql.transactional.lock", "false");
+    }
     @Rule
-    public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(FlywayPreparer.forClasspathLocation("db/testing"));
+    public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(
+            FlywayPreparer.forClasspathLocation( flywayConfiguration, "db/testing")
+    );
 
     @Test
     public void testTablesMade() throws Exception {
