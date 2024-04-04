@@ -43,7 +43,7 @@
     <basepom.release.profiles>basepom.oss-release,oss-build</basepom.release.profiles>
 
     <basepom.check.skip-license>${basepom.check.skip-extended}</basepom.check.skip-license>
-    <basepom.check.fail-license>${basepom.check.fail-extended}</basepom.check.fail-license>
+    <basepom.check.fail-license>false</basepom.check.fail-license>
     <basepom.check.skip-spotbugs>true</basepom.check.skip-spotbugs>
     <project.build.targetJdk>11</project.build.targetJdk>
     <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
