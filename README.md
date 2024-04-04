@@ -37,7 +37,6 @@ as Windows depend primarily on community support. We simply don't have the time 
 
 See "Alternatives Considered" as well if this library doesn't appear to fit your needs.
 
-
 ## Basic Usage
 
 In your JUnit test just add (for JUnit 5 example see **Using JUnit5** below):
@@ -77,6 +76,10 @@ You can easily integrate Flyway or Liquibase database schema migration:
 public PreparedDbRule db =
     EmbeddedPostgresRules.preparedDatabase(
         FlywayPreparer.forClasspathLocation("db/my-db-schema"));
+        
+        
+Please note: Recent versions of FLyway will probably hang if you have concurrent indexing. Use
+the features described in the 1.0.3 changelog to disable the broken lock feature. See the FlywarePreparerTest
 ```
 
 ##### Liquibase
@@ -182,6 +185,9 @@ class DaoTestUsingJunit5 {
 }
 ```
 
+
+
+
 ## Yes, Junit4 is a compile time dependency
 
 This is because TestContainers has a long outstanding bug to remove this -https://github.com/testcontainers/testcontainers-java/issues/970
@@ -245,4 +251,4 @@ for our users.
    for many.
 
 ----
-Copyright (C) 2017-2022 OpenTable, Inc
+Copyright (C) 2017-2024 OpenTable, Inc
