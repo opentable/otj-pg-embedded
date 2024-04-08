@@ -1,5 +1,5 @@
 
-1.0.3 (unreleased) 
+1.0.3
 ----
 * commons compress 1.26.0 (used by testcontainers) updated for a CVE.
 * testcontainers 1.19.6
