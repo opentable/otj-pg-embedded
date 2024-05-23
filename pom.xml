@@ -32,7 +32,7 @@
 
   <groupId>com.opentable.components</groupId>
   <artifactId>otj-pg-embedded</artifactId>
-  <version>1.0.3-SNAPSHOT</version>
+  <version>1.0.4-SNAPSHOT</version>
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
