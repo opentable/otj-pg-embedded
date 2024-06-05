@@ -5,6 +5,7 @@
 * flyway 10.10. 
   * Note this is now modularized as `flyway-core` and `flyway-database-postgresql`
   * This brings in the `flyway-database-postgresql` and `jackson-dataformat-toml` as runtime optional dependencies.
+  * Note Flyway requires java 17
 
 Note for internal OT users: This is compatible with otj-SBT3, but not otj-SBT2.
 
