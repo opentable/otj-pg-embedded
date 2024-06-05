@@ -1,4 +1,13 @@
 
+1.1.0
+-----
+* automatic modules
+* flyway 10.10. 
+  * Note this is now modularized as `flyway-core` and `flyway-database-postgresql`
+  * This brings in the `flyway-database-postgresql` and `jackson-dataformat-toml` as runtime optional dependencies.
+
+Note for internal OT users: This is compatible with otj-SBT3, but not otj-SBT2.
+
 1.0.3
 ----
 * commons compress 1.26.0 (used by testcontainers) updated for a CVE.
