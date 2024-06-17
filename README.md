@@ -1,7 +1,7 @@
 OpenTable Embedded PostgreSQL Component
 =======================================
 
-Note: This library requires Java 11+.
+Note: This library requires Java 11+. However, Flyway 10 requires Java 17.
 
 Allows embedding PostgreSQL into Java application code, using Docker containers.
 Excellent for allowing you to unit
