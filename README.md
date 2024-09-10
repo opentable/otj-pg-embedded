@@ -21,11 +21,11 @@ for these reasons:
   * More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
   * Trivial to do a build oneself based on the official Postgres image adding extensions, setup scripts etc. - see https://github.com/docker-library/docs/blob/master/postgres/README.md for details.
 * **Admittedly, a few disadvantages**
-  * Slower than running a tarball (2-5x slower).
+  * Slower than running a tarball (2-5x slower). This can add up a lot with many tests. You can work around this by changing the lifecycle, but then you have tests that are possibly non reproducible if they modify the same tables.
   * A few API compatibility changes and options have probably disappeared. Feel free to submit PRs.
-  * Docker in Docker can be dodgy to get running. (See below for one thing we discovered)
+  * Docker in Docker can be dodgy to get running. (See below for some tips)
  
-See also `Alternatives Considered` - there are other alternartive approaches that you may find useful.
+See also `Alternatives Considered` - there are other alternative approaches that you may find useful.
 
 ## Before filing tickets.
 
