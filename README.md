@@ -15,7 +15,7 @@ for these reasons:
 
 * **Advantages:** 
   * multi architecture support. This has become a huge issue for us with the introduction of the Mac M1 (and Windows ARM, Linux ARM)/
-  * The same container works the same way on every OS - Mac, Windows, Linux. 
+  * The same container works the same way on every OS - Mac, Windows, Linux. And we can use the official postgresql docker image by default.
   * You need a tarball for every linux distribution as PG 10+ no longer ship a "universal binary" for linux. This means a lot of support and maintenance work, and we frankly didn't have time for it.
   * Easy to switch docker image tag to upgrade versions - no need for a whole new pg-embedded version.
   * More maintainable and secure (you can pull docker images you trust, instead of trusting our tarballs running in your security context)
