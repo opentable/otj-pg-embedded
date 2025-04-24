@@ -48,16 +48,16 @@
     <project.build.targetJdk>11</project.build.targetJdk>
     <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
     <project.build.systemJdk>${project.build.targetJdk}</project.build.systemJdk>
-    <dep.testcontainers.version>1.19.8</dep.testcontainers.version>
-    <dep.postgres-jdbc.version>42.7.3</dep.postgres-jdbc.version>
+    <dep.testcontainers.version>1.20.6</dep.testcontainers.version>
+    <dep.postgres-jdbc.version>42.7.5</dep.postgres-jdbc.version>
     <dep.liquibase.version>4.23.1</dep.liquibase.version>
-    <dep.slf4j.version>1.7.36</dep.slf4j.version>
-    <dep.jackson.version>2.15.2</dep.jackson.version>
-    <dep.flyway.version>10.10.0</dep.flyway.version>
-    <dep.commons-lang.version>3.14.0</dep.commons-lang.version>
-    <dep.commons-compress.version>1.26.0</dep.commons-compress.version>
+    <dep.slf4j.version>2.0.17</dep.slf4j.version>
+    <dep.jackson.version>2.18.3</dep.jackson.version>
+    <dep.flyway.version>10.20.1</dep.flyway.version>
+    <dep.commons-lang.version>3.17.0</dep.commons-lang.version>
+    <dep.commons-compress.version>1.27.1</dep.commons-compress.version>
     <dep.junit.version>4.13.2</dep.junit.version>
-    <dep.junit5.version>5.8.2</dep.junit5.version>
+    <dep.junit5.version>5.11.4</dep.junit5.version>
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.javadoc.skip>false</basepom.javadoc.skip>
     <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
