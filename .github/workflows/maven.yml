@@ -22,6 +22,8 @@ jobs:
         java-version: '17'
         distribution: 'corretto'
         cache: maven
+    - name: test maven version
+      run: mvn -v
     - name: Specific Maven Version
       run: mvn wrapper:wrapper -Dmaven=3.9.6
     - name: test maven version
