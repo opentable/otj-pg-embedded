@@ -71,6 +71,14 @@
     </license>
   </licenses>
 
+  <developers>
+    <developer>
+      <id>opentable</id>
+      <name>OpenTable</name>
+      <url>https://github.com/opentable</url>
+    </developer>
+  </developers>
+
   <dependencies>
     <dependency>
       <groupId>org.slf4j</groupId>
