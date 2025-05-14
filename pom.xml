@@ -19,8 +19,8 @@
 
   <parent>
     <groupId>org.basepom</groupId>
-    <artifactId>basepom-minimal</artifactId>
-    <version>55</version>
+    <artifactId>basepom-oss</artifactId>
+    <version>63</version>
   </parent>
 
   <scm>
@@ -36,14 +36,6 @@
   <description>Embedded PostgreSQL driver</description>
 
   <properties>
-    <dep.plugin.gpg.version>3.1.0</dep.plugin.gpg.version>
-    <dep.plugin.license.version>4.2</dep.plugin.license.version>
-    <basepom.check.phase-license>validate</basepom.check.phase-license> <!-- this is overriding basepom default -->
-    <basepom.license.skip-existing>true</basepom.license.skip-existing>
-    <basepom.release.profiles>basepom.oss-release,oss-build</basepom.release.profiles>
-
-    <basepom.check.skip-license>${basepom.check.skip-extended}</basepom.check.skip-license>
-    <basepom.check.fail-license>${basepom.check.fail-extended}</basepom.check.fail-license>
     <basepom.check.skip-spotbugs>true</basepom.check.skip-spotbugs>
     <project.build.targetJdk>11</project.build.targetJdk>
     <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
@@ -64,6 +56,9 @@
     <basepom.check.skip-javadoc>false</basepom.check.skip-javadoc>
     <basepom.check.fail-javadoc>false</basepom.check.fail-javadoc>
     <moduleName>com.opentable.components.otj.pg.embedded</moduleName>
+    <basepom.central-publishing.repo-id>ot-central</basepom.central-publishing.repo-id>
+    <basepom.deploy.snapshot.repo-id>opentable.snapshot</basepom.deploy.snapshot.repo-id>
+    <basepom.deploy.snapshot.url>https://artifactory.otenv.com/snapshots</basepom.deploy.snapshot.url>
   </properties>
 
   <licenses>
@@ -93,8 +88,6 @@
       <version>${dep.commons-compress.version}</version>
       <scope>runtime</scope>
     </dependency>
-
-
 
     <dependency>
       <groupId>org.flywaydb</groupId>
@@ -184,214 +177,4 @@
     </dependencies>
   </dependencyManagement>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <!-- add module name to main artifact -->
-            <configuration>
-              <archive>
-                <manifestEntries combine.children="append">
-                  <Automatic-Module-Name>${moduleName}</Automatic-Module-Name>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </execution>
-          <execution>
-            <id>basepom.default</id>
-            <!-- add module name with "test" appended to tests artifact -->
-            <configuration>
-              <archive>
-                <manifestEntries combine.children="append">
-                  <Automatic-Module-Name>${moduleName}.tests</Automatic-Module-Name>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-
-  <profiles>
-    <profile>
-      <id>oss-build</id>
-      <activation>
-        <file>
-          <exists>.oss-build</exists>
-        </file>
-      </activation>
-
-      <!-- note the main difference is released artifacts go to oss.sonatype instead of internal -->
-      <distributionManagement>
-        <snapshotRepository>
-          <id>opentable.snapshot</id>
-          <name>opentable-snapshots</name>
-          <uniqueVersion>true</uniqueVersion>
-          <url>https://artifactory.otenv.com/snapshots</url>
-        </snapshotRepository>
-        <repository>
-          <id>sonatype-nexus-staging</id>
-          <name>Nexus Release Repository</name>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-      </distributionManagement>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-release-plugin</artifactId>
-              <configuration>
-                <!-- activate some basepom stuff, this binds the profile below -->
-                <releaseProfiles>${basepom.release.profiles}</releaseProfiles>
-              </configuration>
-            </plugin>
-
-            <!-- checks for valid OSS license stuff and headers -->
-            <plugin>
-              <groupId>com.mycila</groupId>
-              <artifactId>license-maven-plugin</artifactId>
-              <version>${dep.plugin.license.version}</version>
-              <dependencies>
-                <dependency>
-                  <groupId>org.basepom</groupId>
-                  <artifactId>basepom-policy</artifactId>
-                  <version>${dep.basepom-policy.version}</version>
-                </dependency>
-              </dependencies>
-              <configuration>
-                <skip>${basepom.check.skip-license}</skip>
-                <skipExistingHeaders>${basepom.license.skip-existing}</skipExistingHeaders>
-                <failIfMissing>${basepom.check.fail-license}</failIfMissing>
-                <header>license/basepom-apache-license-header.txt</header>
-                <headerDefinitions>
-                  <headerDefinition>license/xml-prefix.xml</headerDefinition>
-                </headerDefinitions>
-                <mapping>
-                  <xml>XML_PREFIX</xml>
-                  <java>SLASHSTAR_STYLE</java>
-                  <yaml>SCRIPT_STYLE</yaml>
-                </mapping>
-                <strictCheck>true</strictCheck>
-                <aggregate>true</aggregate>
-                <useDefaultExcludes>true</useDefaultExcludes>
-                <encoding>${project.build.sourceEncoding}</encoding>
-                <excludes>
-                  <exclude>.*/**</exclude>
-                  <exclude>**/*.md</exclude>
-                  <exclude>**/*.rst</exclude>
-                  <exclude>**/*.adoc</exclude>
-                  <exclude>**/*.sh</exclude>
-                  <exclude>**/*.txt</exclude>
-                  <exclude>**/*.thrift</exclude>
-                  <exclude>**/*.proto</exclude>
-                  <exclude>**/*.g</exclude>
-                  <exclude>**/*.releaseBackup</exclude>
-                  <exclude>**/*.vm</exclude>
-                  <exclude>**/*.st</exclude>
-                  <exclude>**/*.raw</exclude>
-                  <exclude>**/*.ser</exclude>
-                  <exclude>**/src/license/**</exclude>
-                </excludes>
-                <includes>
-                  <include>src/**</include>
-                  <include>**/pom.xml</include>
-                </includes>
-              </configuration>
-            </plugin>
-
-            <!-- sign with gpg -->
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-gpg-plugin</artifactId>
-              <version>${dep.plugin.gpg.version}</version>
-              <configuration>
-                <useAgent>true</useAgent>
-              </configuration>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-
-        <!-- more license checking. One day I'll know why both of these -->
-        <plugins>
-          <plugin>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>basepom.default</id>
-                <phase>${basepom.check.phase-license}</phase>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <!-- Active during OSS release:perform -->
-    <profile>
-      <id>basepom.oss-release</id>
-      <properties>
-        <!-- tests run in the preparation step of the release -->
-        <skipTests>true</skipTests>
-      </properties>
-      <build>
-        <plugins>
-          <!-- oss requires a javadoc jar. Build one when releasing. -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- if necessary, build a scaladoc jar. Disabled by default. -->
-<!--          <plugin>-->
-<!--            <groupId>net.alchim31.maven</groupId>-->
-<!--            <artifactId>scala-maven-plugin</artifactId>-->
-<!--            <executions>-->
-<!--              <execution>-->
-<!--                <id>attach-scaladocs</id>-->
-<!--                <phase>package</phase>-->
-<!--                <configuration>-->
-<!--                  <skip>${basepom.oss.skip-scala-doc}</skip>-->
-<!--                </configuration>-->
-<!--                <goals>-->
-<!--                  <goal>doc-jar</goal>-->
-<!--                </goals>-->
-<!--              </execution>-->
-<!--            </executions>-->
-<!--          </plugin>-->
-          <!-- Sign artifacts using gpg for oss upload -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>basepom.sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
