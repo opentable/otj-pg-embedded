@@ -59,6 +59,7 @@
     <basepom.central-publishing.repo-id>ot-central</basepom.central-publishing.repo-id>
     <basepom.deploy.snapshot.repo-id>opentable.snapshot</basepom.deploy.snapshot.repo-id>
     <basepom.deploy.snapshot.url>https://artifactory.otenv.com/snapshots</basepom.deploy.snapshot.url>
+    <basepom.release.profiles>basepom.central-release</basepom.release.profiles>
   </properties>
 
   <licenses>
