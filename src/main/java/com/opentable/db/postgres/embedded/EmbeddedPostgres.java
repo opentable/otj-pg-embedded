@@ -62,7 +62,7 @@ public class EmbeddedPostgres implements Closeable {
     static final String ENV_DOCKER_PREFIX = "TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX";
     // 3) Otherwise we'll just pull from docker hub with the DOCKER_DEFAULT_TAG
     static final DockerImageName DOCKER_DEFAULT_IMAGE_NAME = DockerImageName.parse(POSTGRES);
-    static final String DOCKER_DEFAULT_TAG = "13-alpine";
+    static final String DOCKER_DEFAULT_TAG = "17-alpine";
     // Note you can override any of these defaults explicitly in the builder.
 
     private final PostgreSQLContainer<?> postgreDBContainer;
