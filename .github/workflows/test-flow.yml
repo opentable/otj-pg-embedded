@@ -5,7 +5,7 @@ on:
 jobs:
   my_self_hosted_job:
 
-    runs-on: self-hosted
+    runs-on: ot-builder
     steps:
       - name: Run a script
         run: echo "Running on a self-hosted runner!"
