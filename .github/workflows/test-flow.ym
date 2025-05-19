@@ -1,0 +1,6 @@
+jobs:
+  my_self_hosted_job:
+    runs-on: self-hosted
+    steps:
+      - name: Run a script
+        run: echo "Running on a self-hosted runner!"
