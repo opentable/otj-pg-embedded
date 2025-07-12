@@ -1,3 +1,15 @@
+1.1.1
+----
+More or less dependency updates
+
+* testcontainers 1.20.6
+* postgres 42.7.5
+* flyway 10.20.1
+* commons-lang 3.17.0
+* commons-compress 1.27.1
+* junit 5.11.4
+* slf4j 2.0.17
+* Default docker image tag is now `17-alpine` (previously `13-alpine`)
 
 1.1.0
 -----
