@@ -47,7 +47,7 @@
     <dep.slf4j.version>2.0.17</dep.slf4j.version>
     <dep.jackson.version>2.18.3</dep.jackson.version>
     <dep.flyway.version>10.20.1</dep.flyway.version>
-    <dep.commons-lang.version>3.17.0</dep.commons-lang.version>
+    <dep.commons-lang.version>3.18.0</dep.commons-lang.version>
     <dep.commons-compress.version>1.27.1</dep.commons-compress.version>
     <dep.junit.version>4.13.2</dep.junit.version>
     <dep.junit5.version>5.11.4</dep.junit5.version>
