@@ -42,7 +42,7 @@
     <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
     <project.build.systemJdk>${project.build.targetJdk}</project.build.systemJdk>
     <dep.testcontainers.version>1.20.6</dep.testcontainers.version>
-    <dep.postgres-jdbc.version>42.7.5</dep.postgres-jdbc.version>
+    <dep.postgres-jdbc.version>42.7.7</dep.postgres-jdbc.version>
     <dep.liquibase.version>4.23.1</dep.liquibase.version>
     <dep.slf4j.version>2.0.17</dep.slf4j.version>
     <dep.jackson.version>2.18.3</dep.jackson.version>
