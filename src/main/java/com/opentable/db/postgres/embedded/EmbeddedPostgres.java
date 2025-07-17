@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 package com.opentable.db.postgres.embedded;
-
+// trigger github action test
 
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -65,7 +66,7 @@ public class EmbeddedPostgres implements Closeable {
     static final String DOCKER_DEFAULT_TAG = "17-alpine";
     // Note you can override any of these defaults explicitly in the builder.
 
-    private final PostgreSQLContainer<?> postgreDBContainer;
+    private final PostgreSQLContainer<?> postgreSQLContainer;
 
     private final UUID instanceId = UUID.randomUUID();
 
@@ -74,14 +75,23 @@ public class EmbeddedPostgres implements Closeable {
                      Map<String, BindMount> bindMounts,
                      Optional<Network> network,
                      Optional<String> networkAlias,
+                     OptionalInt fixedPort,
                      DockerImageName image,
                      Duration pgStartupWait,
                      String databaseName
-    ) throws IOException {
-        LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, bindMounts {}, pgStartupWait {}, dbName {} ", image,
-                postgresConfig, localeConfig, bindMounts, pgStartupWait, databaseName);
+    ) {
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, " +
+                            "bindMounts {}, pgStartupWait {}, dbName {} ", image,
+                    postgresConfig, localeConfig, bindMounts, pgStartupWait, databaseName);
+        }
         image = image.asCompatibleSubstituteFor(POSTGRES);
-        this.postgreDBContainer = new PostgreSQLContainer<>(image)
+        final FixedPostgresSQLContainer<?> pgContainer = new FixedPostgresSQLContainer<>(image); //NOPMD
+        fixedPort.ifPresent(p -> {
+            LOG.warn("Exposing a fixed port {} which is NOT recommended.", p);
+            pgContainer.addFixedExposedPort(p, POSTGRESQL_PORT);
+        });
+        this.postgreSQLContainer = pgContainer
                 .withDatabaseName(databaseName)
                 .withUsername(POSTGRES)
                 .withPassword(POSTGRES)
@@ -92,11 +102,11 @@ public class EmbeddedPostgres implements Closeable {
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust");
         final List<String> cmd = new ArrayList<>(Collections.singletonList(POSTGRES));
         cmd.addAll(createConfigOptions(postgresConfig));
-        postgreDBContainer.setCommand(cmd.toArray(new String[0]));
-        processBindMounts(postgreDBContainer, bindMounts);
-        network.ifPresent(postgreDBContainer::withNetwork);
-        networkAlias.ifPresent(postgreDBContainer::withNetworkAliases);
-        postgreDBContainer.start();
+        postgreSQLContainer.setCommand(cmd.toArray(new String[0]));
+        processBindMounts(postgreSQLContainer, bindMounts);
+        network.ifPresent(postgreSQLContainer::withNetwork);
+        networkAlias.ifPresent(postgreSQLContainer::withNetworkAliases);
+        postgreSQLContainer.start();
     }
 
     private void processBindMounts(PostgreSQLContainer<?> postgreDBContainer, Map<String, BindMount> bindMounts) {
@@ -125,19 +135,19 @@ public class EmbeddedPostgres implements Closeable {
     }
 
     public DataSource getTemplateDatabase() {
-        return getDatabase(postgreDBContainer.getUsername(), "template1");
+        return getDatabase(postgreSQLContainer.getUsername(), "template1");
     }
 
     public DataSource getTemplateDatabase(Map<String, String> properties) {
-        return getDatabase(postgreDBContainer.getUsername(), "template1", properties);
+        return getDatabase(postgreSQLContainer.getUsername(), "template1", properties);
     }
 
     public DataSource getPostgresDatabase() {
-        return getDatabase(postgreDBContainer.getUsername(), postgreDBContainer.getDatabaseName());
+        return getDatabase(postgreSQLContainer.getUsername(), postgreSQLContainer.getDatabaseName());
     }
 
     public DataSource getPostgresDatabase(Map<String, String> properties) {
-        return getDatabase(postgreDBContainer.getUsername(), postgreDBContainer.getDatabaseName(), properties);
+        return getDatabase(postgreSQLContainer.getUsername(), postgreSQLContainer.getDatabaseName(), properties);
     }
 
     public DataSource getDatabase(String userName, String dbName) {
@@ -147,10 +157,10 @@ public class EmbeddedPostgres implements Closeable {
     public DataSource getDatabase(String userName, String dbName, Map<String, String> properties) {
         final PGSimpleDataSource ds = new PGSimpleDataSource();
 
-        ds.setURL(postgreDBContainer.getJdbcUrl());
+        ds.setURL(postgreSQLContainer.getJdbcUrl());
         ds.setDatabaseName(dbName);
         ds.setUser(userName);
-        ds.setPassword(postgreDBContainer.getPassword());
+        ds.setPassword(postgreSQLContainer.getPassword());
 
         properties.forEach((propertyKey, propertyValue) -> {
             try {
@@ -169,22 +179,22 @@ public class EmbeddedPostgres implements Closeable {
      */
     public String getJdbcUrl(String dbName) {
         try {
-            return JdbcUrlUtils.replaceDatabase(postgreDBContainer.getJdbcUrl(), dbName);
+            return JdbcUrlUtils.replaceDatabase(postgreSQLContainer.getJdbcUrl(), dbName);
         } catch (URISyntaxException e) {
             return null;
         }
      }
 
      public String getHost() {
-        return postgreDBContainer.getContainerIpAddress();
+        return postgreSQLContainer.getContainerIpAddress();
      }
     public int getPort() {
-        return postgreDBContainer.getMappedPort(POSTGRESQL_PORT);
+        return postgreSQLContainer.getMappedPort(POSTGRESQL_PORT);
     }
 
     @Override
     public void close() throws IOException {
-        postgreDBContainer.close();
+        postgreSQLContainer.close();
     }
 
     public static EmbeddedPostgres start() throws IOException {
@@ -196,11 +206,11 @@ public class EmbeddedPostgres implements Closeable {
     }
 
     public String getUserName() {
-        return postgreDBContainer.getUsername();
+        return postgreSQLContainer.getUsername();
     }
 
     public String getPassword() {
-        return postgreDBContainer.getPassword();
+        return postgreSQLContainer.getPassword();
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -215,6 +225,7 @@ public class EmbeddedPostgres implements Closeable {
         private DockerImageName image = getDefaultImage();
         private String databaseName = POSTGRES;
         private Optional<String> networkAlias = Optional.empty();
+        private OptionalInt fixedPort = OptionalInt.empty();
 
         // See comments at top for the logic.
         DockerImageName getDefaultImage() {
@@ -336,6 +347,17 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         /**
+         * Force a fixed port on the local side of things. We strongly recommend
+         * against using this, using ephemeral ports, the default. We reserve the
+         * right to remove this support.
+         * @param fixedPort a integer port.
+         */
+        @Deprecated
+        public void setFixedPort(Integer fixedPort) {
+            this.fixedPort = OptionalInt.of(fixedPort);
+        }
+
+        /**
          * Add the tag to an existing image
          * @param tag Tag
          * @return builder
@@ -350,7 +372,7 @@ public class EmbeddedPostgres implements Closeable {
         }
 
         public EmbeddedPostgres start() throws IOException {
-            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, networkAlias, image, pgStartupWait, databaseName);
+            return new EmbeddedPostgres(config, localeConfig,  bindMounts, network, networkAlias, fixedPort, image, pgStartupWait, databaseName);
         }
 
         @Override
