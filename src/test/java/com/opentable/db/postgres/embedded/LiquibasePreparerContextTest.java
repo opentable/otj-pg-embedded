@@ -26,16 +26,20 @@ import java.sql.Statement;
 import static org.junit.Assert.assertEquals;
 
 public class LiquibasePreparerContextTest {
-    @Rule
-    public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(LiquibasePreparer.forClasspathLocation("liqui/master-test.xml", new Contexts("test")));
+  @Rule
+  public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(
+      LiquibasePreparer.forClasspathLocation("liqui/master-test.xml", new Contexts("test"))
+  );
 
-    @Test
-    public void testEmptyTables() throws Exception {
-        try (Connection c = db.getTestDatabase().getConnection();
-             Statement s = c.createStatement()) {
-            ResultSet rs = s.executeQuery("SELECT COUNT(*) FROM foo");
-            rs.next();
-            assertEquals(0, rs.getInt(1));
-        }
+  @Test
+  public void testEmptyTables() throws Exception {
+    try (Connection c = db.getTestDatabase().getConnection();
+         Statement s = c.createStatement();
+         ResultSet rs = s.executeQuery("SELECT COUNT(*) AS cnt FROM foo")) {
+
+      rs.next();
+      long count = rs.getLong("cnt");
+      assertEquals(0L, count);
     }
+  }
 }
