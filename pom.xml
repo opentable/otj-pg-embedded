@@ -37,6 +37,7 @@
   <url>https://github.com/opentable/otj-pg-embedded</url>
 
   <properties>
+    <basepom.release.push-changes>true</basepom.release.push-changes>
     <basepom.check.skip-spotbugs>true</basepom.check.skip-spotbugs>
     <project.build.targetJdk>11</project.build.targetJdk>
     <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
