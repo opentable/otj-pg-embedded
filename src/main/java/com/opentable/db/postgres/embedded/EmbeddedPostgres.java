@@ -14,12 +14,14 @@
 package com.opentable.db.postgres.embedded;
 
 
-import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
+import static org.testcontainers.postgresql.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -36,9 +38,8 @@ import javax.sql.DataSource;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -65,7 +66,7 @@ public class EmbeddedPostgres implements Closeable {
     static final String DOCKER_DEFAULT_TAG = "17-alpine";
     // Note you can override any of these defaults explicitly in the builder.
 
-    private final PostgreSQLContainer<?> postgreDBContainer;
+    private final PostgreSQLContainer postgreDBContainer;
 
     private final UUID instanceId = UUID.randomUUID();
 
@@ -81,7 +82,7 @@ public class EmbeddedPostgres implements Closeable {
         LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, bindMounts {}, pgStartupWait {}, dbName {} ", image,
                 postgresConfig, localeConfig, bindMounts, pgStartupWait, databaseName);
         image = image.asCompatibleSubstituteFor(POSTGRES);
-        this.postgreDBContainer = new PostgreSQLContainer<>(image)
+        this.postgreDBContainer = new PostgreSQLContainer(image)
                 .withDatabaseName(databaseName)
                 .withUsername(POSTGRES)
                 .withPassword(POSTGRES)
@@ -99,11 +100,21 @@ public class EmbeddedPostgres implements Closeable {
         postgreDBContainer.start();
     }
 
-    private void processBindMounts(PostgreSQLContainer<?> postgreDBContainer, Map<String, BindMount> bindMounts) {
-        bindMounts.values().stream()
-                .filter(f -> new File(f.getLocalFile()).exists())
-                .forEach(f -> postgreDBContainer.addFileSystemBind(f.getLocalFile(),
-                        f.getRemoteFile(), f.getBindMode()));
+    private void processBindMounts(PostgreSQLContainer postgreDBContainer, Map<String, BindMount> bindMounts) {
+        // Alpine images use postgres:70:70, others typically 999:999
+        final int uid = postgreDBContainer.getImage().get().contains("alpine") ? 70 : 999;
+        bindMounts.values()
+            .stream()
+            .filter(f -> new File(f.getLocalFile()).exists())
+            .forEach(f -> {
+                try {
+                    final byte[] content = Files.readAllBytes(Paths.get(f.getLocalFile()));
+                    final int mode = Optional.ofNullable(f.getfileMode()).orElse(0644);
+                    postgreDBContainer.withCopyToContainer(OwnedTransferable.of(content, mode, uid, uid), f.getRemoteFile());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     private List<String> createConfigOptions(final Map<String, String> postgresConfig) {
@@ -175,9 +186,10 @@ public class EmbeddedPostgres implements Closeable {
         }
      }
 
-     public String getHost() {
-        return postgreDBContainer.getContainerIpAddress();
-     }
+    public String getHost() {
+        return postgreDBContainer.getHost();
+    }
+
     public int getPort() {
         return postgreDBContainer.getMappedPort(POSTGRESQL_PORT);
     }
@@ -278,7 +290,7 @@ public class EmbeddedPostgres implements Closeable {
          * @return builder
          */
         public Builder setBindMount(String localFile, String remoteFile) {
-            return setBindMount(BindMount.of(localFile, remoteFile, BindMode.READ_ONLY));
+            return setBindMount(BindMount.of(localFile, remoteFile, null));
         }
 
         /**

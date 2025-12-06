@@ -15,25 +15,24 @@ package com.opentable.db.postgres.embedded;
 
 import java.util.Objects;
 
-import org.testcontainers.containers.BindMode;
 
 public final class BindMount {
-    public static BindMount of(String localFile, String remoteFile, BindMode bindMode) {
-        return new BindMount(localFile, remoteFile, bindMode);
+    public static BindMount of(String localFile, String remoteFile, Integer fileMode) {
+        return new BindMount(localFile, remoteFile, fileMode);
     }
 
     private final String localFile;
     private final String remoteFile;
-    private final BindMode bindMode;
+    private final Integer fileMode;
 
-    private BindMount(String localFile, String remoteFile, BindMode bindMode) {
+    private BindMount(String localFile, String remoteFile, Integer fileMode) {
         this.localFile = localFile;
         this.remoteFile = remoteFile;
-        this.bindMode = bindMode == null ? BindMode.READ_ONLY : bindMode;
+        this.fileMode = fileMode;
     }
 
-    public BindMode getBindMode() {
-        return bindMode;
+    public Integer getfileMode() {
+        return fileMode;
     }
 
     public String getLocalFile() {
@@ -66,7 +65,7 @@ public final class BindMount {
         return "BindMount{" +
                 "localFile='" + localFile + '\'' +
                 ", remoteFile='" + remoteFile + '\'' +
-                ", bindMode=" + bindMode +
+                ", fileMode=" + fileMode +
                 '}';
     }
 }
