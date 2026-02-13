@@ -1,3 +1,16 @@
+1.2
+---
+Dependency updates. The testcontainers bit changes artifacts, so..
+
+* testcontainer 2.0.3
+* postgres 42.7.9
+* liquibase 5.0.1
+* junit 6.0.2
+* jackson 2.20.2
+* commons-compress 1.28
+* commons-lang 3.19
+* flyway 11.14.1
+
 1.1.1
 ----
 More or less dependency updates
