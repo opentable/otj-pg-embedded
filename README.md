@@ -81,7 +81,7 @@ public PreparedDbRule db =
         
         
 Please note: Recent versions of FLyway will probably hang if you have concurrent indexing. Use
-the features described in the 1.0.3 changelog to disable the broken lock feature. See the FlywarePreparerTest
+the features described in the 1.0.3 changelog to disable the broken lock feature. See the FlywayPreparerTest
 ```
 
 ##### Liquibase
