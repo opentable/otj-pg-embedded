@@ -1,15 +1,21 @@
-1.1.1
-----
-More or less dependency updates
+1.1.2
+-----
+* Default Docker image tag is now `17-alpine` (previously `13-alpine`).
+* Updated the build, CI workflow, documentation, and Liquibase test resource handling.
+* Dependency updates:
 
 * testcontainers 1.20.6
-* postgres 42.7.5
+* postgres JDBC 42.7.12
 * flyway 10.20.1
-* commons-lang 3.17.0
+* commons-lang 3.18.0
 * commons-compress 1.27.1
 * junit 5.11.4
 * slf4j 2.0.17
-* Default docker image tag is now `17-alpine` (previously `13-alpine`)
+* jackson 2.18.3
+
+1.1.1
+-----
+* Build and publication configuration updates.
 
 1.1.0
 -----
