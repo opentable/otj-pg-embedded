@@ -42,7 +42,7 @@
     <project.build.targetJdk>11</project.build.targetJdk>
     <maven.compiler.target>${project.build.targetJdk}</maven.compiler.target>
     <project.build.systemJdk>${project.build.targetJdk}</project.build.systemJdk>
-    <dep.testcontainers.version>1.21.4</dep.testcontainers.version>
+    <dep.testcontainers.version>2.0.5</dep.testcontainers.version>
     <dep.postgres-jdbc.version>42.7.12</dep.postgres-jdbc.version>
     <dep.liquibase.version>4.23.1</dep.liquibase.version>
     <dep.slf4j.version>2.0.17</dep.slf4j.version>
@@ -50,7 +50,6 @@
     <dep.flyway.version>10.20.1</dep.flyway.version>
     <dep.commons-lang.version>3.18.0</dep.commons-lang.version>
     <dep.commons-compress.version>1.27.1</dep.commons-compress.version>
-    <dep.junit.version>4.13.2</dep.junit.version>
     <dep.junit5.version>5.11.4</dep.junit5.version>
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.javadoc.skip>false</basepom.javadoc.skip>
@@ -135,19 +134,11 @@
 
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
+      <artifactId>testcontainers-postgresql</artifactId>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${dep.junit.version}</version>
-      <scope>provided</scope>
-      <optional>true</optional>
     </dependency>
 
     <dependency>
@@ -170,7 +161,7 @@
     <dependencies>
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>postgresql</artifactId>
+        <artifactId>testcontainers-postgresql</artifactId>
         <version>${dep.testcontainers.version}</version>
        </dependency>
       <dependency>

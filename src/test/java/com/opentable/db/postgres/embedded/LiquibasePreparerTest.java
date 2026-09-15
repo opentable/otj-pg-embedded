@@ -13,20 +13,20 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.PreparedDbRule;
-import org.junit.Rule;
-import org.junit.Test;
+import com.opentable.db.postgres.junit5.EmbeddedPostgresExtension;
+import com.opentable.db.postgres.junit5.PreparedDbExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LiquibasePreparerTest {
-    @Rule
-    public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(LiquibasePreparer.forClasspathLocation("liqui/master.xml"));
+    @RegisterExtension
+    static final PreparedDbExtension db = EmbeddedPostgresExtension.preparedDatabase(LiquibasePreparer.forClasspathLocation("liqui/master.xml"));
 
     @Test
     public void testTablesMade() throws Exception {

@@ -13,17 +13,17 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 public class LocalDirectoryPostgresTest {
 
@@ -31,7 +31,7 @@ public class LocalDirectoryPostgresTest {
 
     @Test
     public void testEmbeddedPg() throws Exception {
-        Assume.assumeTrue("PostgreSQL binary must exist", USR_LOCAL_BIN_POSTGRES.exists());
+        Assumptions.assumeTrue(USR_LOCAL_BIN_POSTGRES.exists(), "PostgreSQL binary must exist");
         try (EmbeddedPostgres pg = EmbeddedPostgres.builder().start();
                 Connection c = pg.getPostgresDatabase().getConnection()) {
             Statement s = c.createStatement();

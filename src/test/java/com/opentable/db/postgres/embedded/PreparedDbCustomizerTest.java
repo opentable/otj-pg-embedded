@@ -14,31 +14,31 @@
 package com.opentable.db.postgres.embedded;
 
 import static com.opentable.db.postgres.embedded.EmbeddedPostgres.DEFAULT_PG_STARTUP_WAIT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.time.Duration;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.PreparedDbRule;
+import com.opentable.db.postgres.junit5.EmbeddedPostgresExtension;
+import com.opentable.db.postgres.junit5.PreparedDbExtension;
 
 public class PreparedDbCustomizerTest {
 
     private static final DatabasePreparer EMPTY_PREPARER = ds -> {};
 
-    @Rule
-    public PreparedDbRule dbA1 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER);
-    @Rule
-    public PreparedDbRule dbA2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> {});
-    @Rule
-    public PreparedDbRule dbA3 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(DEFAULT_PG_STARTUP_WAIT));
-    @Rule
-    public PreparedDbRule dbB1 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
-    @Rule
-    public PreparedDbRule dbB2 = EmbeddedPostgresRules.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
+    @RegisterExtension
+    static final PreparedDbExtension dbA1 = EmbeddedPostgresExtension.preparedDatabase(EMPTY_PREPARER);
+    @RegisterExtension
+    static final PreparedDbExtension dbA2 = EmbeddedPostgresExtension.preparedDatabase(EMPTY_PREPARER).customize(builder -> {});
+    @RegisterExtension
+    static final PreparedDbExtension dbA3 = EmbeddedPostgresExtension.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(DEFAULT_PG_STARTUP_WAIT));
+    @RegisterExtension
+    static final PreparedDbExtension dbB1 = EmbeddedPostgresExtension.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
+    @RegisterExtension
+    static final PreparedDbExtension dbB2 = EmbeddedPostgresExtension.preparedDatabase(EMPTY_PREPARER).customize(builder -> builder.setPGStartupWait(Duration.ofSeconds(DEFAULT_PG_STARTUP_WAIT.getSeconds() + 1)));
 
     @Test
     public void testCustomizers() {

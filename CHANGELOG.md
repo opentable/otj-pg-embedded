@@ -2,9 +2,10 @@
 -----
 * Default Docker image tag is now `17-alpine` (previously `13-alpine`).
 * Updated the build, CI workflow, documentation, and Liquibase test resource handling.
+* Breaking change: removed JUnit 4 rules; use the JUnit Jupiter extensions instead.
 * Dependency updates:
 
-* testcontainers 1.21.4
+* testcontainers 2.0.5
 * postgres JDBC 42.7.12
 * flyway 10.20.1
 * commons-lang 3.18.0

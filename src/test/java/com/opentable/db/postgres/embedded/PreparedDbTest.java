@@ -13,7 +13,7 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -24,23 +24,23 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.PreparedDbRule;
+import com.opentable.db.postgres.junit5.EmbeddedPostgresExtension;
+import com.opentable.db.postgres.junit5.PreparedDbExtension;
 
 public class PreparedDbTest {
 
-    private final DatabasePreparer prepA = new SimplePreparer("a");
-    private final DatabasePreparer prepB = new SimplePreparer("b");
+    private static final DatabasePreparer prepA = new SimplePreparer("a");
+    private static final DatabasePreparer prepB = new SimplePreparer("b");
 
-    @Rule
-    public PreparedDbRule dbA1 = EmbeddedPostgresRules.preparedDatabase(prepA);
-    @Rule
-    public PreparedDbRule dbA2 = EmbeddedPostgresRules.preparedDatabase(prepA);
-    @Rule
-    public PreparedDbRule dbB1 = EmbeddedPostgresRules.preparedDatabase(prepB);
+    @RegisterExtension
+    static final PreparedDbExtension dbA1 = EmbeddedPostgresExtension.preparedDatabase(prepA);
+    @RegisterExtension
+    static final PreparedDbExtension dbA2 = EmbeddedPostgresExtension.preparedDatabase(prepA);
+    @RegisterExtension
+    static final PreparedDbExtension dbB1 = EmbeddedPostgresExtension.preparedDatabase(prepB);
 
     @Test
     public void testDbs() throws Exception {
@@ -61,6 +61,7 @@ public class PreparedDbTest {
     }
 
     private void commonAssertion(final Statement stmt) throws SQLException {
+        stmt.execute("TRUNCATE TABLE a");
         stmt.execute("INSERT INTO a VALUES(1)");
         ResultSet rs = stmt.executeQuery("SELECT COUNT(1) FROM a");
         rs.next();

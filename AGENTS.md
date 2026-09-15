@@ -19,7 +19,7 @@ Target Java compatibility is Java 11 (`project.build.targetJdk`). Follow the exi
 
 ## Testing Guidelines
 
-Tests use JUnit 4 and JUnit Jupiter APIs, plus Testcontainers PostgreSQL. Name test classes with the `*Test` suffix and keep fixtures in `src/test/resources`. Add or update tests for behavior changes, especially around container configuration, JDBC URLs, Flyway, Liquibase, and JUnit integrations. Prefer focused test runs during development, then run `mvn test` or `mvn -B package` before opening a PR.
+Tests use JUnit Jupiter and Testcontainers PostgreSQL. Name test classes with the `*Test` suffix and keep fixtures in `src/test/resources`. Add or update tests for behavior changes, especially around container configuration, JDBC URLs, Flyway, Liquibase, and JUnit Jupiter extensions. Prefer focused test runs during development, then run `mvn test` or `mvn -B package` before opening a PR.
 
 ## Commit & Pull Request Guidelines
 

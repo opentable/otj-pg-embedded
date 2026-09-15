@@ -13,7 +13,7 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
@@ -24,19 +24,19 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.PreparedDbRule;
+import com.opentable.db.postgres.junit5.EmbeddedPostgresExtension;
+import com.opentable.db.postgres.junit5.PreparedDbExtension;
 
 public class FlywayPreparerTest {
     private static final Map<String, String> flywayConfiguration = new HashMap<>();
     static {
         flywayConfiguration.put("flyway.postgresql.transactional.lock", "false");
     }
-    @Rule
-    public PreparedDbRule db = EmbeddedPostgresRules.preparedDatabase(
+    @RegisterExtension
+    static final PreparedDbExtension db = EmbeddedPostgresExtension.preparedDatabase(
             FlywayPreparer.forClasspathLocation(flywayConfiguration, "db/testing")
     );
 

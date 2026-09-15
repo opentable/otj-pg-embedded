@@ -17,19 +17,19 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.opentable.db.postgres.junit.EmbeddedPostgresRules;
-import com.opentable.db.postgres.junit.SingleInstancePostgresRule;
+import com.opentable.db.postgres.junit5.EmbeddedPostgresExtension;
+import com.opentable.db.postgres.junit5.SingleInstancePostgresExtension;
 
 public class IsolationTest
 {
-    @Rule
-    public SingleInstancePostgresRule pg1 = EmbeddedPostgresRules.singleInstance();
+    @RegisterExtension
+    static final SingleInstancePostgresExtension pg1 = EmbeddedPostgresExtension.singleInstance();
 
-    @Rule
-    public SingleInstancePostgresRule pg2 = EmbeddedPostgresRules.singleInstance();
+    @RegisterExtension
+    static final SingleInstancePostgresExtension pg2 = EmbeddedPostgresExtension.singleInstance();
 
     @Test
     public void testIsolation() throws Exception
@@ -48,7 +48,7 @@ public class IsolationTest
         s.execute("CREATE TABLE public.foo (a INTEGER)");
     }
 
-    private Connection getConnection(SingleInstancePostgresRule epg) throws SQLException
+    private Connection getConnection(SingleInstancePostgresExtension epg) throws SQLException
     {
         return epg.getEmbeddedPostgres().getPostgresDatabase().getConnection();
     }

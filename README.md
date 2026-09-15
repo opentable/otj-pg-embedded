@@ -41,14 +41,14 @@ See "Alternatives Considered" as well if this library doesn't appear to fit your
 
 ## Basic Usage
 
-In your JUnit test just add (for JUnit 5 example see **Using JUnit5** below):
+In a JUnit Jupiter test, register an extension:
 
-```
-@Rule
-public SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance();
+```java
+@RegisterExtension
+static final SingleInstancePostgresExtension pg = EmbeddedPostgresExtension.singleInstance();
 ```
 
-This simply has JUnit manage an instance of EmbeddedPostgres (start, stop). You can then use this to get a DataSource with: `pg.getEmbeddedPostgres().getPostgresDatabase();`  
+This has JUnit manage an instance of EmbeddedPostgres (start, stop). You can then use this to get a DataSource with: `pg.getEmbeddedPostgres().getPostgresDatabase();`
 
 Additionally, you may use the [`EmbeddedPostgres`](src/main/java/com/opentable/db/postgres/embedded/EmbeddedPostgres.java) class directly by manually starting and stopping the instance; see [`EmbeddedPostgresTest`](src/test/java/com/opentable/db/postgres/embedded/EmbeddedPostgresTest.java) for an example.
 
@@ -74,9 +74,9 @@ The builder includes options to set the image, the tag, the database name, and v
 You can easily integrate Flyway or Liquibase database schema migration:
 ##### Flyway
 ```
-@Rule 
-public PreparedDbRule db =
-    EmbeddedPostgresRules.preparedDatabase(
+@RegisterExtension
+static final PreparedDbExtension db =
+    EmbeddedPostgresExtension.preparedDatabase(
         FlywayPreparer.forClasspathLocation("db/my-db-schema"));
         
         
@@ -86,19 +86,19 @@ the features described in the 1.0.3 changelog to disable the broken lock feature
 
 ##### Liquibase
 ```
-@Rule
-public PreparedDbRule db = 
-    EmbeddedPostgresRules.preparedDatabase(
+@RegisterExtension
+static final PreparedDbExtension db =
+    EmbeddedPostgresExtension.preparedDatabase(
             LiquibasePreparer.forClasspathLocation("liqui/master.xml"));
 ```
 
-This will create an independent database for every test with the given schema loaded from the classpath.
+This will create an independent database for the test class with the given schema loaded from the classpath.
 Database templates are used so the time cost is relatively small, given the superior isolation truly
 independent databases gives you.
 
 ## Postgres version
 
-The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently, this is "13-latest",
+The default is to use the docker hub registry and pull a tag, hardcoded in `EmbeddedPostgres`. Currently, this is `17-alpine`,
 as this fits the needs of OpenTable, however you can change this easily. This is super useful, both to use a newer version
 of Postgres, or to build your own DockerFile with additional extensions.
 
@@ -131,9 +131,9 @@ or use custom image:
 There are also options to set the initDB configuration parameters, or other functional params, the bind mounts, and
 the network.
 
-## Using JUnit5
+## Using JUnit Jupiter
 
-JUnit5 does not have `@Rule`. So below is an example for how to create tests using JUnit5 and embedded postgres, it creates a Spring context and uses JDBI:
+The library supports JUnit Jupiter extensions. The JUnit 4 rules were removed in version 1.1.2.
 
 ```java
 @ExtendWith(SpringExtension.class)
@@ -190,21 +190,6 @@ class DaoTestUsingJunit5 {
 
 
 
-## Yes, Junit4 is a compile time dependency
-
-This is because TestContainers has a long outstanding bug to remove this -https://github.com/testcontainers/testcontainers-java/issues/970
-If you exclude Junit4, you get nasty NoClassDefFound errors.
-
-If you only use Junit5 in your classpath, and bringing in Junit4 bothers you (it does us, sigh), then
-you can do the following:
-
-* add maven exclusions to the testcontainers modules you declare dependencies on to strip out junit:junit. This by itself
-would still lead to NoClassDefFound errors.
-* add a dependency on io.quarkus:quarkus-junit4-mock , which imports empty interfaces of the required classes. This is
-a hack and a cheat, but what can you do?
-
-We initially excluded junit4 ourselves, which led to confusing breakages for junit5 users...
-
 ## Some new options and some lost from Pre 1.0
 
 * You can't wire to a local postgres, since that concept doesn't make sense here. So that's gone.
@@ -234,7 +219,7 @@ test approach.
 * Why not just use Testcontainers directly?
 
 You can, and it should work well for you. The builders, the api compatibility, the wrapping around Flyway - that's the added value.
-But certainly there's no real reason you can't use [TestContainers](https://testcontainers.com/) directly - they have their own Junit4 and Junit5 Rules/Extensions.
+But certainly there's no real reason you can't use [TestContainers](https://testcontainers.com/) directly - they have their own JUnit Jupiter extensions.
 
 * Why not use a maven plugin approach like `fabric8-docker-maven`?
 

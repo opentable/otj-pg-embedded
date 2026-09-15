@@ -13,10 +13,10 @@
  */
 package com.opentable.db.postgres.embedded;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -28,17 +28,12 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.SystemUtils;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.utility.DockerImageName;
 
 public class EmbeddedPostgresTest
 {
-    @Rule
-    public TemporaryFolder tf = new TemporaryFolder();
-
     @Test
     public void testEmbeddedPg() throws Exception
     {
@@ -82,7 +77,7 @@ public class EmbeddedPostgresTest
     @Test
     public void testImageOptions() {
         // Ugly hack, since OT already has this defined as an ENV VAR, which can't really be cleared
-        Assume.assumeTrue(System.getenv(EmbeddedPostgres.ENV_DOCKER_PREFIX) ==  null);
+        Assumptions.assumeTrue(System.getenv(EmbeddedPostgres.ENV_DOCKER_PREFIX) == null);
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_PREFIX);
         System.clearProperty(EmbeddedPostgres.ENV_DOCKER_IMAGE);
 

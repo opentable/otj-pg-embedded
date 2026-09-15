@@ -14,7 +14,7 @@
 package com.opentable.db.postgres.embedded;
 
 
-import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
+import static org.testcontainers.postgresql.PostgreSQLContainer.POSTGRESQL_PORT;
 
 import java.io.Closeable;
 import java.io.File;
@@ -38,8 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 
@@ -65,7 +65,7 @@ public class EmbeddedPostgres implements Closeable {
     static final String DOCKER_DEFAULT_TAG = "17-alpine";
     // Note you can override any of these defaults explicitly in the builder.
 
-    private final PostgreSQLContainer<?> postgreDBContainer;
+    private final PostgreSQLContainer postgreDBContainer;
 
     private final UUID instanceId = UUID.randomUUID();
 
@@ -81,7 +81,7 @@ public class EmbeddedPostgres implements Closeable {
         LOG.trace("Starting containers with image {}, pgConfig {}, localeConfig {}, bindMounts {}, pgStartupWait {}, dbName {} ", image,
                 postgresConfig, localeConfig, bindMounts, pgStartupWait, databaseName);
         image = image.asCompatibleSubstituteFor(POSTGRES);
-        this.postgreDBContainer = new PostgreSQLContainer<>(image)
+        this.postgreDBContainer = new PostgreSQLContainer(image)
                 .withDatabaseName(databaseName)
                 .withUsername(POSTGRES)
                 .withPassword(POSTGRES)
@@ -99,7 +99,7 @@ public class EmbeddedPostgres implements Closeable {
         postgreDBContainer.start();
     }
 
-    private void processBindMounts(PostgreSQLContainer<?> postgreDBContainer, Map<String, BindMount> bindMounts) {
+    private void processBindMounts(PostgreSQLContainer postgreDBContainer, Map<String, BindMount> bindMounts) {
         bindMounts.values().stream()
                 .filter(f -> new File(f.getLocalFile()).exists())
                 .forEach(f -> postgreDBContainer.addFileSystemBind(f.getLocalFile(),
