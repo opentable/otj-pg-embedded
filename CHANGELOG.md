@@ -4,7 +4,7 @@
 * Updated the build, CI workflow, documentation, and Liquibase test resource handling.
 * Dependency updates:
 
-* testcontainers 1.20.6
+* testcontainers 1.21.4
 * postgres JDBC 42.7.12
 * flyway 10.20.1
 * commons-lang 3.18.0
