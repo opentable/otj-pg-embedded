@@ -9,7 +9,7 @@
 * postgres JDBC 42.7.12
 * flyway 10.20.1
 * commons-lang 3.18.0
-* commons-compress 1.27.1
+* commons-compress 1.28.0
 * junit 5.11.4
 * slf4j 2.0.17
 * jackson 2.18.3

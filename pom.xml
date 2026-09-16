@@ -49,7 +49,7 @@
     <dep.jackson.version>2.18.3</dep.jackson.version>
     <dep.flyway.version>10.20.1</dep.flyway.version>
     <dep.commons-lang.version>3.18.0</dep.commons-lang.version>
-    <dep.commons-compress.version>1.27.1</dep.commons-compress.version>
+    <dep.commons-compress.version>1.28.0</dep.commons-compress.version>
     <dep.junit5.version>5.11.4</dep.junit5.version>
     <basepom.test.timeout>1800</basepom.test.timeout>
     <basepom.javadoc.skip>false</basepom.javadoc.skip>
@@ -181,6 +181,12 @@
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <forkCount>1</forkCount>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
