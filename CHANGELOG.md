@@ -1,3 +1,7 @@
+1.1.3
+-----
+* Update the Maven Central publishing plugin for the current Central Portal API.
+
 1.1.2
 -----
 * Add the required Maven project name metadata for Central publication.
