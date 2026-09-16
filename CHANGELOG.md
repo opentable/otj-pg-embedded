@@ -1,6 +1,6 @@
 1.1.3
 -----
-* Update the Maven Central publishing plugin for the current Central Portal API.
+* Upgrade the BasePOM parent for the current Maven Central Portal API.
 
 1.1.2
 -----
