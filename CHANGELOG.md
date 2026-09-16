@@ -1,6 +1,7 @@
 1.1.3
 -----
 * Upgrade the BasePOM parent for the current Maven Central Portal API.
+* Upgrade Flyway to 12.4.0 and remove Jackson 2 dependencies.
 
 1.1.2
 -----
