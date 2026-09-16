@@ -1,9 +1,6 @@
-1.1.3
------
-* Add the required Maven project name metadata for Central publication.
-
 1.1.2
 -----
+* Add the required Maven project name metadata for Central publication.
 * Default Docker image tag is now `17-alpine` (previously `13-alpine`).
 * Updated the build, CI workflow, documentation, and Liquibase test resource handling.
 * Breaking change: removed JUnit 4 rules; use the JUnit Jupiter extensions instead.
